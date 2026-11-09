@@ -1,0 +1,4 @@
+name = "oprogramowanie"
+cpv = ["72*", "48*"]
+notice_types = ["ContractNotice", "cn-standard"]
+# The legacy feed's TED query is narrower (72000000); parity reports must show this.

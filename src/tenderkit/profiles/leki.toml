@@ -1,0 +1,4 @@
+name = "leki"
+cpv = ["336*"]
+# Keep the same notice set as pharma.public_notice; classification stays in pharma.
+notice_types = ["ContractNotice", "SmallContractNotice", "CompetitionNotice", "cn-standard"]

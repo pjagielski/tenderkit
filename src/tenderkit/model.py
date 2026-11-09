@@ -34,6 +34,8 @@ class Notice:
     reference: str | None = None                 # the buyer's own case number
     url: str | None = None                       # the notice itself
     raw: dict = field(default_factory=dict, compare=False, repr=False)
+    notice_type: str | None = None
+    lot_count: int | None = None
 
 
 @dataclass(frozen=True)
