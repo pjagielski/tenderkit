@@ -19,6 +19,26 @@ create table if not exists refreshes (
     query text not null, status text not null, count integer not null,
     error text, finished_at text not null
 );
+create table if not exists document_refs (
+    source text not null, number text not null, document_key text not null, payload text not null,
+    primary key(source,number,document_key)
+);
+create table if not exists procedure_links (
+    source text not null, number text not null, payload text not null,
+    primary key(source,number)
+);
+create table if not exists notice_documents (
+    source text not null, number text not null, document_key text not null, sha256 text not null,
+    payload text not null, fetched_at text not null,
+    primary key(source,number,document_key,sha256)
+);
+create table if not exists fetch_jobs (
+    id integer primary key, source text not null, number text not null, selection text,
+    status text not null, attempts integer not null default 0, error text, error_kind text,
+    next_attempt real not null default 0, heartbeat real, summary text not null default '{}'
+);
+create unique index if not exists active_document_job on fetch_jobs(source,number)
+    where status in ('QUEUED','RUNNING');
 '''
 
 
@@ -79,4 +99,57 @@ class State:
             refreshes = [dict(r) for r in conn.execute('select * from refreshes order by id desc limit 50')]
             for row in refreshes:
                 row['query'] = json.loads(row['query'])
-            return dict(counts=counts, refreshes=refreshes)
+            jobs = [dict(r) for r in conn.execute('select id,source,number,status,attempts,error,error_kind,next_attempt,summary from fetch_jobs order by id desc limit 50')]
+            for job in jobs:
+                job['summary'] = json.loads(job['summary'])
+            return dict(counts=counts, refreshes=refreshes, jobs=jobs)
+
+    def set_coverage(self, source, number, status):
+        if status not in ('PENDING', 'FETCHED', 'NO_DOCUMENTS', 'UNSUPPORTED_PLATFORM', 'NO_REFERENCE', 'FETCH_FAILED'):
+            raise ValueError('Invalid coverage state')
+        with self.connection() as conn:
+            conn.execute('update notices set coverage=? where source=? and number=?', (status, source, number))
+
+    def save_listing(self, source, number, refs, link=None):
+        from dataclasses import asdict
+        with self.connection() as conn:
+            conn.execute('delete from document_refs where source=? and number=?', (source, number))
+            conn.executemany('insert into document_refs values(?,?,?,?)',
+                [(source, number, ref.key, dumps(asdict(ref))) for ref in refs])
+            if link is not None:
+                conn.execute('insert into procedure_links values(?,?,?) on conflict(source,number) do update set payload=excluded.payload',
+                             (source, number, dumps(asdict(link))))
+
+    def procedure_link(self, source, number):
+        with self.connection() as conn:
+            row = conn.execute('select payload from procedure_links where source=? and number=?', (source, number)).fetchone()
+            return json.loads(row[0]) if row else None
+
+    def listing(self, source, number):
+        with self.connection() as conn:
+            return [json.loads(row[0]) for row in conn.execute(
+                'select payload from document_refs where source=? and number=? order by rowid', (source, number))]
+
+    def record_document(self, source, number, record):
+        with self.connection() as conn:
+            conn.execute('''insert into notice_documents values(?,?,?,?,?,?)
+                on conflict(source,number,document_key,sha256) do update set payload=excluded.payload,fetched_at=excluded.fetched_at''',
+                (source, number, record['key'], record['sha256'], dumps(record), record['fetched_at']))
+
+    def documents(self, source, number):
+        with self.connection() as conn:
+            # Return latest versions by key; earlier hashes stay registered and readable.
+            found = {}
+            for row in conn.execute('select document_key,payload from notice_documents where source=? and number=? order by fetched_at,rowid', (source, number)):
+                found[row['document_key']] = json.loads(row['payload'])
+            return found
+
+    def document(self, digest):
+        import re
+        if not re.fullmatch(r'[a-f0-9]{64}', digest or ''):
+            raise ValueError('Document id must be a SHA-256 digest')
+        with self.connection() as conn:
+            row = conn.execute('select source,number,payload from notice_documents where sha256=? order by fetched_at desc limit 1', (digest,)).fetchone()
+            if row is None:
+                raise ValueError('Document not found in local state')
+            return dict(source=row['source'], number=row['number'], **json.loads(row['payload']))
