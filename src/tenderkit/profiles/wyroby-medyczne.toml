@@ -1,0 +1,4 @@
+name = "wyroby-medyczne"
+# Broad discovery scope from the specification; this is not an MDR classification.
+cpv = ["331*", "332*", "334*"]
+notice_types = ["ContractNotice", "SmallContractNotice", "CompetitionNotice", "cn-standard"]
