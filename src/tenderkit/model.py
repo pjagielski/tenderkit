@@ -56,3 +56,4 @@ class DocumentRef:
     ext: str | None = None
     published: str | None = None
     origin: str | None = None                    # 'attachment', 'message', 'offer folder', ...
+    metadata: dict = field(default_factory=dict, compare=False, repr=False)
