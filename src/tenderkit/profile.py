@@ -9,6 +9,9 @@ Matching is case- and diacritics-insensitive on the title. A source gets only wh
 Profile.matches decides the rest.
 """
 from dataclasses import dataclass
+from datetime import datetime
+from decimal import Decimal, InvalidOperation
+from zoneinfo import ZoneInfo
 from pathlib import Path
 import re
 import tomllib
@@ -18,6 +21,39 @@ from tenderkit.interfaces import SourceQuery
 from tenderkit.model import Notice
 
 _CPV = re.compile(r'^\d{1,8}\*?$')
+
+
+@dataclass(frozen=True)
+class ValueRange:
+    min: Decimal | None = None
+    max: Decimal | None = None
+    currency: str = 'PLN'
+
+    def __post_init__(self):
+        for name in ('min', 'max'):
+            value = getattr(self, name)
+            if value is not None:
+                try:
+                    value = Decimal(str(value))
+                except InvalidOperation as exc:
+                    raise ValueError('Invalid value bound') from exc
+                if not value.is_finite() or value < 0:
+                    raise ValueError('Value bounds must be finite and nonnegative')
+                object.__setattr__(self, name, value)
+        if self.min is not None and self.max is not None and self.min > self.max:
+            raise ValueError('Value min exceeds max')
+        if not re.fullmatch(r'[A-Z]{3}', self.currency):
+            raise ValueError('Currency must be a three-letter code')
+
+
+@dataclass(frozen=True)
+class DeadlineRange:
+    min: int = 0
+    max: int = 120
+
+    def __post_init__(self):
+        if type(self.min) is not int or type(self.max) is not int or not 0 <= self.min <= self.max <= 3650:
+            raise ValueError('Invalid deadline_days bounds')
 
 
 def fold(text):
@@ -33,11 +69,30 @@ class Profile:
     keywords_any: tuple[str, ...] = ()
     exclude_keywords: tuple[str, ...] = ()
     notice_types: tuple[str, ...] = ()
+    value: ValueRange | None = None
+    regions: tuple[str, ...] = ()
+    deadline_days: DeadlineRange | None = None
+    exclude_buyers: tuple[str, ...] = ()
+    documents: tuple[str, ...] = ()
 
     def __post_init__(self):
+        if not isinstance(self.name, str) or not self.name.strip():
+            raise ValueError('Profile name must be nonempty')
+        for name in ('cpv', 'keywords_any', 'exclude_keywords', 'notice_types', 'regions', 'exclude_buyers', 'documents'):
+            values = getattr(self, name)
+            if (not isinstance(values, (list, tuple)) or len(values) > 64
+                    or any(not isinstance(v, str) or not v.strip() or len(v) > 200 for v in values)):
+                raise ValueError(f'{name} must be an array of nonempty strings')
+            object.__setattr__(self, name, tuple(values))
         bad = [c for c in self.cpv if not _CPV.match(c)]
         if bad:
             raise ValueError(f'profile {self.name}: CPV must be digits, optionally ending in *: {bad}')
+        if self.value is not None and not isinstance(self.value, ValueRange):
+            raise ValueError('value must be a ValueRange')
+        if self.deadline_days is not None and not isinstance(self.deadline_days, DeadlineRange):
+            raise ValueError('deadline_days must be a DeadlineRange')
+        if any(not re.fullmatch(r'\d{2}', r) for r in self.regions):
+            raise ValueError('regions must contain two-digit TERYT voivodeship codes')
 
     def cpv_prefixes(self):
         """'336*' -> '336'; a full code stays as it is."""
@@ -47,8 +102,9 @@ class Profile:
         return SourceQuery(cpv_prefixes=self.cpv_prefixes(), notice_types=self.notice_types)
 
     def matches_cpv(self, codes):
-        prefixes = self.cpv_prefixes()
-        return not prefixes or any(str(code).startswith(prefixes) for code in codes)
+        return not self.cpv or any(
+            str(code).startswith(pattern[:-1]) if pattern.endswith('*') else str(code) == pattern
+            for pattern in self.cpv for code in codes)
 
     def matches_text(self, text):
         folded = fold(text)
@@ -56,14 +112,52 @@ class Profile:
             return False
         return not self.keywords_any or any(fold(k) in folded for k in self.keywords_any)
 
-    def matches(self, notice: Notice):
-        return self.matches_cpv(notice.cpv) and self.matches_text(notice.title)
+    def matches(self, notice: Notice, *, today=None):
+        if not self.matches_cpv(notice.cpv) or not self.matches_text(notice.title):
+            return False
+        if self.notice_types and notice.notice_type not in self.notice_types:
+            return False
+        if self.regions and notice.buyer_region not in self.regions:
+            return False
+        if any(fold(b) in fold(notice.buyer_name) or b == notice.buyer_id for b in self.exclude_buyers):
+            return False
+        if self.value:
+            if notice.value is None or notice.currency != self.value.currency:
+                return False
+            if self.value.min is not None and notice.value < self.value.min:
+                return False
+            if self.value.max is not None and notice.value > self.value.max:
+                return False
+        if self.deadline_days:
+            if notice.deadline is None:
+                return False
+            deadline = notice.deadline.astimezone(ZoneInfo('Europe/Warsaw')) if notice.deadline.tzinfo else notice.deadline
+            days = (deadline.date() - (today or datetime.now(ZoneInfo('Europe/Warsaw')).date())).days
+            if not self.deadline_days.min <= days <= self.deadline_days.max:
+                return False
+        return True
 
 
 def load_profile(path):
     source = path if hasattr(path, 'read_text') else Path(path)     # a path or an importlib.resources file
     data = tomllib.loads(source.read_text(encoding='utf-8'))
-    unknown = set(data) - {'name', 'cpv', 'keywords_any', 'exclude_keywords', 'notice_types'}
+    return profile_from_dict(data, origin=str(path))
+
+
+def profile_from_dict(data, *, origin='profile'):
+    unknown = set(data) - set(Profile.__dataclass_fields__)
     if unknown:
-        raise ValueError(f'{path}: unknown profile keys {sorted(unknown)}')
-    return Profile(name=data['name'], **{k: tuple(v) for k, v in data.items() if k != 'name'})
+        raise ValueError(f'{origin}: unknown profile keys {sorted(unknown)}')
+    data = dict(data)
+    for key, cls in (('value', ValueRange), ('deadline_days', DeadlineRange)):
+        if key in data and data[key] is not None:
+            if not isinstance(data[key], dict):
+                raise ValueError(f'{key} must be a table')
+            try:
+                data[key] = cls(**data[key])
+            except TypeError as exc:
+                raise ValueError(f'Invalid {key} fields') from exc
+    try:
+        return Profile(**data)
+    except TypeError as exc:
+        raise ValueError('Invalid profile fields') from exc
