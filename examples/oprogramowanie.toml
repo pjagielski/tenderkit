@@ -1,0 +1,3 @@
+name = "oprogramowanie"
+cpv = ["72*", "48*"]
+notice_types = ["ContractNotice", "cn-standard"]

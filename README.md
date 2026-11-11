@@ -28,6 +28,18 @@ deadline_days = { min = 1, max = 60 }
 
 Region codes refer to the buyer's location. A CPV ending in `*` matches a prefix. Required keywords and CPV restrictions are applied together, and exclusions take precedence.
 
+## Local browser view
+
+```sh
+tenderkit --db .notices.sqlite3 ui --profile examples/oprogramowanie.toml
+```
+
+Open `http://127.0.0.1:8765/` to browse saved notices, switch profiles,
+and search by title or buyer. The UI opens the database in read-only mode.
+Pass each profile you want to see with `--profile`, using a name or a TOML
+path. The first profile opens by default. Use `--port 8766` if the default port
+is in use. The UI defaults to `.notices.sqlite3` in the current directory.
+
 ## Documents
 
 ```sh
