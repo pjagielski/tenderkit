@@ -1,0 +1,30 @@
+[build-system]
+requires = ["setuptools>=77"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "tenderkit"
+version = "0.1.0"
+description = "Collect, filter and read Polish public procurement notices and documents"
+readme = "README.md"
+requires-python = ">=3.11"
+license = "Apache-2.0"
+license-files = ["LICENSE"]
+dependencies = ["tzdata; sys_platform == 'win32'"]
+
+[project.optional-dependencies]
+mcp = ["mcp>=2.3,<3"]
+documents = ["PyMuPDF>=1.26,<2"]
+
+[project.urls]
+Repository = "https://github.com/pjagielski/tenderkit"
+
+[project.scripts]
+tenderkit = "tenderkit.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+include = ["tenderkit*"]
+
+[tool.setuptools.package-data]
+"tenderkit.profiles" = ["*.toml"]

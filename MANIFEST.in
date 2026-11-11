@@ -1,0 +1,2 @@
+include docs/plugins.md
+recursive-include tests *.py *.json

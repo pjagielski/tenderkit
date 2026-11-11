@@ -1,0 +1,412 @@
+{
+ "provenance": "Reduced and anonymized public response captured 2026-11-10; no cookies or document content.",
+ "url": "https://ihit.ezamawiajacy.pl/pn/ihit/demand/notice/public/232844/details",
+ "responses": {
+  "https://ihit.ezamawiajacy.pl/pn/ihit/demand/notice/public/232844/details?folder=0007&": "<table><tr class=\"fileDataRow\"><td></td><td class=\"text long\">Document1</td><td class=\"date-time\">2026-09-09 07:20</td><td class=\"text medium\">-</td><script>data({});</script></tr><tr class=\"fileDataRow\"><td></td><td class=\"text long\">Document2.docx</td><td class=\"date-time\">2026-09-09 07:20</td><td class=\"text medium\">148 KB</td><script>data({downloadPostUrl: '/repository/download/b709e81671ec6e9a51e52dba8755ace5',});</script></tr><tr class=\"fileDataRow\"><td></td><td class=\"text long\">Document3.pdf</td><td class=\"date-time\">2026-09-09 07:20</td><td class=\"text medium\">359 KB</td><script>data({downloadPostUrl: '/repository/download/896215172f30f38d83b41c9217f0f8cb',});</script></tr><tr class=\"fileDataRow\"><td></td><td class=\"text long\">Document4.xlsx</td><td class=\"date-time\">2026-09-09 07:20</td><td class=\"text medium\">91 KB</td><script>data({downloadPostUrl: '/repository/download/3bda45c4bd6805b983300068bc60f934',});</script></tr><tr class=\"fileDataRow\"><td></td><td class=\"text long\">Document5.pdf</td><td class=\"date-time\">2026-09-09 07:20</td><td class=\"text medium\">268 KB</td><script>data({downloadPostUrl: '/repository/download/ed0de43da0250c437e78be8958065618',});</script></tr><tr class=\"fileDataRow\"><td></td><td class=\"text long\">Document6.pdf</td><td class=\"date-time\">2026-09-18 11:31</td><td class=\"text medium\">140 KB</td><script>data({downloadPostUrl: '/repository/download/f3e18100d9f76a75b0921cdf2a631842',});</script></tr><tr class=\"fileDataRow\"><td></td><td class=\"text long\">Document7</td><td class=\"date-time\"></td><td class=\"text medium\"></td><script>data({});</script></tr><tr class=\"fileDataRow\"><td></td><td class=\"text long\">Document8.rtf</td><td class=\"date-time\">2026-09-24 12:19</td><td class=\"text medium\">48 KB</td><script>data({downloadPostUrl: '/repository/download/231a5349d05a261961010902a10be61e',});</script></tr><tr class=\"fileDataRow\"><td></td><td class=\"text long\">Document9.zip</td><td class=\"date-time\">2026-09-24 12:19</td><td class=\"text medium\">3.24 MB</td><script>data({downloadPostUrl: '/repository/download/ba6e30f2de8a8c9838a29bc5a0283d3a',});</script></tr></table>",
+  "https://ihit.ezamawiajacy.pl/pn/ihit/demand/notice/public/232844/details?folder=0004&": "<table><tr class=\"fileDataRow\"><td></td><td class=\"text long\">Document1</td><td class=\"date-time\">2026-09-09 07:20</td><td class=\"text medium\">-</td><script>data({});</script></tr><tr class=\"fileDataRow\"><td></td><td class=\"text long\">Document2.docx</td><td class=\"date-time\">2026-09-09 07:20</td><td class=\"text medium\">148 KB</td><script>data({downloadPostUrl: '/repository/download/b709e81671ec6e9a51e52dba8755ace5',});</script></tr><tr class=\"fileDataRow\"><td></td><td class=\"text long\">Document3.pdf</td><td class=\"date-time\">2026-09-09 07:20</td><td class=\"text medium\">359 KB</td><script>data({downloadPostUrl: '/repository/download/896215172f30f38d83b41c9217f0f8cb',});</script></tr><tr class=\"fileDataRow\"><td></td><td class=\"text long\">Document4.xlsx</td><td class=\"date-time\">2026-09-09 07:20</td><td class=\"text medium\">91 KB</td><script>data({downloadPostUrl: '/repository/download/3bda45c4bd6805b983300068bc60f934',});</script></tr><tr class=\"fileDataRow\"><td></td><td class=\"text long\">Document5.pdf</td><td class=\"date-time\">2026-09-09 07:20</td><td class=\"text medium\">268 KB</td><script>data({downloadPostUrl: '/repository/download/ed0de43da0250c437e78be8958065618',});</script></tr><tr class=\"fileDataRow\"><td></td><td class=\"text long\">Document6.pdf</td><td class=\"date-time\">2026-09-18 11:31</td><td class=\"text medium\">140 KB</td><script>data({downloadPostUrl: '/repository/download/f3e18100d9f76a75b0921cdf2a631842',});</script></tr><tr class=\"fileDataRow\"><td></td><td class=\"text long\">Document7</td><td class=\"date-time\"></td><td class=\"text medium\"></td><script>data({});</script></tr><tr class=\"fileDataRow\"><td></td><td class=\"text long\">Document10.rtf</td><td class=\"date-time\">2026-09-24 12:19</td><td class=\"text medium\">48 KB</td><script>data({downloadPostUrl: '/repository/download/0793b2e2db09df7f0b6c8da9aae27af9',});</script></tr><tr class=\"fileDataRow\"><td></td><td class=\"text long\">Document11.zip</td><td class=\"date-time\">2026-09-24 12:19</td><td class=\"text medium\">1.52 MB</td><script>data({downloadPostUrl: '/repository/download/16d536a2f68eb1e34103529ac06768b7',});</script></tr></table>",
+  "https://ihit.ezamawiajacy.pl/pn/ihit/demand/notice/public/232844/details?folder=0005&": "<table><tr class=\"fileDataRow\"><td></td><td class=\"text long\">Document1</td><td class=\"date-time\">2026-09-09 07:20</td><td class=\"text medium\">-</td><script>data({});</script></tr><tr class=\"fileDataRow\"><td></td><td class=\"text long\">Document2.docx</td><td class=\"date-time\">2026-09-09 07:20</td><td class=\"text medium\">148 KB</td><script>data({downloadPostUrl: '/repository/download/b709e81671ec6e9a51e52dba8755ace5',});</script></tr><tr class=\"fileDataRow\"><td></td><td class=\"text long\">Document3.pdf</td><td class=\"date-time\">2026-09-09 07:20</td><td class=\"text medium\">359 KB</td><script>data({downloadPostUrl: '/repository/download/896215172f30f38d83b41c9217f0f8cb',});</script></tr><tr class=\"fileDataRow\"><td></td><td class=\"text long\">Document4.xlsx</td><td class=\"date-time\">2026-09-09 07:20</td><td class=\"text medium\">91 KB</td><script>data({downloadPostUrl: '/repository/download/3bda45c4bd6805b983300068bc60f934',});</script></tr><tr class=\"fileDataRow\"><td></td><td class=\"text long\">Document5.pdf</td><td class=\"date-time\">2026-09-09 07:20</td><td class=\"text medium\">268 KB</td><script>data({downloadPostUrl: '/repository/download/ed0de43da0250c437e78be8958065618',});</script></tr><tr class=\"fileDataRow\"><td></td><td class=\"text long\">Document6.pdf</td><td class=\"date-time\">2026-09-18 11:31</td><td class=\"text medium\">140 KB</td><script>data({downloadPostUrl: '/repository/download/f3e18100d9f76a75b0921cdf2a631842',});</script></tr><tr class=\"fileDataRow\"><td></td><td class=\"text long\">Document7</td><td class=\"date-time\"></td><td class=\"text medium\"></td><script>data({});</script></tr><tr class=\"fileDataRow\"><td></td><td class=\"text long\">Document12.rtf</td><td class=\"date-time\">2026-09-24 12:19</td><td class=\"text medium\">77 KB</td><script>data({downloadPostUrl: '/repository/download/ac52876b6b050b2455ddbbbbf205813d',});</script></tr><tr class=\"fileDataRow\"><td></td><td class=\"text long\">Document13.pdf</td><td class=\"date-time\">2026-09-24 12:19</td><td class=\"text medium\">144 KB</td><script>data({downloadPostUrl: '/repository/download/2c9c0078588f9648c1161f8f8336b6ab',});</script></tr><tr class=\"fileDataRow\"><td></td><td class=\"text long\">Document14.xlsx</td><td class=\"date-time\">2026-09-24 12:19</td><td class=\"text medium\">23 KB</td><script>data({downloadPostUrl: '/repository/download/ccd6457dc53271b138be10314cbeeb17',});</script></tr><tr class=\"fileDataRow\"><td></td><td class=\"text long\">Document15.xades</td><td class=\"date-time\">2026-09-24 12:19</td><td class=\"text medium\">11 KB</td><script>data({downloadPostUrl: '/repository/download/97188bbc4025ecb833ca98a2c28123b7',});</script></tr><tr class=\"fileDataRow\"><td></td><td class=\"text long\">Document16.pdf</td><td class=\"date-time\">2026-09-24 12:19</td><td class=\"text medium\">180 KB</td><script>data({downloadPostUrl: '/repository/download/0ce9ad125beab51bedb3cc9bfc673ca3',});</script></tr><tr class=\"fileDataRow\"><td></td><td class=\"text long\">Document17.pdf</td><td class=\"date-time\">2026-09-24 12:19</td><td class=\"text medium\">221 KB</td><script>data({downloadPostUrl: '/repository/download/bc04acd6e3e6c4699c006b232bdd58c7',});</script></tr><tr class=\"fileDataRow\"><td></td><td class=\"text long\">Document18.pdf</td><td class=\"date-time\">2026-09-24 12:19</td><td class=\"text medium\">136 KB</td><script>data({downloadPostUrl: '/repository/download/a9d720aa3ec5a47e1e3958e3ffd139f8',});</script></tr><tr class=\"fileDataRow\"><td></td><td class=\"text long\">Document19.pdf</td><td class=\"date-time\">2026-09-24 12:19</td><td class=\"text medium\">690 KB</td><script>data({downloadPostUrl: '/repository/download/64097d32519c01d75cff86017d3e68ce',});</script></tr></table>",
+  "https://ihit.ezamawiajacy.pl/pn/ihit/demand/notice/public/232844/details?folder=0001&": "<table><tr class=\"fileDataRow\"><td></td><td class=\"text long\">Document1</td><td class=\"date-time\">2026-09-09 07:20</td><td class=\"text medium\">-</td><script>data({});</script></tr><tr class=\"fileDataRow\"><td></td><td class=\"text long\">Document2.docx</td><td class=\"date-time\">2026-09-09 07:20</td><td class=\"text medium\">148 KB</td><script>data({downloadPostUrl: '/repository/download/b709e81671ec6e9a51e52dba8755ace5',});</script></tr><tr class=\"fileDataRow\"><td></td><td class=\"text long\">Document3.pdf</td><td class=\"date-time\">2026-09-09 07:20</td><td class=\"text medium\">359 KB</td><script>data({downloadPostUrl: '/repository/download/896215172f30f38d83b41c9217f0f8cb',});</script></tr><tr class=\"fileDataRow\"><td></td><td class=\"text long\">Document4.xlsx</td><td class=\"date-time\">2026-09-09 07:20</td><td class=\"text medium\">91 KB</td><script>data({downloadPostUrl: '/repository/download/3bda45c4bd6805b983300068bc60f934',});</script></tr><tr class=\"fileDataRow\"><td></td><td class=\"text long\">Document5.pdf</td><td class=\"date-time\">2026-09-09 07:20</td><td class=\"text medium\">268 KB</td><script>data({downloadPostUrl: '/repository/download/ed0de43da0250c437e78be8958065618',});</script></tr><tr class=\"fileDataRow\"><td></td><td class=\"text long\">Document6.pdf</td><td class=\"date-time\">2026-09-18 11:31</td><td class=\"text medium\">140 KB</td><script>data({downloadPostUrl: '/repository/download/f3e18100d9f76a75b0921cdf2a631842',});</script></tr><tr class=\"fileDataRow\"><td></td><td class=\"text long\">Document7</td><td class=\"date-time\"></td><td class=\"text medium\"></td><script>data({});</script></tr><tr class=\"fileDataRow\"><td></td><td class=\"text long\">Document20.rtf</td><td class=\"date-time\">2026-09-24 12:16</td><td class=\"text medium\">56 KB</td><script>data({downloadPostUrl: '/repository/download/1fdb17742df24f49584846bfa6559f06',});</script></tr></table>",
+  "https://ihit.ezamawiajacy.pl/pn/ihit/demand/notice/public/232844/details": "<table><tr class=\"fileDataRow\"><td></td><td class=\"text long\">Document1</td><td class=\"date-time\">2026-09-09 07:20</td><td class=\"text medium\">-</td><script>data({});</script></tr><tr class=\"fileDataRow\"><td></td><td class=\"text long\">Document2.docx</td><td class=\"date-time\">2026-09-09 07:20</td><td class=\"text medium\">148 KB</td><script>data({downloadPostUrl: '/repository/download/b709e81671ec6e9a51e52dba8755ace5',});</script></tr><tr class=\"fileDataRow\"><td></td><td class=\"text long\">Document3.pdf</td><td class=\"date-time\">2026-09-09 07:20</td><td class=\"text medium\">359 KB</td><script>data({downloadPostUrl: '/repository/download/896215172f30f38d83b41c9217f0f8cb',});</script></tr><tr class=\"fileDataRow\"><td></td><td class=\"text long\">Document4.xlsx</td><td class=\"date-time\">2026-09-09 07:20</td><td class=\"text medium\">91 KB</td><script>data({downloadPostUrl: '/repository/download/3bda45c4bd6805b983300068bc60f934',});</script></tr><tr class=\"fileDataRow\"><td></td><td class=\"text long\">Document5.pdf</td><td class=\"date-time\">2026-09-09 07:20</td><td class=\"text medium\">268 KB</td><script>data({downloadPostUrl: '/repository/download/ed0de43da0250c437e78be8958065618',});</script></tr><tr class=\"fileDataRow\"><td></td><td class=\"text long\">Document6.pdf</td><td class=\"date-time\">2026-09-18 11:31</td><td class=\"text medium\">140 KB</td><script>data({downloadPostUrl: '/repository/download/f3e18100d9f76a75b0921cdf2a631842',});</script></tr><tr class=\"fileDataRow\"><td></td><td class=\"text long\">Folder21</td><td class=\"date-time\"></td><td class=\"text medium\">-</td><script>data({enterFolderUrl: '/pn/ihit/demand/notice/public/232844/details?folder=0001&',});</script></tr><tr class=\"fileDataRow\"><td></td><td class=\"text long\">Folder22</td><td class=\"date-time\"></td><td class=\"text medium\">-</td><script>data({enterFolderUrl: '/pn/ihit/demand/notice/public/232844/details?folder=0002&',});</script></tr><tr class=\"fileDataRow\"><td></td><td class=\"text long\">Folder23</td><td class=\"date-time\"></td><td class=\"text medium\">-</td><script>data({enterFolderUrl: '/pn/ihit/demand/notice/public/232844/details?folder=0003&',});</script></tr><tr class=\"fileDataRow\"><td></td><td class=\"text long\">Folder24</td><td class=\"date-time\"></td><td class=\"text medium\">-</td><script>data({enterFolderUrl: '/pn/ihit/demand/notice/public/232844/details?folder=0004&',});</script></tr><tr class=\"fileDataRow\"><td></td><td class=\"text long\">Folder25</td><td class=\"date-time\"></td><td class=\"text medium\">-</td><script>data({enterFolderUrl: '/pn/ihit/demand/notice/public/232844/details?folder=0005&',});</script></tr><tr class=\"fileDataRow\"><td></td><td class=\"text long\">Folder26</td><td class=\"date-time\"></td><td class=\"text medium\">-</td><script>data({enterFolderUrl: '/pn/ihit/demand/notice/public/232844/details?folder=0006&',});</script></tr><tr class=\"fileDataRow\"><td></td><td class=\"text long\">Folder27</td><td class=\"date-time\"></td><td class=\"text medium\">-</td><script>data({enterFolderUrl: '/pn/ihit/demand/notice/public/232844/details?folder=0007&',});</script></tr></table>",
+  "https://ihit.ezamawiajacy.pl/pn/ihit/demand/notice/public/232844/details?folder=0006&": "<table><tr class=\"fileDataRow\"><td></td><td class=\"text long\">Document1</td><td class=\"date-time\">2026-09-09 07:20</td><td class=\"text medium\">-</td><script>data({});</script></tr><tr class=\"fileDataRow\"><td></td><td class=\"text long\">Document2.docx</td><td class=\"date-time\">2026-09-09 07:20</td><td class=\"text medium\">148 KB</td><script>data({downloadPostUrl: '/repository/download/b709e81671ec6e9a51e52dba8755ace5',});</script></tr><tr class=\"fileDataRow\"><td></td><td class=\"text long\">Document3.pdf</td><td class=\"date-time\">2026-09-09 07:20</td><td class=\"text medium\">359 KB</td><script>data({downloadPostUrl: '/repository/download/896215172f30f38d83b41c9217f0f8cb',});</script></tr><tr class=\"fileDataRow\"><td></td><td class=\"text long\">Document4.xlsx</td><td class=\"date-time\">2026-09-09 07:20</td><td class=\"text medium\">91 KB</td><script>data({downloadPostUrl: '/repository/download/3bda45c4bd6805b983300068bc60f934',});</script></tr><tr class=\"fileDataRow\"><td></td><td class=\"text long\">Document5.pdf</td><td class=\"date-time\">2026-09-09 07:20</td><td class=\"text medium\">268 KB</td><script>data({downloadPostUrl: '/repository/download/ed0de43da0250c437e78be8958065618',});</script></tr><tr class=\"fileDataRow\"><td></td><td class=\"text long\">Document6.pdf</td><td class=\"date-time\">2026-09-18 11:31</td><td class=\"text medium\">140 KB</td><script>data({downloadPostUrl: '/repository/download/f3e18100d9f76a75b0921cdf2a631842',});</script></tr><tr class=\"fileDataRow\"><td></td><td class=\"text long\">Document7</td><td class=\"date-time\"></td><td class=\"text medium\"></td><script>data({});</script></tr><tr class=\"fileDataRow\"><td></td><td class=\"text long\">Document28.rtf</td><td class=\"date-time\">2026-09-24 12:19</td><td class=\"text medium\">63 KB</td><script>data({downloadPostUrl: '/repository/download/ca0bfdacf2925bf367f66b8fe8ecdf87',});</script></tr><tr class=\"fileDataRow\"><td></td><td class=\"text long\">Document29.pdf</td><td class=\"date-time\">2026-09-24 12:19</td><td class=\"text medium\">158 KB</td><script>data({downloadPostUrl: '/repository/download/af98510dfa8fa00993dd28bfedfd63d0',});</script></tr><tr class=\"fileDataRow\"><td></td><td class=\"text long\">Document30.pdf</td><td class=\"date-time\">2026-09-24 12:19</td><td class=\"text medium\">103 KB</td><script>data({downloadPostUrl: '/repository/download/c426bf6ad372c969e0b295565cf39e8a',});</script></tr><tr class=\"fileDataRow\"><td></td><td class=\"text long\">Document31.pdf</td><td class=\"date-time\">2026-09-24 12:19</td><td class=\"text medium\">388 KB</td><script>data({downloadPostUrl: '/repository/download/60163fbfe63491843d41ffdd5fcfa530',});</script></tr><tr class=\"fileDataRow\"><td></td><td class=\"text long\">Document32.pdf</td><td class=\"date-time\">2026-09-24 12:19</td><td class=\"text medium\">253 KB</td><script>data({downloadPostUrl: '/repository/download/4678d285216c4738dc5dde54aa9ec548',});</script></tr><tr class=\"fileDataRow\"><td></td><td class=\"text long\">Document33.pdf</td><td class=\"date-time\">2026-09-24 12:19</td><td class=\"text medium\">408 KB</td><script>data({downloadPostUrl: '/repository/download/d041aaf197dc49ecfc3733c9c0b1916b',});</script></tr><tr class=\"fileDataRow\"><td></td><td class=\"text long\">Document34.pdf</td><td class=\"date-time\">2026-09-24 12:19</td><td class=\"text medium\">367 KB</td><script>data({downloadPostUrl: '/repository/download/a71835af34a3039ffdd4826199b4440c',});</script></tr><tr class=\"fileDataRow\"><td></td><td class=\"text long\">Document35.pdf</td><td class=\"date-time\">2026-09-24 12:19</td><td class=\"text medium\">277 KB</td><script>data({downloadPostUrl: '/repository/download/fcd60990d0fbd0a11a0decf4608dbe1d',});</script></tr><tr class=\"fileDataRow\"><td></td><td class=\"text long\">Document36.pdf</td><td class=\"date-time\">2026-09-24 12:19</td><td class=\"text medium\">178 KB</td><script>data({downloadPostUrl: '/repository/download/a5edc79fa384ae1690ba631b4b1f8eae',});</script></tr></table>",
+  "https://ihit.ezamawiajacy.pl/pn/ihit/demand/notice/public/232844/details?folder=0003&": "<table><tr class=\"fileDataRow\"><td></td><td class=\"text long\">Document1</td><td class=\"date-time\">2026-09-09 07:20</td><td class=\"text medium\">-</td><script>data({});</script></tr><tr class=\"fileDataRow\"><td></td><td class=\"text long\">Document2.docx</td><td class=\"date-time\">2026-09-09 07:20</td><td class=\"text medium\">148 KB</td><script>data({downloadPostUrl: '/repository/download/b709e81671ec6e9a51e52dba8755ace5',});</script></tr><tr class=\"fileDataRow\"><td></td><td class=\"text long\">Document3.pdf</td><td class=\"date-time\">2026-09-09 07:20</td><td class=\"text medium\">359 KB</td><script>data({downloadPostUrl: '/repository/download/896215172f30f38d83b41c9217f0f8cb',});</script></tr><tr class=\"fileDataRow\"><td></td><td class=\"text long\">Document4.xlsx</td><td class=\"date-time\">2026-09-09 07:20</td><td class=\"text medium\">91 KB</td><script>data({downloadPostUrl: '/repository/download/3bda45c4bd6805b983300068bc60f934',});</script></tr><tr class=\"fileDataRow\"><td></td><td class=\"text long\">Document5.pdf</td><td class=\"date-time\">2026-09-09 07:20</td><td class=\"text medium\">268 KB</td><script>data({downloadPostUrl: '/repository/download/ed0de43da0250c437e78be8958065618',});</script></tr><tr class=\"fileDataRow\"><td></td><td class=\"text long\">Document6.pdf</td><td class=\"date-time\">2026-09-18 11:31</td><td class=\"text medium\">140 KB</td><script>data({downloadPostUrl: '/repository/download/f3e18100d9f76a75b0921cdf2a631842',});</script></tr><tr class=\"fileDataRow\"><td></td><td class=\"text long\">Document7</td><td class=\"date-time\"></td><td class=\"text medium\"></td><script>data({});</script></tr><tr class=\"fileDataRow\"><td></td><td class=\"text long\">Document37.rtf</td><td class=\"date-time\">2026-09-24 12:20</td><td class=\"text medium\">48 KB</td><script>data({downloadPostUrl: '/repository/download/d4331b8343edd87a1db474ca6a1cf372',});</script></tr><tr class=\"fileDataRow\"><td></td><td class=\"text long\">Document38.pdf</td><td class=\"date-time\">2026-09-24 12:20</td><td class=\"text medium\">258 KB</td><script>data({downloadPostUrl: '/repository/download/6957d8f36e7601aa759c0996890f0f07',});</script></tr><tr class=\"fileDataRow\"><td></td><td class=\"text long\">Document39.pdf</td><td class=\"date-time\">2026-09-24 12:20</td><td class=\"text medium\">480 KB</td><script>data({downloadPostUrl: '/repository/download/78b49889b5d25c5e0506b20198f550fa',});</script></tr><tr class=\"fileDataRow\"><td></td><td class=\"text long\">Document40.pdf</td><td class=\"date-time\">2026-09-24 12:20</td><td class=\"text medium\">98 KB</td><script>data({downloadPostUrl: '/repository/download/36ff1b8e6adcdff401e93d1ac69339e1',});</script></tr><tr class=\"fileDataRow\"><td></td><td class=\"text long\">Document41.pdf</td><td class=\"date-time\">2026-09-24 12:20</td><td class=\"text medium\">414 KB</td><script>data({downloadPostUrl: '/repository/download/9aa340582e1ee98611eb199643325800',});</script></tr><tr class=\"fileDataRow\"><td></td><td class=\"text long\">Document42.pdf</td><td class=\"date-time\">2026-09-24 12:20</td><td class=\"text medium\">112 KB</td><script>data({downloadPostUrl: '/repository/download/6f17b27104b9a73471fbbabc2625d54e',});</script></tr><tr class=\"fileDataRow\"><td></td><td class=\"text long\">Document43.pdf</td><td class=\"date-time\">2026-09-24 12:20</td><td class=\"text medium\">133 KB</td><script>data({downloadPostUrl: '/repository/download/aa986665048c37ab328b826a210cbe5b',});</script></tr><tr class=\"fileDataRow\"><td></td><td class=\"text long\">Document44.pdf</td><td class=\"date-time\">2026-09-24 12:20</td><td class=\"text medium\">83 KB</td><script>data({downloadPostUrl: '/repository/download/4121a74cc29af8cf55876e028d9d4afd',});</script></tr></table>",
+  "https://ihit.ezamawiajacy.pl/pn/ihit/demand/notice/public/232844/details?folder=0002&": "<table><tr class=\"fileDataRow\"><td></td><td class=\"text long\">Document1</td><td class=\"date-time\">2026-09-09 07:20</td><td class=\"text medium\">-</td><script>data({});</script></tr><tr class=\"fileDataRow\"><td></td><td class=\"text long\">Document2.docx</td><td class=\"date-time\">2026-09-09 07:20</td><td class=\"text medium\">148 KB</td><script>data({downloadPostUrl: '/repository/download/b709e81671ec6e9a51e52dba8755ace5',});</script></tr><tr class=\"fileDataRow\"><td></td><td class=\"text long\">Document3.pdf</td><td class=\"date-time\">2026-09-09 07:20</td><td class=\"text medium\">359 KB</td><script>data({downloadPostUrl: '/repository/download/896215172f30f38d83b41c9217f0f8cb',});</script></tr><tr class=\"fileDataRow\"><td></td><td class=\"text long\">Document4.xlsx</td><td class=\"date-time\">2026-09-09 07:20</td><td class=\"text medium\">91 KB</td><script>data({downloadPostUrl: '/repository/download/3bda45c4bd6805b983300068bc60f934',});</script></tr><tr class=\"fileDataRow\"><td></td><td class=\"text long\">Document5.pdf</td><td class=\"date-time\">2026-09-09 07:20</td><td class=\"text medium\">268 KB</td><script>data({downloadPostUrl: '/repository/download/ed0de43da0250c437e78be8958065618',});</script></tr><tr class=\"fileDataRow\"><td></td><td class=\"text long\">Document6.pdf</td><td class=\"date-time\">2026-09-18 11:31</td><td class=\"text medium\">140 KB</td><script>data({downloadPostUrl: '/repository/download/f3e18100d9f76a75b0921cdf2a631842',});</script></tr><tr class=\"fileDataRow\"><td></td><td class=\"text long\">Document7</td><td class=\"date-time\"></td><td class=\"text medium\"></td><script>data({});</script></tr><tr class=\"fileDataRow\"><td></td><td class=\"text long\">Document45.rtf</td><td class=\"date-time\">2026-09-24 12:20</td><td class=\"text medium\">77 KB</td><script>data({downloadPostUrl: '/repository/download/6964f4e0e4673e710374226db6cdb5b9',});</script></tr><tr class=\"fileDataRow\"><td></td><td class=\"text long\">Document46.pdf</td><td class=\"date-time\">2026-09-24 12:20</td><td class=\"text medium\">503 KB</td><script>data({downloadPostUrl: '/repository/download/b60ac48bf76f30162d5d288eb9d9277a',});</script></tr><tr class=\"fileDataRow\"><td></td><td class=\"text long\">Document47.pdf</td><td class=\"date-time\">2026-09-24 12:20</td><td class=\"text medium\">592 KB</td><script>data({downloadPostUrl: '/repository/download/cc2647c556e025c6b27fd8936b3bddfa',});</script></tr><tr class=\"fileDataRow\"><td></td><td class=\"text long\">Document48.pdf</td><td class=\"date-time\">2026-09-24 12:20</td><td class=\"text medium\">514 KB</td><script>data({downloadPostUrl: '/repository/download/9c6063aec5c35a8e2339ea8c5a9fb6c4',});</script></tr><tr class=\"fileDataRow\"><td></td><td class=\"text long\">Document49.pdf</td><td class=\"date-time\">2026-09-24 12:20</td><td class=\"text medium\">210 KB</td><script>data({downloadPostUrl: '/repository/download/d2b30add7b2988188c12de894128124a',});</script></tr><tr class=\"fileDataRow\"><td></td><td class=\"text long\">Document50.pdf</td><td class=\"date-time\">2026-09-24 12:20</td><td class=\"text medium\">91 KB</td><script>data({downloadPostUrl: '/repository/download/f4664838fb7b72bb06c806ad29ec5c27',});</script></tr><tr class=\"fileDataRow\"><td></td><td class=\"text long\">Document51.pdf</td><td class=\"date-time\">2026-09-24 12:20</td><td class=\"text medium\">569 KB</td><script>data({downloadPostUrl: '/repository/download/c13d23a48c2762716c1639d358281ac3',});</script></tr><tr class=\"fileDataRow\"><td></td><td class=\"text long\">Document52.pdf</td><td class=\"date-time\">2026-09-24 12:20</td><td class=\"text medium\">57 KB</td><script>data({downloadPostUrl: '/repository/download/fa0814b04739a8ad48db9a3b390f2830',});</script></tr><tr class=\"fileDataRow\"><td></td><td class=\"text long\">Document53.pdf</td><td class=\"date-time\">2026-09-24 12:20</td><td class=\"text medium\">164 KB</td><script>data({downloadPostUrl: '/repository/download/0f89bb50851bc45caf2e4a580d019e5e',});</script></tr></table>"
+ },
+ "expected": [
+  {
+   "name": "Document2.docx",
+   "ext": null,
+   "url": "https://ihit.ezamawiajacy.pl/repository/download/b709e81671ec6e9a51e52dba8755ace5",
+   "published": "2026-09-09 07:20",
+   "origin": "Postępowanie",
+   "key": "https://ihit.ezamawiajacy.pl/pn/ihit/demand/notice/public/232844/details#/Document2.docx@2026-09-09 07:20",
+   "metadata": {}
+  },
+  {
+   "name": "Document3.pdf",
+   "ext": null,
+   "url": "https://ihit.ezamawiajacy.pl/repository/download/896215172f30f38d83b41c9217f0f8cb",
+   "published": "2026-09-09 07:20",
+   "origin": "Postępowanie",
+   "key": "https://ihit.ezamawiajacy.pl/pn/ihit/demand/notice/public/232844/details#/Document3.pdf@2026-09-09 07:20",
+   "metadata": {}
+  },
+  {
+   "name": "Document4.xlsx",
+   "ext": null,
+   "url": "https://ihit.ezamawiajacy.pl/repository/download/3bda45c4bd6805b983300068bc60f934",
+   "published": "2026-09-09 07:20",
+   "origin": "Postępowanie",
+   "key": "https://ihit.ezamawiajacy.pl/pn/ihit/demand/notice/public/232844/details#/Document4.xlsx@2026-09-09 07:20",
+   "metadata": {}
+  },
+  {
+   "name": "Document5.pdf",
+   "ext": null,
+   "url": "https://ihit.ezamawiajacy.pl/repository/download/ed0de43da0250c437e78be8958065618",
+   "published": "2026-09-09 07:20",
+   "origin": "Postępowanie",
+   "key": "https://ihit.ezamawiajacy.pl/pn/ihit/demand/notice/public/232844/details#/Document5.pdf@2026-09-09 07:20",
+   "metadata": {}
+  },
+  {
+   "name": "Document6.pdf",
+   "ext": null,
+   "url": "https://ihit.ezamawiajacy.pl/repository/download/f3e18100d9f76a75b0921cdf2a631842",
+   "published": "2026-09-18 11:31",
+   "origin": "Postępowanie",
+   "key": "https://ihit.ezamawiajacy.pl/pn/ihit/demand/notice/public/232844/details#/Document6.pdf@2026-09-18 11:31",
+   "metadata": {}
+  },
+  {
+   "name": "Document20.rtf",
+   "ext": null,
+   "url": "https://ihit.ezamawiajacy.pl/repository/download/1fdb17742df24f49584846bfa6559f06",
+   "published": "2026-09-24 12:16",
+   "origin": "Folder21",
+   "key": "https://ihit.ezamawiajacy.pl/pn/ihit/demand/notice/public/232844/details#Folder21/Document20.rtf@2026-09-24 12:16",
+   "metadata": {}
+  },
+  {
+   "name": "Document45.rtf",
+   "ext": null,
+   "url": "https://ihit.ezamawiajacy.pl/repository/download/6964f4e0e4673e710374226db6cdb5b9",
+   "published": "2026-09-24 12:20",
+   "origin": "Folder22",
+   "key": "https://ihit.ezamawiajacy.pl/pn/ihit/demand/notice/public/232844/details#Folder22/Document45.rtf@2026-09-24 12:20",
+   "metadata": {}
+  },
+  {
+   "name": "Document46.pdf",
+   "ext": null,
+   "url": "https://ihit.ezamawiajacy.pl/repository/download/b60ac48bf76f30162d5d288eb9d9277a",
+   "published": "2026-09-24 12:20",
+   "origin": "Folder22",
+   "key": "https://ihit.ezamawiajacy.pl/pn/ihit/demand/notice/public/232844/details#Folder22/Document46.pdf@2026-09-24 12:20",
+   "metadata": {}
+  },
+  {
+   "name": "Document47.pdf",
+   "ext": null,
+   "url": "https://ihit.ezamawiajacy.pl/repository/download/cc2647c556e025c6b27fd8936b3bddfa",
+   "published": "2026-09-24 12:20",
+   "origin": "Folder22",
+   "key": "https://ihit.ezamawiajacy.pl/pn/ihit/demand/notice/public/232844/details#Folder22/Document47.pdf@2026-09-24 12:20",
+   "metadata": {}
+  },
+  {
+   "name": "Document48.pdf",
+   "ext": null,
+   "url": "https://ihit.ezamawiajacy.pl/repository/download/9c6063aec5c35a8e2339ea8c5a9fb6c4",
+   "published": "2026-09-24 12:20",
+   "origin": "Folder22",
+   "key": "https://ihit.ezamawiajacy.pl/pn/ihit/demand/notice/public/232844/details#Folder22/Document48.pdf@2026-09-24 12:20",
+   "metadata": {}
+  },
+  {
+   "name": "Document49.pdf",
+   "ext": null,
+   "url": "https://ihit.ezamawiajacy.pl/repository/download/d2b30add7b2988188c12de894128124a",
+   "published": "2026-09-24 12:20",
+   "origin": "Folder22",
+   "key": "https://ihit.ezamawiajacy.pl/pn/ihit/demand/notice/public/232844/details#Folder22/Document49.pdf@2026-09-24 12:20",
+   "metadata": {}
+  },
+  {
+   "name": "Document50.pdf",
+   "ext": null,
+   "url": "https://ihit.ezamawiajacy.pl/repository/download/f4664838fb7b72bb06c806ad29ec5c27",
+   "published": "2026-09-24 12:20",
+   "origin": "Folder22",
+   "key": "https://ihit.ezamawiajacy.pl/pn/ihit/demand/notice/public/232844/details#Folder22/Document50.pdf@2026-09-24 12:20",
+   "metadata": {}
+  },
+  {
+   "name": "Document51.pdf",
+   "ext": null,
+   "url": "https://ihit.ezamawiajacy.pl/repository/download/c13d23a48c2762716c1639d358281ac3",
+   "published": "2026-09-24 12:20",
+   "origin": "Folder22",
+   "key": "https://ihit.ezamawiajacy.pl/pn/ihit/demand/notice/public/232844/details#Folder22/Document51.pdf@2026-09-24 12:20",
+   "metadata": {}
+  },
+  {
+   "name": "Document52.pdf",
+   "ext": null,
+   "url": "https://ihit.ezamawiajacy.pl/repository/download/fa0814b04739a8ad48db9a3b390f2830",
+   "published": "2026-09-24 12:20",
+   "origin": "Folder22",
+   "key": "https://ihit.ezamawiajacy.pl/pn/ihit/demand/notice/public/232844/details#Folder22/Document52.pdf@2026-09-24 12:20",
+   "metadata": {}
+  },
+  {
+   "name": "Document53.pdf",
+   "ext": null,
+   "url": "https://ihit.ezamawiajacy.pl/repository/download/0f89bb50851bc45caf2e4a580d019e5e",
+   "published": "2026-09-24 12:20",
+   "origin": "Folder22",
+   "key": "https://ihit.ezamawiajacy.pl/pn/ihit/demand/notice/public/232844/details#Folder22/Document53.pdf@2026-09-24 12:20",
+   "metadata": {}
+  },
+  {
+   "name": "Document37.rtf",
+   "ext": null,
+   "url": "https://ihit.ezamawiajacy.pl/repository/download/d4331b8343edd87a1db474ca6a1cf372",
+   "published": "2026-09-24 12:20",
+   "origin": "Folder23",
+   "key": "https://ihit.ezamawiajacy.pl/pn/ihit/demand/notice/public/232844/details#Folder23/Document37.rtf@2026-09-24 12:20",
+   "metadata": {}
+  },
+  {
+   "name": "Document38.pdf",
+   "ext": null,
+   "url": "https://ihit.ezamawiajacy.pl/repository/download/6957d8f36e7601aa759c0996890f0f07",
+   "published": "2026-09-24 12:20",
+   "origin": "Folder23",
+   "key": "https://ihit.ezamawiajacy.pl/pn/ihit/demand/notice/public/232844/details#Folder23/Document38.pdf@2026-09-24 12:20",
+   "metadata": {}
+  },
+  {
+   "name": "Document39.pdf",
+   "ext": null,
+   "url": "https://ihit.ezamawiajacy.pl/repository/download/78b49889b5d25c5e0506b20198f550fa",
+   "published": "2026-09-24 12:20",
+   "origin": "Folder23",
+   "key": "https://ihit.ezamawiajacy.pl/pn/ihit/demand/notice/public/232844/details#Folder23/Document39.pdf@2026-09-24 12:20",
+   "metadata": {}
+  },
+  {
+   "name": "Document40.pdf",
+   "ext": null,
+   "url": "https://ihit.ezamawiajacy.pl/repository/download/36ff1b8e6adcdff401e93d1ac69339e1",
+   "published": "2026-09-24 12:20",
+   "origin": "Folder23",
+   "key": "https://ihit.ezamawiajacy.pl/pn/ihit/demand/notice/public/232844/details#Folder23/Document40.pdf@2026-09-24 12:20",
+   "metadata": {}
+  },
+  {
+   "name": "Document41.pdf",
+   "ext": null,
+   "url": "https://ihit.ezamawiajacy.pl/repository/download/9aa340582e1ee98611eb199643325800",
+   "published": "2026-09-24 12:20",
+   "origin": "Folder23",
+   "key": "https://ihit.ezamawiajacy.pl/pn/ihit/demand/notice/public/232844/details#Folder23/Document41.pdf@2026-09-24 12:20",
+   "metadata": {}
+  },
+  {
+   "name": "Document42.pdf",
+   "ext": null,
+   "url": "https://ihit.ezamawiajacy.pl/repository/download/6f17b27104b9a73471fbbabc2625d54e",
+   "published": "2026-09-24 12:20",
+   "origin": "Folder23",
+   "key": "https://ihit.ezamawiajacy.pl/pn/ihit/demand/notice/public/232844/details#Folder23/Document42.pdf@2026-09-24 12:20",
+   "metadata": {}
+  },
+  {
+   "name": "Document43.pdf",
+   "ext": null,
+   "url": "https://ihit.ezamawiajacy.pl/repository/download/aa986665048c37ab328b826a210cbe5b",
+   "published": "2026-09-24 12:20",
+   "origin": "Folder23",
+   "key": "https://ihit.ezamawiajacy.pl/pn/ihit/demand/notice/public/232844/details#Folder23/Document43.pdf@2026-09-24 12:20",
+   "metadata": {}
+  },
+  {
+   "name": "Document44.pdf",
+   "ext": null,
+   "url": "https://ihit.ezamawiajacy.pl/repository/download/4121a74cc29af8cf55876e028d9d4afd",
+   "published": "2026-09-24 12:20",
+   "origin": "Folder23",
+   "key": "https://ihit.ezamawiajacy.pl/pn/ihit/demand/notice/public/232844/details#Folder23/Document44.pdf@2026-09-24 12:20",
+   "metadata": {}
+  },
+  {
+   "name": "Document10.rtf",
+   "ext": null,
+   "url": "https://ihit.ezamawiajacy.pl/repository/download/0793b2e2db09df7f0b6c8da9aae27af9",
+   "published": "2026-09-24 12:19",
+   "origin": "Folder24",
+   "key": "https://ihit.ezamawiajacy.pl/pn/ihit/demand/notice/public/232844/details#Folder24/Document10.rtf@2026-09-24 12:19",
+   "metadata": {}
+  },
+  {
+   "name": "Document11.zip",
+   "ext": null,
+   "url": "https://ihit.ezamawiajacy.pl/repository/download/16d536a2f68eb1e34103529ac06768b7",
+   "published": "2026-09-24 12:19",
+   "origin": "Folder24",
+   "key": "https://ihit.ezamawiajacy.pl/pn/ihit/demand/notice/public/232844/details#Folder24/Document11.zip@2026-09-24 12:19",
+   "metadata": {}
+  },
+  {
+   "name": "Document12.rtf",
+   "ext": null,
+   "url": "https://ihit.ezamawiajacy.pl/repository/download/ac52876b6b050b2455ddbbbbf205813d",
+   "published": "2026-09-24 12:19",
+   "origin": "Folder25",
+   "key": "https://ihit.ezamawiajacy.pl/pn/ihit/demand/notice/public/232844/details#Folder25/Document12.rtf@2026-09-24 12:19",
+   "metadata": {}
+  },
+  {
+   "name": "Document13.pdf",
+   "ext": null,
+   "url": "https://ihit.ezamawiajacy.pl/repository/download/2c9c0078588f9648c1161f8f8336b6ab",
+   "published": "2026-09-24 12:19",
+   "origin": "Folder25",
+   "key": "https://ihit.ezamawiajacy.pl/pn/ihit/demand/notice/public/232844/details#Folder25/Document13.pdf@2026-09-24 12:19",
+   "metadata": {}
+  },
+  {
+   "name": "Document14.xlsx",
+   "ext": null,
+   "url": "https://ihit.ezamawiajacy.pl/repository/download/ccd6457dc53271b138be10314cbeeb17",
+   "published": "2026-09-24 12:19",
+   "origin": "Folder25",
+   "key": "https://ihit.ezamawiajacy.pl/pn/ihit/demand/notice/public/232844/details#Folder25/Document14.xlsx@2026-09-24 12:19",
+   "metadata": {}
+  },
+  {
+   "name": "Document15.xades",
+   "ext": null,
+   "url": "https://ihit.ezamawiajacy.pl/repository/download/97188bbc4025ecb833ca98a2c28123b7",
+   "published": "2026-09-24 12:19",
+   "origin": "Folder25",
+   "key": "https://ihit.ezamawiajacy.pl/pn/ihit/demand/notice/public/232844/details#Folder25/Document15.xades@2026-09-24 12:19",
+   "metadata": {}
+  },
+  {
+   "name": "Document16.pdf",
+   "ext": null,
+   "url": "https://ihit.ezamawiajacy.pl/repository/download/0ce9ad125beab51bedb3cc9bfc673ca3",
+   "published": "2026-09-24 12:19",
+   "origin": "Folder25",
+   "key": "https://ihit.ezamawiajacy.pl/pn/ihit/demand/notice/public/232844/details#Folder25/Document16.pdf@2026-09-24 12:19",
+   "metadata": {}
+  },
+  {
+   "name": "Document17.pdf",
+   "ext": null,
+   "url": "https://ihit.ezamawiajacy.pl/repository/download/bc04acd6e3e6c4699c006b232bdd58c7",
+   "published": "2026-09-24 12:19",
+   "origin": "Folder25",
+   "key": "https://ihit.ezamawiajacy.pl/pn/ihit/demand/notice/public/232844/details#Folder25/Document17.pdf@2026-09-24 12:19",
+   "metadata": {}
+  },
+  {
+   "name": "Document18.pdf",
+   "ext": null,
+   "url": "https://ihit.ezamawiajacy.pl/repository/download/a9d720aa3ec5a47e1e3958e3ffd139f8",
+   "published": "2026-09-24 12:19",
+   "origin": "Folder25",
+   "key": "https://ihit.ezamawiajacy.pl/pn/ihit/demand/notice/public/232844/details#Folder25/Document18.pdf@2026-09-24 12:19",
+   "metadata": {}
+  },
+  {
+   "name": "Document19.pdf",
+   "ext": null,
+   "url": "https://ihit.ezamawiajacy.pl/repository/download/64097d32519c01d75cff86017d3e68ce",
+   "published": "2026-09-24 12:19",
+   "origin": "Folder25",
+   "key": "https://ihit.ezamawiajacy.pl/pn/ihit/demand/notice/public/232844/details#Folder25/Document19.pdf@2026-09-24 12:19",
+   "metadata": {}
+  },
+  {
+   "name": "Document28.rtf",
+   "ext": null,
+   "url": "https://ihit.ezamawiajacy.pl/repository/download/ca0bfdacf2925bf367f66b8fe8ecdf87",
+   "published": "2026-09-24 12:19",
+   "origin": "Folder26",
+   "key": "https://ihit.ezamawiajacy.pl/pn/ihit/demand/notice/public/232844/details#Folder26/Document28.rtf@2026-09-24 12:19",
+   "metadata": {}
+  },
+  {
+   "name": "Document29.pdf",
+   "ext": null,
+   "url": "https://ihit.ezamawiajacy.pl/repository/download/af98510dfa8fa00993dd28bfedfd63d0",
+   "published": "2026-09-24 12:19",
+   "origin": "Folder26",
+   "key": "https://ihit.ezamawiajacy.pl/pn/ihit/demand/notice/public/232844/details#Folder26/Document29.pdf@2026-09-24 12:19",
+   "metadata": {}
+  },
+  {
+   "name": "Document30.pdf",
+   "ext": null,
+   "url": "https://ihit.ezamawiajacy.pl/repository/download/c426bf6ad372c969e0b295565cf39e8a",
+   "published": "2026-09-24 12:19",
+   "origin": "Folder26",
+   "key": "https://ihit.ezamawiajacy.pl/pn/ihit/demand/notice/public/232844/details#Folder26/Document30.pdf@2026-09-24 12:19",
+   "metadata": {}
+  },
+  {
+   "name": "Document31.pdf",
+   "ext": null,
+   "url": "https://ihit.ezamawiajacy.pl/repository/download/60163fbfe63491843d41ffdd5fcfa530",
+   "published": "2026-09-24 12:19",
+   "origin": "Folder26",
+   "key": "https://ihit.ezamawiajacy.pl/pn/ihit/demand/notice/public/232844/details#Folder26/Document31.pdf@2026-09-24 12:19",
+   "metadata": {}
+  },
+  {
+   "name": "Document32.pdf",
+   "ext": null,
+   "url": "https://ihit.ezamawiajacy.pl/repository/download/4678d285216c4738dc5dde54aa9ec548",
+   "published": "2026-09-24 12:19",
+   "origin": "Folder26",
+   "key": "https://ihit.ezamawiajacy.pl/pn/ihit/demand/notice/public/232844/details#Folder26/Document32.pdf@2026-09-24 12:19",
+   "metadata": {}
+  },
+  {
+   "name": "Document33.pdf",
+   "ext": null,
+   "url": "https://ihit.ezamawiajacy.pl/repository/download/d041aaf197dc49ecfc3733c9c0b1916b",
+   "published": "2026-09-24 12:19",
+   "origin": "Folder26",
+   "key": "https://ihit.ezamawiajacy.pl/pn/ihit/demand/notice/public/232844/details#Folder26/Document33.pdf@2026-09-24 12:19",
+   "metadata": {}
+  },
+  {
+   "name": "Document34.pdf",
+   "ext": null,
+   "url": "https://ihit.ezamawiajacy.pl/repository/download/a71835af34a3039ffdd4826199b4440c",
+   "published": "2026-09-24 12:19",
+   "origin": "Folder26",
+   "key": "https://ihit.ezamawiajacy.pl/pn/ihit/demand/notice/public/232844/details#Folder26/Document34.pdf@2026-09-24 12:19",
+   "metadata": {}
+  },
+  {
+   "name": "Document35.pdf",
+   "ext": null,
+   "url": "https://ihit.ezamawiajacy.pl/repository/download/fcd60990d0fbd0a11a0decf4608dbe1d",
+   "published": "2026-09-24 12:19",
+   "origin": "Folder26",
+   "key": "https://ihit.ezamawiajacy.pl/pn/ihit/demand/notice/public/232844/details#Folder26/Document35.pdf@2026-09-24 12:19",
+   "metadata": {}
+  },
+  {
+   "name": "Document36.pdf",
+   "ext": null,
+   "url": "https://ihit.ezamawiajacy.pl/repository/download/a5edc79fa384ae1690ba631b4b1f8eae",
+   "published": "2026-09-24 12:19",
+   "origin": "Folder26",
+   "key": "https://ihit.ezamawiajacy.pl/pn/ihit/demand/notice/public/232844/details#Folder26/Document36.pdf@2026-09-24 12:19",
+   "metadata": {}
+  },
+  {
+   "name": "Document8.rtf",
+   "ext": null,
+   "url": "https://ihit.ezamawiajacy.pl/repository/download/231a5349d05a261961010902a10be61e",
+   "published": "2026-09-24 12:19",
+   "origin": "Folder27",
+   "key": "https://ihit.ezamawiajacy.pl/pn/ihit/demand/notice/public/232844/details#Folder27/Document8.rtf@2026-09-24 12:19",
+   "metadata": {}
+  },
+  {
+   "name": "Document9.zip",
+   "ext": null,
+   "url": "https://ihit.ezamawiajacy.pl/repository/download/ba6e30f2de8a8c9838a29bc5a0283d3a",
+   "published": "2026-09-24 12:19",
+   "origin": "Folder27",
+   "key": "https://ihit.ezamawiajacy.pl/pn/ihit/demand/notice/public/232844/details#Folder27/Document9.zip@2026-09-24 12:19",
+   "metadata": {}
+  }
+ ]
+}

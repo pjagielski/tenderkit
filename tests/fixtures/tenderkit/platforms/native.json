@@ -1,0 +1,18 @@
+{
+ "provenance": "Reduced and anonymized public native API response captured 2026-11-10.",
+ "url": "https://ezamowienia.gov.pl/mp-client/search/list/ocds-148610-78b95e9e-ed34-4420-94d3-13ec50cd5c06",
+ "responses": {
+  "https://ezamowienia.gov.pl/mp-readmodels/api/Search/GetTenderDocuments": "[{\"objectId\": \"ocds-148610-78b95e9e-ed34-4420-94d3-13ec50cd5c06_1\", \"fileName\": \"Document1.zip\", \"publishedDate\": \"2026-11-06T12:57:16.602Z\"}]"
+ },
+ "expected": [
+  {
+   "name": "Document1.zip",
+   "ext": null,
+   "key": "ocds-148610-78b95e9e-ed34-4420-94d3-13ec50cd5c06_1",
+   "published": "2026-11-06T12:57:16.602Z",
+   "origin": "Postępowanie",
+   "metadata": {},
+   "url": "https://ezamowienia.gov.pl/mp-readmodels/api/Tender/DownloadDocument/ocds-148610-78b95e9e-ed34-4420-94d3-13ec50cd5c06/ocds-148610-78b95e9e-ed34-4420-94d3-13ec50cd5c06_1"
+  }
+ ]
+}
