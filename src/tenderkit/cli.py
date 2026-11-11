@@ -15,47 +15,77 @@ from tenderkit.platforms.backends import FetchError
 def main(argv=None):
     if hasattr(sys.stdout, 'reconfigure'):
         sys.stdout.reconfigure(encoding='utf-8')
-    parser = argparse.ArgumentParser(prog='tenderkit')
-    parser.add_argument('--db', type=Path, default=os.environ.get('TENDERKIT_DB'))
-    parser.add_argument('--documents-dir', type=Path, default=os.environ.get('TENDERKIT_DOCUMENT_DIR'))
-    commands = parser.add_subparsers(dest='command', required=True)
-    for name in ('fetch', 'filter', 'export'):
-        command = commands.add_parser(name)
-        command.add_argument('--profile', required=True, help='built-in name or TOML path')
-        command.add_argument('--from', dest='start')
-        command.add_argument('--to', dest='end')
-        command.add_argument('--source', action='append', dest='source_names')
+    parser = argparse.ArgumentParser(
+        prog='tenderkit',
+        description='Fetch, browse and export Polish public procurement notices.',
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog='''Examples:
+  tenderkit --db .notices.sqlite3 fetch --profile oprogramowanie
+  tenderkit --db .notices.sqlite3 filter --profile oprogramowanie --limit 10
+  tenderkit --db .notices.sqlite3 ui --profile oprogramowanie
+  tenderkit --db .notices.sqlite3 export --profile oprogramowanie > notices.jsonl
+
+Run tenderkit COMMAND --help for command options.''',
+    )
+    parser.add_argument('--db', type=Path, default=os.environ.get('TENDERKIT_DB'), metavar='PATH',
+                        help='SQLite database (TENDERKIT_DB). Defaults to .notices.sqlite3 for ui '
+                             'and .tenderkit/state.sqlite3 for other commands.')
+    parser.add_argument('--documents-dir', type=Path, default=os.environ.get('TENDERKIT_DOCUMENT_DIR'),
+                        metavar='PATH', help='Document store (TENDERKIT_DOCUMENT_DIR).')
+    commands = parser.add_subparsers(dest='command', title='commands', metavar='COMMAND')
+
+    def add_command(name, description):
+        return commands.add_parser(name, help=description, description=description)
+
+    for name, description in (
+        ('fetch', 'Fetch notices from sources into the SQLite database.'),
+        ('filter', 'List saved notices that match a profile as JSON.'),
+        ('export', 'Write matching saved notices as JSON Lines.'),
+    ):
+        command = add_command(name, description)
+        command.add_argument('--profile', required=True, help='Built-in profile name or TOML path.')
+        command.add_argument('--from', dest='start', metavar='YYYY-MM-DD', help='First publication date, inclusive.')
+        command.add_argument('--to', dest='end', metavar='YYYY-MM-DD', help='Last publication date, inclusive.')
+        command.add_argument('--source', action='append', dest='source_names', metavar='NAME',
+                             help='Limit to a source such as BZP or TED. Repeat to include more sources.')
+        if name == 'fetch':
+            command.epilog = 'With no date options, fetch covers the last 30 calendar days including today.'
         if name == 'filter':
-            command.add_argument('--limit', type=int, default=100)
-            command.add_argument('--offset', type=int, default=0)
+            command.add_argument('--limit', type=int, default=100, help='Notices per page (default: 100, max: 500).')
+            command.add_argument('--offset', type=int, default=0, help='Skip this many matching notices (default: 0).')
         if name == 'export':
-            command.add_argument('--format', choices=('jsonl',), default='jsonl')
-    commands.add_parser('profiles')
-    commands.add_parser('status')
-    ui = commands.add_parser('ui', help='serve a local browser view of saved notices')
-    ui.add_argument('--port', type=int, default=8765)
-    ui.add_argument('--profile', default='oprogramowanie', help='initial built-in profile or TOML path')
-    download = commands.add_parser('download')
-    download.add_argument('--source')
-    download.add_argument('--number')
-    download.add_argument('--key', action='append', dest='keys')
-    download.add_argument('--enqueue-only', action='store_true')
-    download.add_argument('--run-queued', action='store_true')
-    download.add_argument('--max-jobs', type=int, default=1)
-    listing = commands.add_parser('list-documents')
-    listing.add_argument('--source', required=True)
-    listing.add_argument('--number', required=True)
-    listing.add_argument('--limit', type=int, default=100)
-    listing.add_argument('--offset', type=int, default=0)
-    listing.add_argument('--cached', action='store_true')
-    reader = commands.add_parser('read-document')
-    reader.add_argument('document_id')
-    reader.add_argument('--page', type=int, default=1)
-    reader.add_argument('--pages', type=int, default=1)
-    mcp = commands.add_parser('mcp')
+            command.add_argument('--format', choices=('jsonl',), default='jsonl', help='Output format (default: jsonl).')
+    add_command('profiles', 'List built-in profiles and their criteria.')
+    add_command('status', 'Show database coverage, refresh history and download jobs.')
+    ui = add_command('ui', 'Browse saved notices at http://127.0.0.1:8765/.')
+    ui.add_argument('--port', type=int, default=8765, help='Local HTTP port (default: 8765).')
+    ui.add_argument('--profile', action='append', required=True, metavar='NAME_OR_PATH',
+                    help='Profile name or TOML path. Repeat to add tabs. The first profile opens by default.')
+    download = add_command('download', 'Download documents for a notice or run queued jobs.')
+    download.add_argument('--source', help='Notice source, such as BZP or TED.')
+    download.add_argument('--number', help='Notice number from filter.')
+    download.add_argument('--key', action='append', dest='keys',
+                          help='Document key from list-documents. Repeat to select multiple documents.')
+    download.add_argument('--enqueue-only', action='store_true', help='Queue the download for later.')
+    download.add_argument('--run-queued', action='store_true', help='Process jobs already in the queue.')
+    download.add_argument('--max-jobs', type=int, default=1, help='Limit jobs for --run-queued (default: 1).')
+    listing = add_command('list-documents', 'List the documents attached to a notice.')
+    listing.add_argument('--source', required=True, help='Notice source, such as BZP or TED.')
+    listing.add_argument('--number', required=True, help='Notice number from filter.')
+    listing.add_argument('--limit', type=int, default=100, help='Documents per page (default: 100).')
+    listing.add_argument('--offset', type=int, default=0, help='Skip this many documents (default: 0).')
+    listing.add_argument('--cached', action='store_true', help='Read the saved list without refreshing it.')
+    reader = add_command('read-document', 'Extract text from a downloaded document.')
+    reader.add_argument('document_id', help='SHA-256 of the downloaded document.')
+    reader.add_argument('--page', type=int, default=1, help='First page to read (default: 1).')
+    reader.add_argument('--pages', type=int, default=1, help='Number of pages to read (default: 1).')
+    mcp = add_command('mcp', 'Serve tenderkit tools over MCP stdio.')
     mcp.add_argument('--profile-file', type=Path, action='append', default=[],
                      help='trusted profile to expose alongside the built-ins')
     args = parser.parse_args(argv)
+    if args.command is None:
+        parser.print_help()
+        return 0
     if args.db is None:
         args.db = Path('.notices.sqlite3' if args.command == 'ui' else '.tenderkit/state.sqlite3')
     try:
@@ -64,10 +94,13 @@ def main(argv=None):
             return 0
         if args.command == 'ui':
             from tenderkit.ui import serve
-            profiles = builtin_profiles()
-            profile = resolve_profile(args.profile)
-            profiles[profile.name] = profile
-            serve(args.db, profiles, profile.name, args.port)
+            profiles = {}
+            for name_or_path in args.profile:
+                profile = resolve_profile(name_or_path)
+                if profile.name in profiles:
+                    raise ValueError(f'Duplicate UI profile name: {profile.name}')
+                profiles[profile.name] = profile
+            serve(args.db, profiles, next(iter(profiles)), args.port)
             return 0
         if args.command == 'mcp':
             from tenderkit.mcp import create_server

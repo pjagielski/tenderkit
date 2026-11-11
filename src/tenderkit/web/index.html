@@ -17,13 +17,35 @@
       <h1>Twoje profile wyszukiwania</h1>
       <nav class="profiles" aria-label="Profile wyszukiwania">$profile_tabs</nav>
       <div class="criteria">$criteria</div>
-      <form class="search" action="/" method="get" role="search">
+      <form class="filters" action="/" method="get" role="search">
         <input type="hidden" name="profile" value="$profile">
         <input type="hidden" name="source" value="$source">
-        <input type="search" name="q" value="$query" maxlength="200"
-               aria-label="Szukaj po tytule lub zamawiającym"
-               placeholder="Szukaj po tytule lub zamawiającym…">
-        <button type="submit">Szukaj</button>
+        <div class="search">
+          <input type="search" name="q" value="$query" maxlength="200"
+                 aria-label="Szukaj po tytule lub zamawiającym"
+                 placeholder="Szukaj po tytule lub zamawiającym…">
+        </div>
+        <div class="filter-fields">
+          <label>Publikacja od
+            <input type="date" name="from" value="$published_from">
+          </label>
+          <label>Publikacja do
+            <input type="date" name="to" value="$published_to">
+          </label>
+          <label>Prefiks CPV
+            <input name="cpv" value="$cpv" inputmode="numeric" maxlength="8" pattern="[0-9]{0,8}" placeholder="np. 72">
+          </label>
+          <label>Termin ofert
+            <select name="deadline">$deadline_options</select>
+          </label>
+          <label>Sortuj według
+            <select name="sort">$sort_options</select>
+          </label>
+        </div>
+        <div class="filter-actions">
+          <button type="submit">Zastosuj</button>
+          <a href="$reset_link">Wyczyść filtry</a>
+        </div>
       </form>
       <div class="results-heading">
         <span>$count</span>
