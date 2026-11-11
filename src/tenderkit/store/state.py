@@ -43,15 +43,19 @@ create unique index if not exists active_document_job on fetch_jobs(source,numbe
 
 
 class State:
-    def __init__(self, path):
+    def __init__(self, path, *, read_only=False):
         self.path = Path(path).expanduser()
+        self.read_only = read_only
+        if read_only:
+            return
         self.path.parent.mkdir(parents=True, exist_ok=True)
         with self.connection() as conn:
             conn.executescript(SCHEMA)
 
     @contextmanager
     def connection(self):
-        conn = sqlite3.connect(self.path, timeout=30)
+        database = self.path.resolve().as_uri() + '?mode=ro' if self.read_only else self.path
+        conn = sqlite3.connect(database, timeout=30, uri=self.read_only)
         conn.row_factory = sqlite3.Row
         try:
             with conn:

@@ -16,7 +16,7 @@ def main(argv=None):
     if hasattr(sys.stdout, 'reconfigure'):
         sys.stdout.reconfigure(encoding='utf-8')
     parser = argparse.ArgumentParser(prog='tenderkit')
-    parser.add_argument('--db', type=Path, default=Path(os.environ.get('TENDERKIT_DB', '.tenderkit/state.sqlite3')))
+    parser.add_argument('--db', type=Path, default=os.environ.get('TENDERKIT_DB'))
     parser.add_argument('--documents-dir', type=Path, default=os.environ.get('TENDERKIT_DOCUMENT_DIR'))
     commands = parser.add_subparsers(dest='command', required=True)
     for name in ('fetch', 'filter', 'export'):
@@ -32,6 +32,9 @@ def main(argv=None):
             command.add_argument('--format', choices=('jsonl',), default='jsonl')
     commands.add_parser('profiles')
     commands.add_parser('status')
+    ui = commands.add_parser('ui', help='serve a local browser view of saved notices')
+    ui.add_argument('--port', type=int, default=8765)
+    ui.add_argument('--profile', default='oprogramowanie', help='initial built-in profile or TOML path')
     download = commands.add_parser('download')
     download.add_argument('--source')
     download.add_argument('--number')
@@ -53,9 +56,18 @@ def main(argv=None):
     mcp.add_argument('--profile-file', type=Path, action='append', default=[],
                      help='trusted profile to expose alongside the built-ins')
     args = parser.parse_args(argv)
+    if args.db is None:
+        args.db = Path('.notices.sqlite3' if args.command == 'ui' else '.tenderkit/state.sqlite3')
     try:
         if args.command == 'profiles':
             print(dumps({name: asdict(p) for name, p in builtin_profiles().items()}))
+            return 0
+        if args.command == 'ui':
+            from tenderkit.ui import serve
+            profiles = builtin_profiles()
+            profile = resolve_profile(args.profile)
+            profiles[profile.name] = profile
+            serve(args.db, profiles, profile.name, args.port)
             return 0
         if args.command == 'mcp':
             from tenderkit.mcp import create_server

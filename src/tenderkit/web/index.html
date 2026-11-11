@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="pl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>tenderkit — Przegląd ogłoszeń</title>
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <main class="window">
+    <header class="header">
+      <span class="mark" aria-hidden="true">↗</span>
+      <strong>tenderkit</strong>
+      <span class="local">Lokalna baza</span>
+    </header>
+    <div class="content">
+      <h1>Twoje profile wyszukiwania</h1>
+      <nav class="profiles" aria-label="Profile wyszukiwania">$profile_tabs</nav>
+      <div class="criteria">$criteria</div>
+      <form class="search" action="/" method="get" role="search">
+        <input type="hidden" name="profile" value="$profile">
+        <input type="hidden" name="source" value="$source">
+        <input type="search" name="q" value="$query" maxlength="200"
+               aria-label="Szukaj po tytule lub zamawiającym"
+               placeholder="Szukaj po tytule lub zamawiającym…">
+        <button type="submit">Szukaj</button>
+      </form>
+      <div class="results-heading">
+        <span>$count</span>
+        <nav class="sources" aria-label="Źródło ogłoszenia">$source_tabs</nav>
+      </div>
+      $rows
+      <nav class="pagination" aria-label="Strony wyników">$pagination</nav>
+    </div>
+  </main>
+</body>
+</html>

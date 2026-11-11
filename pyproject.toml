@@ -28,3 +28,4 @@ include = ["tenderkit*"]
 
 [tool.setuptools.package-data]
 "tenderkit.profiles" = ["*.toml"]
+"tenderkit" = ["web/*.html", "web/*.css"]
