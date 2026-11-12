@@ -48,7 +48,9 @@ tenderkit --db notices.sqlite3 download --source BZP --number '2026/BZP …/01' 
 tenderkit --db notices.sqlite3 read-document '<SHA-256>'
 ```
 
-Use a notice number returned by the filter and a key returned by the listing. The store verifies content by SHA-256 and retains document provenance. The native e-Zamówienia adapter lists attachments. The platformazakupowa.pl and Marketplanet adapters also implement downloads. Check each source's terms and your authorization before automating access. For platformazakupowa.pl, consult the [platform terms](https://platformazakupowa.pl/strona/regulamin) and [official CSV export](https://platformazakupowa.pl/strona/api).
+Use a notice number returned by the filter and a key returned by the listing. The store verifies content by SHA-256 and retains document provenance. Native e-Zamówienia, platformazakupowa.pl and Marketplanet implement document downloads. For platformazakupowa.pl, consult the [platform terms](https://platformazakupowa.pl/strona/regulamin) and [official CSV export](https://platformazakupowa.pl/strona/api).
+
+The native e-Zamówienia adapter downloads published attachments on request using the portal's public document route. The platform allows access to its public area without signing in. The integration guide documents a rate limit for the BZP notice API. We found no published quota or integration contract for the attachment route. Tenderkit spaces requests by 2.1 seconds and caps downloads at 200 MB per file and 1 GB per job. [Platform terms](https://ezamowienia.gov.pl/pl/regulamin/) · [Integration guide](https://ezamowienia.gov.pl/pl/integracja/)
 
 DOCX and XLSX reading uses the standard library. PDF text extraction needs `pdftotext` on PATH or the `documents` extra, which installs the PyMuPDF CLI. Scanned PDFs may have no text layer.
 

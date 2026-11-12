@@ -10,6 +10,15 @@ from tenderkit.platforms.backends import FetchError
 DOMAINS = ('platformazakupowa.pl', 'ezamawiajacy.pl', 'ezamowienia.gov.pl')
 
 
+def native_platform_url(url):
+    try:
+        parts = urlsplit(url)
+        return (parts.scheme == 'https' and parts.hostname == 'ezamowienia.gov.pl'
+                and parts.username is None and parts.port in (None, 443))
+    except ValueError:
+        return False
+
+
 def public_platform_url(url):
     try:
         parts = urlsplit(url)
@@ -23,6 +32,8 @@ def public_platform_url(url):
 
 class PlatformRedirect(HTTPRedirectHandler):
     def redirect_request(self, request, response, code, message, headers, newurl):
+        if urlsplit(request.full_url).hostname == 'ezamowienia.gov.pl' and not native_platform_url(newurl):
+            raise FetchError('UNSAFE_URL')
         if not public_platform_url(newurl):
             target = urlsplit(newurl)
             query = parse_qs(target.query)

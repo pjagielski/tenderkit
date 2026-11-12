@@ -13,6 +13,7 @@ from zipfile import ZipFile
 
 from tenderkit.documents import Documents
 from tenderkit.cli import main
+from tenderkit.http import Response
 from tenderkit.model import DocumentRef, Notice, PlatformLink
 from tenderkit.platforms.backends import FetchError
 from tenderkit.platforms.ezamowienia import Ezamowienia
@@ -233,17 +234,64 @@ class ReaderTests(unittest.TestCase):
 
 
 class NativeTests(unittest.TestCase):
-    def test_inventory_skips_unpublished_files_and_cannot_download(self):
+    def setUp(self):
         identifier = 'ocds-148610-12345678-1234-1234-1234-123456789abc'
-        session = mock.Mock()
-        session.get.return_value.json.return_value = [dict(objectId='one', fileName='SWZ.pdf', publishedDate='2026-11-01'),
-                                                     dict(objectId='hidden', fileName='placeholder', publishedDate=None)]
-        adapter = Ezamowienia(session)
-        link = adapter.procedure(Notice('BZP', '1', platform_url=f'https://ezamowienia.gov.pl/mp-client/search/list/{identifier}'))
-        refs = adapter.documents(link)
-        self.assertEqual([ref.key for ref in refs], ['one'])
-        with self.assertRaisesRegex(FetchError, 'LIST_ONLY'):
-            adapter.download(refs[0], Path('.'))
+        temp = tempfile.TemporaryDirectory()
+        self.addCleanup(temp.cleanup)
+        self.root = Path(temp.name)
+        self.session = mock.Mock()
+        self.adapter = Ezamowienia(self.session)
+        self.notice = Notice('BZP', '1', published=date(2026, 11, 1),
+                             platform_url=f'https://ezamowienia.gov.pl/mp-client/search/list/{identifier}')
+        self.link = self.adapter.procedure(self.notice)
+        self.inventory = Response(200, json.dumps([
+            dict(objectId='one', fileName='SWZ.pdf', publishedDate='2026-11-01'),
+            dict(objectId='hidden', fileName='placeholder', publishedDate=None),
+        ]).encode())
+
+    def test_empty_inventory(self):
+        self.session.get.return_value = Response(200, b'[]')
+        self.assertEqual(self.adapter.documents(self.link), [])
+
+    def test_download_published_pdf_through_queue_and_read_it(self):
+        binary = pdf(self.root / 'example.pdf').read_bytes()
+        self.session.get.side_effect = [self.inventory, Response(200, binary, {'Content-Type': 'application/pdf'})]
+        state = State(self.root / 'state.sqlite3')
+        state.record_refresh('BZP', self.notice.published, self.notice.published, {}, [self.notice])
+        service = Documents(state, self.root / 'store', {self.adapter.name: self.adapter})
+        result = service.fetch('BZP', self.notice.number)
+        self.assertEqual(result['status'], 'DONE', result)
+        self.assertEqual(result['summary']['listed'], 1)
+        self.assertEqual(state.coverage()['counts'][0]['coverage'], 'FETCHED')
+        saved = state.documents('BZP', self.notice.number)
+        digest = hashlib.sha256(binary).hexdigest()
+        self.assertEqual(saved['one']['sha256'], digest)
+        self.assertIn('SWZ conditions of participation', service.read(digest)['pages'][0]['text'])
+        self.assertTrue(self.session.get.call_args.kwargs['stream'])
+
+    def test_rejects_html_http_errors_and_other_hosts(self):
+        self.session.get.return_value = self.inventory
+        ref, = self.adapter.documents(self.link)
+        cases = (
+            (Response(200, b'<!DOCTYPE html><html>Error</html>'), 'DOWNLOAD_REJECTED'),
+            (Response(200, b'Login required', {'Content-Type': 'text/html; charset=utf-8'}), 'DOWNLOAD_REJECTED'),
+            (Response(404, b''), 'HTTP_404'),
+            (Response(200, b'%PDF-1.4', url='https://platformazakupowa.pl/file/test'), 'UNSAFE_URL'),
+        )
+        for response, code in cases:
+            with self.subTest(code=code):
+                self.session.get.return_value = response
+                with self.assertRaisesRegex(FetchError, code):
+                    self.adapter.download(ref, self.root)
+        self.assertEqual(list(self.root.iterdir()), [])
+
+    def test_size_limit_rejects_file_before_writing(self):
+        self.session.get.return_value = self.inventory
+        ref, = self.adapter.documents(self.link)
+        self.session.get.return_value = Response(200, b'%PDF-1.4')
+        with mock.patch('tenderkit.platforms.ezamowienia.MAX_BYTES', 4), self.assertRaisesRegex(FetchError, 'TOO_LARGE'):
+            self.adapter.download(ref, self.root)
+        self.assertEqual(list(self.root.iterdir()), [])
 
 
 if __name__ == '__main__':
