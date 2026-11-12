@@ -11,6 +11,7 @@ from tenderkit.model import Award, Lot, Notice
 REFERENCE = re.compile(r'4\.1\.2\.\)\s*Numer referencyjny:\s*(.+?)\s+\d\.\d\.\d+\.\)')
 PLATFORM_URL = re.compile(r'Adres strony internetowej prowadzonego post.powania.{0,300}?(https?://\s*\S+|www\.\S+)')
 CPV = re.compile(r'\b(\d{8})(?:-\d)?\b')
+WARSAW = ZoneInfo('Europe/Warsaw')
 # NUTS level 2 -> TERYT voivodeship. Warsaw and the surrounding region share 14.
 NUTS_TERYT = dict(zip(
     ('PL21', 'PL22', 'PL41', 'PL42', 'PL43', 'PL51', 'PL52', 'PL61', 'PL62', 'PL63', 'PL71', 'PL72', 'PL81', 'PL82', 'PL84', 'PL91', 'PL92'),
@@ -60,6 +61,15 @@ def instant(value):
     return datetime.fromisoformat(value.replace('Z', '+00:00'))
 
 
+def bzp_publication_day(value):
+    published = instant(value)
+    if published is None:
+        return None
+    if published.tzinfo is not None:
+        published = published.astimezone(WARSAW)
+    return published.date()
+
+
 def polish(value):
     if isinstance(value, str):
         return value
@@ -79,7 +89,7 @@ def bzp_notice(raw):
     value = re.search(r'Wartość zamówienia:\s*(\d[\d\s]*(?:,\d+)?)\s*([A-Z]{3})\b', text)
     return Notice(
         source='BZP', number=raw['noticeNumber'], procedure_id=raw.get('tenderId'),
-        published=day(raw.get('publicationDate')), deadline=instant(raw.get('submittingOffersDate')),
+        published=bzp_publication_day(raw.get('publicationDate')), deadline=instant(raw.get('submittingOffersDate')),
         title=raw.get('orderObject'), buyer_name=raw.get('organizationName'),
         buyer_id=raw.get('organizationNationalId'), buyer_city=raw.get('organizationCity'),
         buyer_region=region(raw.get('organizationProvince')),
@@ -107,9 +117,9 @@ def bzp_amendment(raw):
         if label.startswith('3.4.1.') and re.match(r'8\.1\.\)?\s*Termin składania ofert\b', value):
             updated = re.search(r'Po zmianie:\s*(\d{4}-\d{2}-\d{2} \d{2}:\d{2}(?::\d{2})?)', value)
             if updated:
-                deadline = datetime.fromisoformat(updated[1]).replace(tzinfo=ZoneInfo('Europe/Warsaw'))
+                deadline = datetime.fromisoformat(updated[1]).replace(tzinfo=WARSAW)
     return Notice('BZP', raw['noticeNumber'], procedure_id=raw.get('tenderId'),
-                  published=day(raw.get('publicationDate')), deadline=deadline, title=raw.get('orderObject'),
+                  published=bzp_publication_day(raw.get('publicationDate')), deadline=deadline, title=raw.get('orderObject'),
                   url=f"https://ezamowienia.gov.pl/mo-client-board/bzp/notice-details/id/{raw['objectId']}",
                   notice_type=raw.get('noticeType'), raw={'amends': target_number})
 
@@ -156,7 +166,7 @@ def bzp_awards(raw):
     body = raw.get('htmlBody') or ''
     sections = [match for match in re.finditer(r'<h2\b[^>]*>(.*?)</h2>', body, re.I | re.S)
                 if re.search(r'\bSEKCJA\s+V\b', match[1])]
-    published = day(raw.get('publicationDate'))
+    published = bzp_publication_day(raw.get('publicationDate'))
     awards = []
     for index, section in enumerate(sections):
         heading = html_to_text(section[1]).strip()

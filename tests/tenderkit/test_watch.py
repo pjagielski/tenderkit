@@ -1,6 +1,6 @@
 from contextlib import redirect_stdout
 from dataclasses import replace
-from datetime import date, datetime, timedelta
+from datetime import date, datetime, time, timedelta, timezone
 from io import StringIO
 import json
 from pathlib import Path
@@ -105,7 +105,9 @@ class WatchTests(unittest.TestCase):
         self.assertEqual(self.watch(end=DAY + timedelta(days=31))[0], [])
         end = DAY + timedelta(days=45)
         raw = dict(objectId='correction', noticeType='NoticeUpdateNotice',
-                   noticeNumber='2026/BZP 00528560/01', publicationDate=end.isoformat(),
+                   noticeNumber='2026/BZP 00528560/01',
+                   publicationDate=datetime.combine(end - timedelta(days=1),
+                                                    time(23, 30, tzinfo=timezone.utc)).isoformat(),
                    htmlBody='<h3>3.2.) Numer zmienianego ogłoszenia w BZP: 2026/BZP 00505877</h3>'
                             '<h3>3.3.) Identyfikator ostatniej wersji zmienianego ogłoszenia: 01</h3>'
                             '<h3>3.4.1.) Opis zmiany, w tym tekst, który należy dodać lub zmienić: </h3>'
