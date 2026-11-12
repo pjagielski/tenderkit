@@ -84,9 +84,11 @@ def first(value):
 
 
 def bzp_notice(raw):
-    text = html_to_text(raw.get('htmlBody'))
+    body = raw.get('htmlBody')
+    text = html_to_text(body)
     reference, platform = REFERENCE.search(text), PLATFORM_URL.search(text)
     value = re.search(r'Wartość zamówienia:\s*(\d[\d\s]*(?:,\d+)?)\s*([A-Z]{3})\b', text)
+    description, lots = bzp_scope(body)
     return Notice(
         source='BZP', number=raw['noticeNumber'], procedure_id=raw.get('tenderId'),
         published=bzp_publication_day(raw.get('publicationDate')), deadline=instant(raw.get('submittingOffersDate')),
@@ -99,6 +101,7 @@ def bzp_notice(raw):
         platform_url=re.sub(r'\s+', '', platform[1]) if platform else None,
         url=f"https://ezamowienia.gov.pl/mo-client-board/bzp/notice-details/id/{raw['objectId']}",
         notice_type=raw.get('noticeType'), raw=raw,
+        description=description, lots=lots,
         awards=bzp_awards(raw),
         lot_count=int(re.search(r'Liczba części:\s*(\d+)', text)[1]) if re.search(r'Liczba części:\s*(\d+)', text)
         else 1 if re.search(r'Możliwe jest składanie ofert częściowych:\s*Nie', text) else None,
@@ -124,17 +127,41 @@ def bzp_amendment(raw):
                   notice_type=raw.get('noticeType'), raw={'amends': target_number})
 
 
-def bzp_blocks(body):
+def bzp_blocks(body, labels=None):
     """(label, value) pairs of one BZP HTML body, the same h3 layout the reader uses."""
-    main = re.search(r'<main\b[^>]*>(.*?)</main>', body or '', re.S | re.I)
+    if not body:
+        return []
+    main = re.search(r'<main\b[^>]*>(.*?)</main>', body, re.S | re.I)
     if main:
         body = main[1]
     found = []
     for heading, value in re.findall(r'<h3\b[^>]*>(.*?)</h3>(.*?)(?=<h[23]\b|</main>|</body>|$)', body, re.S | re.I):
+        if labels is not None and not labels.search(heading):
+            continue
         inline = re.findall(r'<span\b[^>]*>(.*?)</span>', heading, re.S | re.I)
         label = re.sub(r'<span\b[^>]*>.*?</span>', '', heading, flags=re.S | re.I)
         found.append((html_to_text(label).strip(), html_to_text(' '.join(inline) + ' ' + value).strip()))
     return found
+
+
+_SCOPE_LABELS = re.compile(r'Krótki opis przedmiotu zamówienia|Część\s+\d|Nazwa części', re.I)
+
+
+def bzp_scope(body):
+    descriptions, titles = [], {}
+    lot_number = None
+    for label, value in bzp_blocks(body, _SCOPE_LABELS):
+        lot = re.fullmatch(r'Część\s+(\d+)(?:\s*[-–—:]\s*(.+))?', label, re.I)
+        if lot:
+            lot_number = lot[1]
+            if lot[2]:
+                titles[lot_number] = lot[2]
+        elif 'krótki opis przedmiotu zamówienia' in label.casefold() and value:
+            descriptions.append(value)
+        elif lot_number is not None and 'nazwa części' in label.casefold() and value:
+            titles[lot_number] = value
+    return '\n\n'.join(dict.fromkeys(descriptions)) or None, tuple(
+        Lot(number, title=title) for number, title in titles.items())
 
 
 def bzp_fields(body):
@@ -196,6 +223,18 @@ def _offer_count(fields):
     return int(count) if count and count.isdigit() else None
 
 
+def _ted_texts(value):
+    if isinstance(value, dict):
+        value = value.get('pol') or next(iter(value.values()), None)
+    texts = value if isinstance(value, list) else [value]
+    return tuple(text.strip() for text in texts if isinstance(text, str) and text.strip())
+
+
+def ted_scope(raw):
+    descriptions = _ted_texts(raw.get('description-proc')) + _ted_texts(raw.get('description-lot'))
+    return '\n\n'.join(dict.fromkeys(descriptions)) or None, tuple(dict.fromkeys(_ted_texts(raw.get('title-lot'))))
+
+
 def ted_notice(raw):
     ids = raw.get('identifier-lot') or []
     values, currencies = raw.get('estimated-value-lot') or [], raw.get('estimated-value-cur-lot') or []
@@ -204,6 +243,7 @@ def ted_notice(raw):
         value, currency = sum(amount(v) for v in values), currencies[0]
     deadlines = sorted(d for d in raw.get('deadline-receipt-tender-date-lot') or [] if d)
     urls = [u for u in raw.get('document-url-lot') or [] if u]
+    description, lot_titles = ted_scope(raw)
     return Notice(
         source='TED', number=raw['publication-number'], procedure_id=first(raw.get('procedure-identifier')),
         published=day(raw.get('publication-date')), deadline=instant(deadlines[0]) if deadlines else None,
@@ -216,6 +256,7 @@ def ted_notice(raw):
         # Search API arrays are flattened, without a join between each amount
         # and its lot id. Keep the IDs; never infer per-lot amounts by position.
         lots=tuple(Lot(str(number)) for number in ids),
+        description=description, lot_titles=lot_titles,
         reference=first(raw.get('internal-identifier-proc')), platform_url=urls[0] if urls else None,
         url=f"https://ted.europa.eu/pl/notice/-/detail/{raw['publication-number']}",
         notice_type=first(raw.get('notice-type')) or 'cn-standard', raw=raw,

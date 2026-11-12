@@ -5,12 +5,13 @@
     keywords_any = ["lek", "farmaceut"]    # empty: no keyword condition
     exclude_keywords = ["weterynar"]
 
-Matching is case- and diacritics-insensitive on the title. A source gets only what it can filter itself (SourceQuery);
-Profile.matches decides the rest.
+Keywords match from the start of a word in the title, description or lot titles. Use *term* for a substring.
+Matching is case- and diacritics-insensitive. Profile.matches applies the filters the source cannot handle.
 """
 from dataclasses import dataclass
 from datetime import datetime
 from decimal import Decimal, InvalidOperation
+from functools import lru_cache
 from zoneinfo import ZoneInfo
 from pathlib import Path
 import re
@@ -62,6 +63,27 @@ def fold(text):
     return ''.join(c for c in text if not unicodedata.combining(c)).casefold()
 
 
+@lru_cache(maxsize=1024)
+def _keyword_pattern(keyword):
+    term = fold(keyword.strip())
+    substring = len(term) > 2 and term.startswith('*') and term.endswith('*')
+    if substring:
+        term = term[1:-1]
+    phrase = r'\s+'.join(re.escape(word) for word in term.split())
+    return re.compile(('' if substring else r'(?<!\w)') + phrase) if phrase else re.compile(r'(?!)')
+
+
+def _keyword_fields(notice):
+    yield 'title', None, notice.title
+    for paragraph in (notice.description or '').split('\n\n'):
+        yield 'description', None, paragraph
+    for lot in notice.lots:
+        if lot.title:
+            yield 'lot_title', lot.number, lot.title
+    for title in notice.lot_titles:
+        yield 'lot_title', None, title
+
+
 @dataclass(frozen=True)
 class Profile:
     name: str
@@ -107,13 +129,32 @@ class Profile:
             for pattern in self.cpv for code in codes)
 
     def matches_text(self, text):
-        folded = fold(text)
-        if any(fold(k) in folded for k in self.exclude_keywords):
+        return self._matches_keywords((text,))
+
+    def _matches_keywords(self, texts):
+        if not (self.keywords_any or self.exclude_keywords):
+            return True
+        folded = tuple(fold(text) for text in texts if text)
+        if any(_keyword_pattern(term).search(text) for term in self.exclude_keywords for text in folded):
             return False
-        return not self.keywords_any or any(fold(k) in folded for k in self.keywords_any)
+        return not self.keywords_any or any(
+            _keyword_pattern(term).search(text) for term in self.keywords_any for text in folded)
+
+    def keyword_matches(self, notice):
+        """Return the configured inclusion terms that matched and their source fields."""
+        if not self.keywords_any:
+            return []
+        fields = [(field, lot, fold(text)) for field, lot, text in _keyword_fields(notice) if text]
+        hits = dict.fromkeys(
+            (term, field, lot)
+            for term in self.keywords_any for field, lot, text in fields
+            if _keyword_pattern(term).search(text)
+        )
+        return [dict(keyword=term, field=field, lot=lot) if lot is not None else dict(keyword=term, field=field)
+                for term, field, lot in hits]
 
     def matches(self, notice: Notice, *, today=None):
-        if not self.matches_cpv(notice.cpv) or not self.matches_text(notice.title):
+        if not self.matches_cpv(notice.cpv):
             return False
         if self.notice_types and notice.notice_type not in self.notice_types:
             return False
@@ -135,7 +176,7 @@ class Profile:
             days = (deadline.date() - (today or datetime.now(ZoneInfo('Europe/Warsaw')).date())).days
             if not self.deadline_days.min <= days <= self.deadline_days.max:
                 return False
-        return True
+        return self._matches_keywords(text for _, _, text in _keyword_fields(notice))
 
 
 def load_profile(path):

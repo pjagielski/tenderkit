@@ -81,8 +81,15 @@ def search(state, profile, *, start=None, end=None, limit=100, offset=0, source_
         if len(found) == limit:
             more = True
             break
-        found.append(notice_record(notice, raw=False))
+        found.append(matched_notice_record(notice, profile))
     return dict(notices=found, offset=offset, next_offset=offset + len(found) if more else None)
+
+
+def matched_notice_record(notice, profile, *, raw=False):
+    record = notice_record(notice, raw=raw)
+    if profile.keywords_any:
+        record['keyword_matches'] = profile.keyword_matches(notice)
+    return record
 
 
 def _award_record(award, notice):

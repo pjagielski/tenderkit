@@ -1,10 +1,11 @@
 """Lossless JSON notice records shared by SQLite, CLI and MCP."""
-from dataclasses import asdict
+from dataclasses import asdict, replace
 from datetime import date, datetime
 from decimal import Decimal
 import json
 
 from tenderkit.model import Award, Lot, Notice
+from tenderkit.sources.mapping import bzp_scope, ted_scope
 
 
 def json_default(value):
@@ -39,6 +40,19 @@ def notice_from_record(record):
         lot['value'] = Decimal(lot['value']) if lot.get('value') is not None else None
         lots.append(Lot(**lot))
     data['lots'] = tuple(lots)
+    data['lot_titles'] = tuple(data.get('lot_titles') or [])
+    if 'description' not in data:
+        raw = data.get('raw') or {}
+        if data['source'] == 'BZP':
+            description, titled_lots = bzp_scope(raw.get('htmlBody'))
+            merged = {lot.number: lot for lot in lots}
+            for lot in titled_lots:
+                existing = merged.get(lot.number)
+                merged[lot.number] = replace(existing, title=existing.title or lot.title) if existing else lot
+            data['description'] = description
+            data['lots'] = tuple(merged.values())
+        elif data['source'] == 'TED':
+            data['description'], data['lot_titles'] = ted_scope(raw)
     awards = []
     for award in data.get('awards') or []:
         award = dict(award)

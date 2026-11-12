@@ -58,6 +58,8 @@ def create_server(path, *, profiles=None, adapters=None, document_root=None, doc
 
         Regions are buyer TERYT voivodeship codes; unknown fields do not match a constrained filter.
         Amounts must use the stated currency; no exchange-rate conversion is applied.
+        Keywords match word starts in titles, descriptions and lot titles. Use *term* for substrings.
+        keyword_matches identifies the configured inclusion terms and fields that matched.
         """
         if profile is not None and profile not in profiles:
             raise ValueError('Unknown profile; read tenderkit://profiles')

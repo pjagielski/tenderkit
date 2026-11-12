@@ -6,8 +6,9 @@ from pathlib import Path
 import sys
 
 from tenderkit.profiles import builtin_profiles, resolve_profile
-from tenderkit.serialization import dumps, notice_record
-from tenderkit.service import (filtered, procedure_results, refresh, search, search_results, sources, window)
+from tenderkit.serialization import dumps
+from tenderkit.service import (filtered, matched_notice_record, procedure_results, refresh, search, search_results,
+                               sources, window)
 from tenderkit.store.state import State
 from tenderkit.platforms.backends import FetchError
 
@@ -210,7 +211,7 @@ Run tenderkit COMMAND --help for command options.''',
                                offset=args.offset, source_names=args.source_names or ())))
         elif args.command == 'export':
             for notice in filtered(state, profile, start=start, end=end, source_names=args.source_names or ()):
-                print(dumps(notice_record(notice)))
+                print(dumps(matched_notice_record(notice, profile, raw=True)))
         elif args.command == 'status':
             print(dumps(state.coverage()))
         return 0
