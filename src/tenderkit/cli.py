@@ -12,6 +12,18 @@ from tenderkit.store.state import State
 from tenderkit.platforms.backends import FetchError
 
 
+def default_database():
+    if sys.platform == 'win32':
+        configured = Path(os.environ.get('LOCALAPPDATA', ''))
+        root = configured if configured.is_absolute() else Path.home() / 'AppData' / 'Local'
+    elif sys.platform == 'darwin':
+        root = Path.home() / 'Library' / 'Application Support'
+    else:
+        configured = Path(os.environ.get('XDG_DATA_HOME', ''))
+        root = configured if configured.is_absolute() else Path.home() / '.local' / 'share'
+    return root / 'tenderkit' / 'state.sqlite3'
+
+
 def main(argv=None):
     if hasattr(sys.stdout, 'reconfigure'):
         sys.stdout.reconfigure(encoding='utf-8')
@@ -20,19 +32,19 @@ def main(argv=None):
         description='Fetch, browse and export Polish public procurement notices.',
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog='''Examples:
-  tenderkit --db .notices.sqlite3 fetch --profile oprogramowanie
-  tenderkit --db .notices.sqlite3 filter --profile oprogramowanie --limit 10
-  tenderkit --db .notices.sqlite3 ui --profile oprogramowanie
-  tenderkit --db .notices.sqlite3 export --profile oprogramowanie > notices.jsonl
+  tenderkit fetch --profile oprogramowanie
+  tenderkit filter --profile oprogramowanie --limit 10
+  tenderkit ui --profile oprogramowanie
+  tenderkit export --profile oprogramowanie > notices.jsonl
   tenderkit watch --profile oprogramowanie
-  tenderkit --db .notices.sqlite3 fetch --profile oprogramowanie --results
-  tenderkit --db .notices.sqlite3 results --buyer Kraków --cpv 72*
+  tenderkit fetch --profile oprogramowanie --results
+  tenderkit results --buyer Kraków --cpv 72*
 
 Run tenderkit COMMAND --help for command options.''',
     )
-    parser.add_argument('--db', type=Path, default=os.environ.get('TENDERKIT_DB'), metavar='PATH',
-                        help='SQLite database path. Overrides TENDERKIT_DB. If unset, defaults to '
-                             '.notices.sqlite3 for ui and .tenderkit/state.sqlite3 for other commands.')
+    parser.add_argument('--db', type=Path, metavar='PATH',
+                        help='SQLite database path. Overrides TENDERKIT_DB. '
+                             'The default is state.sqlite3 in the tenderkit user data directory.')
     parser.add_argument('--documents-dir', type=Path, default=os.environ.get('TENDERKIT_DOCUMENT_DIR'),
                         metavar='PATH', help='Document store (TENDERKIT_DOCUMENT_DIR).')
     commands = parser.add_subparsers(dest='command', title='commands', metavar='COMMAND')
@@ -106,12 +118,13 @@ Run tenderkit COMMAND --help for command options.''',
     if args.command is None:
         parser.print_help()
         return 0
-    if args.db is None:
-        args.db = Path('.notices.sqlite3' if args.command == 'ui' else '.tenderkit/state.sqlite3')
     try:
         if args.command == 'profiles':
             print(dumps({name: asdict(p) for name, p in builtin_profiles().items()}))
             return 0
+        if args.db is None:
+            configured = os.environ.get('TENDERKIT_DB')
+            args.db = Path(configured) if configured else default_database()
         if args.command == 'ui':
             from tenderkit.ui import serve
             profiles = {}
