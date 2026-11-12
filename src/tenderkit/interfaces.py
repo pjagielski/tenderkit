@@ -13,6 +13,7 @@ class SourceQuery:
     """The part of a profile a source can filter on its side; the rest is filtered by Profile after fetching."""
     cpv_prefixes: tuple[str, ...] = ()           # '336' for CPV 336*
     notice_types: tuple[str, ...] = ()
+    include_results: bool = False                # also ask for the source's formal result notices
 
 
 @runtime_checkable

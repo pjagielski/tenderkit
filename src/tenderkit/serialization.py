@@ -4,7 +4,7 @@ from datetime import date, datetime
 from decimal import Decimal
 import json
 
-from tenderkit.model import Lot, Notice
+from tenderkit.model import Award, Lot, Notice
 
 
 def json_default(value):
@@ -39,4 +39,11 @@ def notice_from_record(record):
         lot['value'] = Decimal(lot['value']) if lot.get('value') is not None else None
         lots.append(Lot(**lot))
     data['lots'] = tuple(lots)
+    awards = []
+    for award in data.get('awards') or []:
+        award = dict(award)
+        award['price'] = Decimal(award['price']) if award.get('price') is not None else None
+        award['date'] = date.fromisoformat(award['date']) if award.get('date') else None
+        awards.append(Award(**award))
+    data['awards'] = tuple(awards)
     return Notice(**data)

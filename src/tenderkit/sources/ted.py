@@ -1,4 +1,5 @@
 """TED Search API v3 with bounded pagination and completeness checks."""
+from dataclasses import replace
 import re
 import time
 
@@ -6,11 +7,17 @@ from tenderkit.http import Session
 from tenderkit.sources.mapping import ted_notice
 
 TED_SEARCH = 'https://api.ted.europa.eu/v3/notices/search'
+TED_XML = 'https://ted.europa.eu/en/notice/{number}/xml'
+# Search API fields only; the award XML below carries the per-lot join.
 TED_FIELDS = ['publication-number', 'publication-date', 'procedure-identifier', 'title-proc', 'notice-title',
               'buyer-name', 'organisation-city-buyer', 'internal-identifier-proc', 'document-url-lot',
               'deadline-receipt-tender-date-lot', 'classification-cpv', 'identifier-lot', 'estimated-value-proc',
               'estimated-value-cur-proc', 'estimated-value-lot', 'estimated-value-cur-lot',
               'organisation-country-sub-buyer', 'organisation-identifier-buyer', 'notice-type']
+NOTICE_KINDS = ('cn-standard', 'cn-social', 'pin-cfc-standard')
+RESULT_KINDS = ('can-standard',)
+SEARCH_KINDS = NOTICE_KINDS + RESULT_KINDS
+MAX_AWARD_XML = 1000
 
 
 class TedIncomplete(RuntimeError):
@@ -74,11 +81,34 @@ def fetch_notices(session, start, end, codes=(), kinds=('cn-standard',), *, mapp
 class Ted:
     name = 'TED'
 
-    def __init__(self, session=None):
+    def __init__(self, session=None, xml_delay=1.0):
         self.session = session or Session()
+        self.xml_delay = xml_delay
 
     def fetch(self, start, end, query):
-        kinds = tuple(k for k in query.notice_types if k in ('cn-standard', 'cn-social', 'pin-cfc-standard')) if query.notice_types else ('cn-standard',)
+        known = tuple(k for k in query.notice_types if k in SEARCH_KINDS)
+        kinds = known or NOTICE_KINDS
+        if query.include_results:
+            kinds = kinds + tuple(k for k in RESULT_KINDS if k not in kinds)
         # SourceQuery carries prefixes; append * to short codes, keep full codes exact.
         codes = tuple(p + '*' if len(p) < 8 else p for p in query.cpv_prefixes)
-        return fetch_notices(self.session, start, end, codes, kinds)
+        notices = fetch_notices(self.session, start, end, codes, kinds)
+        if not any(kind in kinds for kind in RESULT_KINDS):
+            return notices
+        results = [notice for notice in notices if notice.notice_type in RESULT_KINDS]
+        if len(results) > MAX_AWARD_XML:
+            raise TedIncomplete(f'{len(results)} TED award notices exceed the {MAX_AWARD_XML} XML budget; narrow the window')
+        return [self.awards(notice) if notice.notice_type in RESULT_KINDS else notice for notice in notices]
+
+    def awards(self, notice):
+        """Fill per-lot awards from the notice XML; a failed fetch keeps the search-API record intact."""
+        try:
+            if self.xml_delay:
+                time.sleep(self.xml_delay)
+            response = self.session.get(TED_XML.format(number=notice.number),
+                                        headers={'Accept': 'application/xml'}, timeout=90)
+            response.raise_for_status()
+            from tenderkit.sources.ted_xml import parse_awards
+            return replace(notice, awards=parse_awards(response.content))
+        except (OSError, ValueError, RuntimeError):
+            return notice

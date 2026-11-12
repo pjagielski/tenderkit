@@ -7,7 +7,7 @@ import sys
 
 from tenderkit.profiles import builtin_profiles, resolve_profile
 from tenderkit.serialization import dumps, notice_record
-from tenderkit.service import filtered, refresh, search, sources, window
+from tenderkit.service import (filtered, procedure_results, refresh, search, search_results, sources, window)
 from tenderkit.store.state import State
 from tenderkit.platforms.backends import FetchError
 
@@ -24,6 +24,8 @@ def main(argv=None):
   tenderkit --db .notices.sqlite3 filter --profile oprogramowanie --limit 10
   tenderkit --db .notices.sqlite3 ui --profile oprogramowanie
   tenderkit --db .notices.sqlite3 export --profile oprogramowanie > notices.jsonl
+  tenderkit --db .notices.sqlite3 fetch --profile oprogramowanie --results
+  tenderkit --db .notices.sqlite3 results --buyer Kraków --cpv 72*
 
 Run tenderkit COMMAND --help for command options.''',
     )
@@ -50,6 +52,8 @@ Run tenderkit COMMAND --help for command options.''',
                              help='Limit to a source such as BZP or TED. Repeat to include more sources.')
         if name == 'fetch':
             command.epilog = 'With no date options, fetch covers the last 30 calendar days including today.'
+            command.add_argument('--results', action='store_true',
+                                 help='Also fetch formal result notices (BZP TenderResultNotice, TED can-standard).')
         if name == 'filter':
             command.add_argument('--limit', type=int, default=100, help='Notices per page (default: 100, max: 500).')
             command.add_argument('--offset', type=int, default=0, help='Skip this many matching notices (default: 0).')
@@ -57,6 +61,16 @@ Run tenderkit COMMAND --help for command options.''',
             command.add_argument('--format', choices=('jsonl',), default='jsonl', help='Output format (default: jsonl).')
     add_command('profiles', 'List built-in profiles and their criteria.')
     add_command('status', 'Show database coverage, refresh history and download jobs.')
+    results = add_command('results', 'Show formal results: contractor, price and bid count per lot.')
+    results.add_argument('--source', help='Notice source such as BZP or TED; required with --number, optional for search.')
+    results.add_argument('--number', help='Notice number; returns this procedure and its latest award per lot.')
+    results.add_argument('--buyer', help='Buyer name fragment for searching stored results.')
+    results.add_argument('--cpv', action='append', dest='cpv', metavar='CODE',
+                         help='CPV code or prefix ending in *; repeat to search several.')
+    results.add_argument('--from', dest='start', metavar='YYYY-MM-DD', help='First publication date, inclusive.')
+    results.add_argument('--to', dest='end', metavar='YYYY-MM-DD', help='Last publication date, inclusive.')
+    results.add_argument('--limit', type=int, default=100, help='Awards per page (default: 100, max: 500).')
+    results.add_argument('--offset', type=int, default=0, help='Skip this many awards (default: 0).')
     ui = add_command('ui', 'Browse saved notices at http://127.0.0.1:8765/.')
     ui.add_argument('--port', type=int, default=8765, help='Local HTTP port (default: 8765).')
     ui.add_argument('--profile', action='append', required=True, metavar='NAME_OR_PATH',
@@ -111,6 +125,15 @@ Run tenderkit COMMAND --help for command options.''',
             create_server(args.db, profiles=profiles, document_root=args.documents_dir).run(transport='stdio')
             return 0
         # Validate inputs before creating or opening the state file.
+        if args.command == 'results':
+            if args.number and not args.source:
+                raise ValueError('results --number requires --source')
+            if args.number and (args.buyer or args.cpv):
+                raise ValueError('--number cannot be combined with --buyer or --cpv')
+            if not args.number and not (args.buyer or args.cpv):
+                raise ValueError('results requires --number with --source, or --buyer and/or --cpv')
+            if args.start or args.end:
+                window(args.start, args.end)
         if args.command in ('fetch', 'filter', 'export'):
             profile = resolve_profile(args.profile)
             if args.start or args.end or args.command == 'fetch':
@@ -118,6 +141,14 @@ Run tenderkit COMMAND --help for command options.''',
             else:
                 start = end = None
         state = State(args.db)
+        if args.command == 'results':
+            if args.number:
+                print(dumps(procedure_results(state, args.source, args.number)))
+            else:
+                print(dumps(search_results(state, buyer=args.buyer, cpv=args.cpv or (),
+                                           start=args.start, end=args.end, limit=args.limit, offset=args.offset,
+                                           source_names=(args.source,) if args.source else ())))
+            return 0
         if args.command in ('download', 'list-documents', 'read-document'):
             from tenderkit.documents import Documents
             service = Documents(state, args.documents_dir or state.path.parent / 'documents')
@@ -144,7 +175,7 @@ Run tenderkit COMMAND --help for command options.''',
                 if set(args.source_names) - set(adapters):
                     raise ValueError('Unknown source')
                 adapters = {name: adapters[name] for name in dict.fromkeys(args.source_names)}
-            summaries = refresh(state, profile, start, end, adapters)
+            summaries = refresh(state, profile, start, end, adapters, include_results=args.results)
             print(dumps(dict(window=[str(start), str(end)], sources=summaries)))
             return int(any(r['status'] == 'FAILED' for r in summaries))
         if args.command == 'filter':

@@ -1,6 +1,7 @@
 """Official SDK client against the real server, including its stdio entry point."""
 from dataclasses import asdict
 from datetime import date
+from decimal import Decimal
 import importlib.util
 import json
 import os
@@ -10,7 +11,7 @@ import tempfile
 import unittest
 from unittest import mock
 
-from tenderkit.model import Lot, Notice
+from tenderkit.model import Award, Lot, Notice
 from tenderkit.profiles import builtin_profiles
 from tenderkit.service import search
 from tenderkit.store.state import State
@@ -24,23 +25,34 @@ class McpTests(unittest.IsolatedAsyncioTestCase):
         self.path = Path(self.temp.name) / 'state.sqlite3'
         self.state = State(self.path)
         self.profile = builtin_profiles()['leki']
-        self.notice = Notice('TED', 'one', title='Dostawa leków', cpv=('33600000',),
+        self.notice = Notice('TED', 'one', procedure_id='proc-1', title='Dostawa leków', cpv=('33600000',),
             published=date(2026, 11, 1), notice_type='cn-standard',
             platform_url='https://platformazakupowa.pl/transakcja/1', lots=(Lot('LOT-0001'),))
-        self.state.record_refresh('TED', date(2026, 11, 1), date(2026, 11, 1), asdict(self.profile.source_query()), [self.notice])
+        self.result = Notice('TED', 'two', procedure_id='proc-1', title='Wynik: dostawa leków', cpv=('33600000',),
+            published=date(2026, 11, 10), notice_type='can-standard',
+            awards=(Award('LOT-0001', 'AWARDED', contractor='Acme', contractor_id='111',
+                          price=Decimal('1000'), currency='PLN', offers=2, date=date(2026, 11, 10)),))
+        self.state.record_refresh('TED', date(2026, 11, 1), date(2026, 11, 10), asdict(self.profile.source_query()),
+                                  [self.notice, self.result])
 
     async def check_client(self, client):
         tools = await client.list_tools()
-        self.assertEqual({t.name for t in tools.tools}, {'search_notices', 'get_notice', 'list_documents', 'fetch_documents', 'read_document'})
+        self.assertEqual({t.name for t in tools.tools}, {'search_notices', 'get_notice', 'procedure_results',
+                                                         'search_results', 'list_documents', 'fetch_documents', 'read_document'})
         result = await client.call_tool('search_notices', {'profile': 'leki'})
         self.assertFalse(result.is_error)
         self.assertEqual(result.structured_content['notices'], search(self.state, self.profile)['notices'])
         notice = await client.call_tool('get_notice', {'source': 'TED', 'number': 'one'})
         self.assertEqual(notice.structured_content['notice']['lots'][0]['number'], 'LOT-0001')
+        procedure = await client.call_tool('procedure_results', {'source': 'TED', 'number': 'two'})
+        self.assertEqual(procedure.structured_content['awards'][0]['contractor'], 'Acme')
+        self.assertEqual(procedure.structured_content['contracts'][0]['number'], 'one')
+        awards = await client.call_tool('search_results', {'cpv': ['336*']})
+        self.assertEqual(awards.structured_content['awards'][0]['contractor'], 'Acme')
         resources = await client.list_resources()
         self.assertEqual({str(r.uri) for r in resources.resources}, {'tenderkit://profiles', 'tenderkit://coverage'})
         coverage = await client.read_resource('tenderkit://coverage')
-        self.assertEqual(json.loads(coverage.contents[0].text)['counts'][0]['count'], 1)
+        self.assertEqual(json.loads(coverage.contents[0].text)['counts'][0]['count'], 2)
 
     async def test_in_memory_client_uses_the_cli_filter_and_profile_resources(self):
         from mcp.client import Client
@@ -78,6 +90,24 @@ class McpTests(unittest.IsolatedAsyncioTestCase):
                 start='2026-11-01', end='2026-11-01'))
             self.assertEqual(result.structured_content['refreshes'][0], dict(source='TED', status='FAILED', error='RuntimeError'))
             self.assertEqual(len(result.structured_content['notices']), 1)
+
+    async def test_search_results_refreshes_results_with_a_profile(self):
+        from mcp.client import Client
+        from tenderkit.mcp import create_server
+        award = Notice('TED', 'three', procedure_id='proc-3', title='Wynik', cpv=('33600000',),
+                       published=date(2026, 11, 2), notice_type='can-standard',
+                       awards=(Award('1', 'AWARDED', contractor='Beta', price=Decimal('500'),
+                                     currency='PLN', offers=1, date=date(2026, 11, 2)),))
+        adapter = mock.Mock()
+        adapter.fetch.return_value = [award]
+        server = create_server(self.path, adapters={'TED': adapter})
+        async with Client(server) as client:
+            refused = await client.call_tool('search_results', {'refresh': True, 'cpv': ['336*']})
+            self.assertTrue(refused.is_error)
+            result = await client.call_tool('search_results', dict(profile='leki', refresh=True,
+                start='2026-11-02', end='2026-11-02', cpv=['336*']))
+            self.assertEqual(result.structured_content['refreshes'][0]['status'], 'COMPLETED')
+            self.assertEqual(result.structured_content['awards'][0]['contractor'], 'Beta')
 
     async def test_f2_list_fetch_and_read_share_the_queue_and_store(self):
         from mcp.client import Client
