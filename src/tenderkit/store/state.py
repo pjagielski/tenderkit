@@ -39,6 +39,27 @@ create table if not exists fetch_jobs (
 );
 create unique index if not exists active_document_job on fetch_jobs(source,number)
     where status in ('QUEUED','RUNNING');
+create table if not exists watch_cursors (
+    profile text not null, source text not null, resume_from text not null,
+    primary key(profile,source)
+);
+create table if not exists watch_seen (
+    profile text not null, source text not null, identity text not null,
+    revision text not null, deadline text, primary key(profile,source,identity)
+);
+create table if not exists watch_ted_aliases (
+    profile text not null, alias text not null, identity text not null, primary key(profile,alias)
+);
+create table if not exists watch_runs (
+    id integer primary key, profile text not null, finished_at text not null, sources text not null
+);
+create index if not exists watch_runs_profile on watch_runs(profile,id);
+create table if not exists watch_events (
+    id integer primary key, run_id integer not null references watch_runs(id),
+    profile text not null, payload text not null, delivered integer not null default 0
+);
+create index if not exists watch_events_run on watch_events(run_id,id);
+create index if not exists watch_events_pending on watch_events(profile) where delivered=0;
 '''
 
 

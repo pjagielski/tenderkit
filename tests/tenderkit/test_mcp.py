@@ -38,7 +38,8 @@ class McpTests(unittest.IsolatedAsyncioTestCase):
     async def check_client(self, client):
         tools = await client.list_tools()
         self.assertEqual({t.name for t in tools.tools}, {'search_notices', 'get_notice', 'procedure_results',
-                                                         'search_results', 'list_documents', 'fetch_documents', 'read_document'})
+                                                         'search_results', 'list_documents', 'fetch_documents', 'read_document',
+                                                         'watch_updates'})
         result = await client.call_tool('search_notices', {'profile': 'leki'})
         self.assertFalse(result.is_error)
         self.assertEqual(result.structured_content['notices'], search(self.state, self.profile)['notices'])
@@ -64,6 +65,23 @@ class McpTests(unittest.IsolatedAsyncioTestCase):
                          {'refresh': True, 'start': '2000-01-01', 'end': '2026-11-01'}):
                 response = await client.call_tool('search_notices', args)
                 self.assertTrue(response.is_error, args)
+
+    async def test_watch_updates_reads_the_latest_run_without_consuming_events(self):
+        from io import StringIO
+        from mcp.client import Client
+        from tenderkit.mcp import create_server
+        from tenderkit.watch import run_watch
+
+        adapter = mock.Mock()
+        adapter.fetch.return_value = [self.notice]
+        run_watch(self.state, self.profile, self.notice.published, self.notice.published,
+                  {'TED': adapter}, StringIO())
+        async with Client(create_server(self.path)) as client:
+            for _ in range(2):
+                response = await client.call_tool('watch_updates', {'profile': 'leki'})
+                self.assertFalse(response.is_error)
+                self.assertEqual(response.structured_content['events'][0]['notice']['number'], 'one')
+        adapter.fetch.assert_called_once()
 
     async def test_stdio_client_initialization_discovery_tools_and_resources(self):
         from mcp.client import Client

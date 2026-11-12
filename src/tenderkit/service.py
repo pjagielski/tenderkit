@@ -38,13 +38,13 @@ def sources():
     return registered
 
 
-def refresh(state, profile, start, end, adapters=None, include_results=False):
+def refresh(state, profile, start, end, adapters=None, include_results=False, include_amendments=False):
     start, end = window(start, end)
     adapters = sources() if adapters is None else adapters
     summaries = []
     query = profile.source_query()
-    if include_results:
-        query = replace(query, include_results=True)
+    if include_results or include_amendments:
+        query = replace(query, include_results=include_results, include_amendments=include_amendments)
     for source, adapter in adapters.items():
         try:
             notices = []

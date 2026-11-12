@@ -14,6 +14,7 @@ class SourceQuery:
     cpv_prefixes: tuple[str, ...] = ()           # '336' for CPV 336*
     notice_types: tuple[str, ...] = ()
     include_results: bool = False                # also ask for the source's formal result notices
+    include_amendments: bool = False             # also ask for separate amendment publications
 
 
 @runtime_checkable

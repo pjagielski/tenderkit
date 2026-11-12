@@ -13,7 +13,8 @@ TED_FIELDS = ['publication-number', 'publication-date', 'procedure-identifier', 
               'buyer-name', 'organisation-city-buyer', 'internal-identifier-proc', 'document-url-lot',
               'deadline-receipt-tender-date-lot', 'classification-cpv', 'identifier-lot', 'estimated-value-proc',
               'estimated-value-cur-proc', 'estimated-value-lot', 'estimated-value-cur-lot',
-              'organisation-country-sub-buyer', 'organisation-identifier-buyer', 'notice-type']
+              'organisation-country-sub-buyer', 'organisation-identifier-buyer', 'notice-type',
+              'notice-identifier', 'notice-version', 'change-notice-version-identifier']
 NOTICE_KINDS = ('cn-standard', 'cn-social', 'pin-cfc-standard')
 RESULT_KINDS = ('can-standard',)
 SEARCH_KINDS = NOTICE_KINDS + RESULT_KINDS

@@ -6,6 +6,7 @@ from zoneinfo import ZoneInfo
 WARSAW = ZoneInfo('Europe/Warsaw')
 FRESH_NOTICE_TYPES = ('ContractNotice', 'SmallContractNotice', 'CompetitionNotice')
 RESULT_NOTICE_TYPES = ('TenderResultNotice',)
+AMENDMENT_TYPE = 'NoticeUpdateNotice'
 ENDPOINT = 'https://ezamowienia.gov.pl/mo-board/api/v1/notice'
 
 
@@ -119,7 +120,7 @@ class Bzp:
         self.session, self.delay = session or Session(), delay
 
     def fetch(self, start, end, query):
-        from tenderkit.sources.mapping import bzp_notice
+        from tenderkit.sources.mapping import bzp_amendment, bzp_notice
         known = FRESH_NOTICE_TYPES + RESULT_NOTICE_TYPES
         kinds = tuple(k for k in query.notice_types if k in known) if query.notice_types else FRESH_NOTICE_TYPES
         if query.include_results:
@@ -130,5 +131,12 @@ class Bzp:
                 rows, _ = fetch_window(self.session, start, end, kind, cpv_code=prefix, delay=self.delay)
                 for raw in rows:
                     notice = bzp_notice(raw)
+                    found[notice.number] = notice
+        if query.include_amendments and any(kind in FRESH_NOTICE_TYPES for kind in kinds):
+            # Amendment records do not carry CPV codes. Keep the reference and changed deadline.
+            rows, _ = fetch_window(self.session, start, end, AMENDMENT_TYPE, cpv_code='', delay=self.delay)
+            for raw in rows:
+                notice = bzp_amendment(raw)
+                if notice is not None:
                     found[notice.number] = notice
         return list(found.values())

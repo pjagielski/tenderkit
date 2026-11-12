@@ -10,8 +10,8 @@ from tenderkit.serialization import dumps
 
 
 @contextmanager
-def worker_lock(path):
-    with open(str(path) + '.documents.lock', 'a+b') as stream:
+def worker_lock(path, *, suffix='.documents.lock'):
+    with open(str(path) + suffix, 'a+b') as stream:
         if stream.tell() == 0:
             stream.write(b'0')
             stream.flush()

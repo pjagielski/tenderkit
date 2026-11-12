@@ -12,6 +12,18 @@ from tenderkit.store.state import State
 from tenderkit.platforms.backends import FetchError
 
 
+def default_database():
+    if sys.platform == 'win32':
+        configured = Path(os.environ.get('LOCALAPPDATA', ''))
+        root = configured if configured.is_absolute() else Path.home() / 'AppData' / 'Local'
+    elif sys.platform == 'darwin':
+        root = Path.home() / 'Library' / 'Application Support'
+    else:
+        configured = Path(os.environ.get('XDG_DATA_HOME', ''))
+        root = configured if configured.is_absolute() else Path.home() / '.local' / 'share'
+    return root / 'tenderkit' / 'state.sqlite3'
+
+
 def main(argv=None):
     if hasattr(sys.stdout, 'reconfigure'):
         sys.stdout.reconfigure(encoding='utf-8')
@@ -20,18 +32,19 @@ def main(argv=None):
         description='Fetch, browse and export Polish public procurement notices.',
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog='''Examples:
-  tenderkit --db .notices.sqlite3 fetch --profile oprogramowanie
-  tenderkit --db .notices.sqlite3 filter --profile oprogramowanie --limit 10
-  tenderkit --db .notices.sqlite3 ui --profile oprogramowanie
-  tenderkit --db .notices.sqlite3 export --profile oprogramowanie > notices.jsonl
-  tenderkit --db .notices.sqlite3 fetch --profile oprogramowanie --results
-  tenderkit --db .notices.sqlite3 results --buyer Kraków --cpv 72*
+  tenderkit fetch --profile oprogramowanie
+  tenderkit filter --profile oprogramowanie --limit 10
+  tenderkit ui --profile oprogramowanie
+  tenderkit export --profile oprogramowanie > notices.jsonl
+  tenderkit watch --profile oprogramowanie
+  tenderkit fetch --profile oprogramowanie --results
+  tenderkit results --buyer Kraków --cpv 72*
 
 Run tenderkit COMMAND --help for command options.''',
     )
-    parser.add_argument('--db', type=Path, default=os.environ.get('TENDERKIT_DB'), metavar='PATH',
-                        help='SQLite database (TENDERKIT_DB). Defaults to .notices.sqlite3 for ui '
-                             'and .tenderkit/state.sqlite3 for other commands.')
+    parser.add_argument('--db', type=Path, metavar='PATH',
+                        help='SQLite database path. Overrides TENDERKIT_DB. '
+                             'The default is state.sqlite3 in the tenderkit user data directory.')
     parser.add_argument('--documents-dir', type=Path, default=os.environ.get('TENDERKIT_DOCUMENT_DIR'),
                         metavar='PATH', help='Document store (TENDERKIT_DOCUMENT_DIR).')
     commands = parser.add_subparsers(dest='command', title='commands', metavar='COMMAND')
@@ -43,6 +56,7 @@ Run tenderkit COMMAND --help for command options.''',
         ('fetch', 'Fetch notices from sources into the SQLite database.'),
         ('filter', 'List saved notices that match a profile as JSON.'),
         ('export', 'Write matching saved notices as JSON Lines.'),
+        ('watch', 'Refresh a profile and print new or revised matches as JSON Lines.'),
     ):
         command = add_command(name, description)
         command.add_argument('--profile', required=True, help='Built-in profile name or TOML path.')
@@ -59,6 +73,10 @@ Run tenderkit COMMAND --help for command options.''',
             command.add_argument('--offset', type=int, default=0, help='Skip this many matching notices (default: 0).')
         if name == 'export':
             command.add_argument('--format', choices=('jsonl',), default='jsonl', help='Output format (default: jsonl).')
+        if name == 'watch':
+            command.epilog = ('Run once per invocation. The default window covers 30 days and includes missed '
+                              'days since the last successful run. Keep the same database for each run.')
+            command.add_argument('--webhook', metavar='URL', help='Also POST events to this HTTP(S) webhook.')
     add_command('profiles', 'List built-in profiles and their criteria.')
     add_command('status', 'Show database coverage, refresh history and download jobs.')
     results = add_command('results', 'Show formal results: contractor, price and bid count per lot.')
@@ -100,12 +118,13 @@ Run tenderkit COMMAND --help for command options.''',
     if args.command is None:
         parser.print_help()
         return 0
-    if args.db is None:
-        args.db = Path('.notices.sqlite3' if args.command == 'ui' else '.tenderkit/state.sqlite3')
     try:
         if args.command == 'profiles':
             print(dumps({name: asdict(p) for name, p in builtin_profiles().items()}))
             return 0
+        if args.db is None:
+            configured = os.environ.get('TENDERKIT_DB')
+            args.db = Path(configured) if configured else default_database()
         if args.command == 'ui':
             from tenderkit.ui import serve
             profiles = {}
@@ -134,9 +153,9 @@ Run tenderkit COMMAND --help for command options.''',
                 raise ValueError('results requires --number with --source, or --buyer and/or --cpv')
             if args.start or args.end:
                 window(args.start, args.end)
-        if args.command in ('fetch', 'filter', 'export'):
+        if args.command in ('fetch', 'filter', 'export', 'watch'):
             profile = resolve_profile(args.profile)
-            if args.start or args.end or args.command == 'fetch':
+            if args.start or args.end or args.command in ('fetch', 'watch'):
                 start, end = window(args.start, args.end)
             else:
                 start = end = None
@@ -169,12 +188,20 @@ Run tenderkit COMMAND --help for command options.''',
                 print(dumps(result))
                 return 0 if args.enqueue_only or result['status'] == 'DONE' else 1
             return 0
-        if args.command == 'fetch':
+        if args.command in ('fetch', 'watch'):
             adapters = sources()
             if args.source_names:
                 if set(args.source_names) - set(adapters):
                     raise ValueError('Unknown source')
                 adapters = {name: adapters[name] for name in dict.fromkeys(args.source_names)}
+            if args.command == 'watch':
+                from tenderkit.watch import run_watch
+                summaries = run_watch(state, profile, start, end, adapters, sys.stdout,
+                                      catch_up=args.start is None and args.end is None, webhook=args.webhook)
+                for summary in summaries:
+                    if summary['status'] == 'FAILED':
+                        print(f"tenderkit: {summary['source']} refresh failed ({summary['error']})", file=sys.stderr)
+                return int(any(summary['status'] == 'FAILED' for summary in summaries))
             summaries = refresh(state, profile, start, end, adapters, include_results=args.results)
             print(dumps(dict(window=[str(start), str(end)], sources=summaries)))
             return int(any(r['status'] == 'FAILED' for r in summaries))
