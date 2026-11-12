@@ -44,6 +44,13 @@ class PlatformFixturesTests(unittest.TestCase):
             with self.assertRaises(FetchError):
                 redirect.redirect_request(request, None, 302, '', {}, url)
 
+    def test_native_redirect_stays_on_the_same_https_host(self):
+        redirect = PlatformRedirect()
+        request = Request('https://ezamowienia.gov.pl/mp-readmodels/api/Tender/DownloadDocument/example')
+        for url in ('https://platformazakupowa.pl/file/example', 'http://ezamowienia.gov.pl/file/example'):
+            with self.subTest(url=url), self.assertRaisesRegex(FetchError, 'UNSAFE_URL'):
+                redirect.redirect_request(request, None, 302, '', {}, url)
+
 
 if __name__ == '__main__':
     unittest.main()
