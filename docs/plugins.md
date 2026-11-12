@@ -31,7 +31,7 @@ def make_source():
     return ExampleSource()
 ```
 
-Implement `tenderkit.interfaces.Source`. Use a unique source name and stable notice numbers, and return that source name on every notice. Publication dates must fall within the inclusive window. A source may apply `SourceQuery.cpv_prefixes` and `SourceQuery.notice_types` to narrow the request. The profile applies its full filter locally. Raise an error for incomplete pagination so the refresh cannot commit partial results.
+Implement `tenderkit.interfaces.Source`. Use a unique source name and stable notice numbers, and return that source name on every notice. Publication dates must fall within the inclusive window. A source may apply `SourceQuery.cpv_prefixes` and `SourceQuery.notice_types` to narrow the request. When `SourceQuery.include_results` is true, also return the source's formal result notices; attach per-lot `Award` records to them. The profile applies its full filter locally. Raise an error for incomplete pagination so the refresh cannot commit partial results.
 
 After installing the plugin, try `tenderkit fetch --source EXAMPLE --profile oprogramowanie` and inspect the saved notice with `tenderkit filter --source EXAMPLE --profile oprogramowanie`.
 

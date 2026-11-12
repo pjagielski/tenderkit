@@ -1,0 +1,761 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?><ContractAwardNotice xmlns="urn:oasis:names:specification:ubl:schema:xsd:ContractAwardNotice-2" xmlns:cac="urn:oasis:names:specification:ubl:schema:xsd:CommonAggregateComponents-2" xmlns:cbc="urn:oasis:names:specification:ubl:schema:xsd:CommonBasicComponents-2" xmlns:efac="http://data.europa.eu/p27/eforms-ubl-extension-aggregate-components/1" xmlns:efbc="http://data.europa.eu/p27/eforms-ubl-extension-basic-components/1" xmlns:efext="http://data.europa.eu/p27/eforms-ubl-extensions/1" xmlns:ext="urn:oasis:names:specification:ubl:schema:xsd:CommonExtensionComponents-2">
+   <ext:UBLExtensions>
+      <ext:UBLExtension>
+         <ext:ExtensionContent>
+            <efext:EformsExtension>
+               <efac:NoticeResult>
+                  <cbc:TotalAmount currencyID="PLN">2259040</cbc:TotalAmount>
+                  <efac:LotResult>
+                     <cbc:ID schemeName="result">RES-0001</cbc:ID>
+                     <cbc:TenderResultCode listName="winner-selection-status">selec-w</cbc:TenderResultCode>
+                     <efac:LotTender>
+                        <cbc:ID schemeName="tender">TEN-0001</cbc:ID>
+                     </efac:LotTender>
+                     <efac:ReceivedSubmissionsStatistics>
+                        <efbc:StatisticsCode listName="received-submission-type">tenders</efbc:StatisticsCode>
+                        <efbc:StatisticsNumeric>1</efbc:StatisticsNumeric>
+                     </efac:ReceivedSubmissionsStatistics>
+                     <efac:ReceivedSubmissionsStatistics>
+                        <efbc:StatisticsCode listName="received-submission-type">t-esubm</efbc:StatisticsCode>
+                        <efbc:StatisticsNumeric>1</efbc:StatisticsNumeric>
+                     </efac:ReceivedSubmissionsStatistics>
+                     <efac:ReceivedSubmissionsStatistics>
+                        <efbc:StatisticsCode listName="received-submission-type">t-sme</efbc:StatisticsCode>
+                        <efbc:StatisticsNumeric>0</efbc:StatisticsNumeric>
+                     </efac:ReceivedSubmissionsStatistics>
+                     <efac:ReceivedSubmissionsStatistics>
+                        <efbc:StatisticsCode listName="received-submission-type">t-oth-eea</efbc:StatisticsCode>
+                        <efbc:StatisticsNumeric>0</efbc:StatisticsNumeric>
+                     </efac:ReceivedSubmissionsStatistics>
+                     <efac:ReceivedSubmissionsStatistics>
+                        <efbc:StatisticsCode listName="received-submission-type">t-no-eea</efbc:StatisticsCode>
+                        <efbc:StatisticsNumeric>0</efbc:StatisticsNumeric>
+                     </efac:ReceivedSubmissionsStatistics>
+                     <efac:ReceivedSubmissionsStatistics>
+                        <efbc:StatisticsCode listName="received-submission-type">t-verif-inad</efbc:StatisticsCode>
+                        <efbc:StatisticsNumeric>0</efbc:StatisticsNumeric>
+                     </efac:ReceivedSubmissionsStatistics>
+                     <efac:ReceivedSubmissionsStatistics>
+                        <efbc:StatisticsCode listName="received-submission-type">t-verif-inad-low</efbc:StatisticsCode>
+                        <efbc:StatisticsNumeric>0</efbc:StatisticsNumeric>
+                     </efac:ReceivedSubmissionsStatistics>
+                     <efac:ReceivedSubmissionsStatistics>
+                        <efbc:StatisticsCode listName="received-submission-type">t-no-verif</efbc:StatisticsCode>
+                        <efbc:StatisticsNumeric>0</efbc:StatisticsNumeric>
+                     </efac:ReceivedSubmissionsStatistics>
+                     <efac:SettledContract>
+                        <cbc:ID schemeName="contract">CON-0001</cbc:ID>
+                     </efac:SettledContract>
+                     <efac:TenderLot>
+                        <cbc:ID schemeName="Lot">LOT-0001</cbc:ID>
+                     </efac:TenderLot>
+                  </efac:LotResult>
+                  <efac:LotResult>
+                     <cbc:ID schemeName="result">RES-0002</cbc:ID>
+                     <cbc:TenderResultCode listName="winner-selection-status">selec-w</cbc:TenderResultCode>
+                     <efac:LotTender>
+                        <cbc:ID schemeName="tender">TEN-0002</cbc:ID>
+                     </efac:LotTender>
+                     <efac:ReceivedSubmissionsStatistics>
+                        <efbc:StatisticsCode listName="received-submission-type">tenders</efbc:StatisticsCode>
+                        <efbc:StatisticsNumeric>1</efbc:StatisticsNumeric>
+                     </efac:ReceivedSubmissionsStatistics>
+                     <efac:ReceivedSubmissionsStatistics>
+                        <efbc:StatisticsCode listName="received-submission-type">t-esubm</efbc:StatisticsCode>
+                        <efbc:StatisticsNumeric>1</efbc:StatisticsNumeric>
+                     </efac:ReceivedSubmissionsStatistics>
+                     <efac:ReceivedSubmissionsStatistics>
+                        <efbc:StatisticsCode listName="received-submission-type">t-sme</efbc:StatisticsCode>
+                        <efbc:StatisticsNumeric>0</efbc:StatisticsNumeric>
+                     </efac:ReceivedSubmissionsStatistics>
+                     <efac:ReceivedSubmissionsStatistics>
+                        <efbc:StatisticsCode listName="received-submission-type">t-oth-eea</efbc:StatisticsCode>
+                        <efbc:StatisticsNumeric>0</efbc:StatisticsNumeric>
+                     </efac:ReceivedSubmissionsStatistics>
+                     <efac:ReceivedSubmissionsStatistics>
+                        <efbc:StatisticsCode listName="received-submission-type">t-no-eea</efbc:StatisticsCode>
+                        <efbc:StatisticsNumeric>0</efbc:StatisticsNumeric>
+                     </efac:ReceivedSubmissionsStatistics>
+                     <efac:ReceivedSubmissionsStatistics>
+                        <efbc:StatisticsCode listName="received-submission-type">t-verif-inad</efbc:StatisticsCode>
+                        <efbc:StatisticsNumeric>0</efbc:StatisticsNumeric>
+                     </efac:ReceivedSubmissionsStatistics>
+                     <efac:ReceivedSubmissionsStatistics>
+                        <efbc:StatisticsCode listName="received-submission-type">t-verif-inad-low</efbc:StatisticsCode>
+                        <efbc:StatisticsNumeric>0</efbc:StatisticsNumeric>
+                     </efac:ReceivedSubmissionsStatistics>
+                     <efac:ReceivedSubmissionsStatistics>
+                        <efbc:StatisticsCode listName="received-submission-type">t-no-verif</efbc:StatisticsCode>
+                        <efbc:StatisticsNumeric>0</efbc:StatisticsNumeric>
+                     </efac:ReceivedSubmissionsStatistics>
+                     <efac:SettledContract>
+                        <cbc:ID schemeName="contract">CON-0002</cbc:ID>
+                     </efac:SettledContract>
+                     <efac:TenderLot>
+                        <cbc:ID schemeName="Lot">LOT-0002</cbc:ID>
+                     </efac:TenderLot>
+                  </efac:LotResult>
+                  <efac:LotTender>
+                     <cbc:ID schemeName="tender">TEN-0001</cbc:ID>
+                     <cbc:RankCode>1</cbc:RankCode>
+                     <efbc:TenderRankedIndicator>true</efbc:TenderRankedIndicator>
+                     <efbc:TenderVariantIndicator>false</efbc:TenderVariantIndicator>
+                     <cac:LegalMonetaryTotal>
+                        <cbc:PayableAmount currencyID="PLN">1764040</cbc:PayableAmount>
+                     </cac:LegalMonetaryTotal>
+                     <efac:SubcontractingTerm>
+                        <efbc:TermCode listName="applicability">no</efbc:TermCode>
+                     </efac:SubcontractingTerm>
+                     <efac:TenderingParty>
+                        <cbc:ID schemeName="tendering-party">TPA-0001</cbc:ID>
+                     </efac:TenderingParty>
+                     <efac:TenderLot>
+                        <cbc:ID>LOT-0001</cbc:ID>
+                     </efac:TenderLot>
+                     <efac:TenderReference>
+                        <cbc:ID>IT-II.272.1.2026_cz.1</cbc:ID>
+                     </efac:TenderReference>
+                  </efac:LotTender>
+                  <efac:LotTender>
+                     <cbc:ID schemeName="tender">TEN-0002</cbc:ID>
+                     <cbc:RankCode>1</cbc:RankCode>
+                     <efbc:TenderRankedIndicator>true</efbc:TenderRankedIndicator>
+                     <efbc:TenderVariantIndicator>false</efbc:TenderVariantIndicator>
+                     <cac:LegalMonetaryTotal>
+                        <cbc:PayableAmount currencyID="PLN">495000</cbc:PayableAmount>
+                     </cac:LegalMonetaryTotal>
+                     <efac:SubcontractingTerm>
+                        <efbc:TermCode listName="applicability">no</efbc:TermCode>
+                     </efac:SubcontractingTerm>
+                     <efac:TenderingParty>
+                        <cbc:ID schemeName="tendering-party">TPA-0002</cbc:ID>
+                     </efac:TenderingParty>
+                     <efac:TenderLot>
+                        <cbc:ID>LOT-0002</cbc:ID>
+                     </efac:TenderLot>
+                     <efac:TenderReference>
+                        <cbc:ID>IT-II.272.1.2026_cz.2</cbc:ID>
+                     </efac:TenderReference>
+                  </efac:LotTender>
+                  <efac:SettledContract>
+                     <cbc:ID schemeName="contract">CON-0001</cbc:ID>
+                     <cbc:IssueDate>2026-09-24+02:00</cbc:IssueDate>
+                     <cbc:Title languageID="POL">Część 1 – System obiegu dokumentów oraz portalu pracowniczego z elementami: prezentacji informacji kadrowych, obsługi wniosków (m.in. wniosków o nieobecność, zfśs, szkoleniowych, ocena pracownicza, plan urlopowy, plan szkoleń, upoważnienia), obsługi aktów własnych, obsługi rezerwacji zasobów.</cbc:Title>
+                     <efac:ContractReference>
+                        <cbc:ID>I/4302/IT/5319/UMWM/26</cbc:ID>
+                     </efac:ContractReference>
+                     <efac:LotTender>
+                        <cbc:ID schemeName="tender">TEN-0001</cbc:ID>
+                     </efac:LotTender>
+                  </efac:SettledContract>
+                  <efac:SettledContract>
+                     <cbc:ID schemeName="contract">CON-0002</cbc:ID>
+                     <cbc:IssueDate>2026-09-18+02:00</cbc:IssueDate>
+                     <cbc:Title languageID="POL">Część 2 – System kadrowo płacowy KSAT.</cbc:Title>
+                     <efac:ContractReference>
+                        <cbc:ID>I/4185/IT/5166/UMWM/26</cbc:ID>
+                     </efac:ContractReference>
+                     <efac:LotTender>
+                        <cbc:ID schemeName="tender">TEN-0002</cbc:ID>
+                     </efac:LotTender>
+                  </efac:SettledContract>
+                  <efac:TenderingParty>
+                     <cbc:ID schemeName="tendering-party">TPA-0001</cbc:ID>
+                     <efac:Tenderer>
+                        <cbc:ID schemeName="organization">ORG-0003</cbc:ID>
+                     </efac:Tenderer>
+                  </efac:TenderingParty>
+                  <efac:TenderingParty>
+                     <cbc:ID schemeName="tendering-party">TPA-0002</cbc:ID>
+                     <efac:Tenderer>
+                        <cbc:ID schemeName="organization">ORG-0004</cbc:ID>
+                     </efac:Tenderer>
+                  </efac:TenderingParty>
+               </efac:NoticeResult>
+               <efac:NoticeSubType>
+                  <cbc:SubTypeCode listName="notice-subtype">29</cbc:SubTypeCode>
+               </efac:NoticeSubType>
+               <efac:Organizations>
+                  <efac:Organization>
+                     <efac:Company>
+                        <cbc:WebsiteURI>https://bip.malopolska.pl/umwm/</cbc:WebsiteURI>
+                        <cbc:EndpointID>https://ezamowienia.gov.pl</cbc:EndpointID>
+                        <cac:PartyIdentification>
+                           <cbc:ID schemeName="organization">ORG-0001</cbc:ID>
+                        </cac:PartyIdentification>
+                        <cac:PartyName>
+                           <cbc:Name languageID="POL">Województwo Małopolskie</cbc:Name>
+                        </cac:PartyName>
+                        <cac:PostalAddress>
+                           <cbc:StreetName>ul. Basztowa 22</cbc:StreetName>
+                           <cbc:CityName>Kraków</cbc:CityName>
+                           <cbc:PostalZone>31-156</cbc:PostalZone>
+                           <cbc:CountrySubentityCode listName="nuts">PL213</cbc:CountrySubentityCode>
+                           <cac:Country>
+                              <cbc:IdentificationCode listName="country">POL</cbc:IdentificationCode>
+                           </cac:Country>
+                        </cac:PostalAddress>
+                        <cac:PartyLegalEntity>
+                           <cbc:CompanyID>351554287</cbc:CompanyID>
+                        </cac:PartyLegalEntity>
+                        <cac:Contact>
+                           <cbc:Name>Zespół Zamówień Publicznych</cbc:Name>
+                           <cbc:Telephone>+48 126303222</cbc:Telephone>
+                           <cbc:ElectronicMail>przetargi@umwm.malopolska.pl</cbc:ElectronicMail>
+                        </cac:Contact>
+                     </efac:Company>
+                  </efac:Organization>
+                  <efac:Organization>
+                     <efac:Company>
+                        <cbc:WebsiteURI>https://www.uzp.gov.pl/kio</cbc:WebsiteURI>
+                        <cbc:EndpointID>https://ezamowienia.gov.pl</cbc:EndpointID>
+                        <cac:PartyIdentification>
+                           <cbc:ID schemeName="organization">ORG-0002</cbc:ID>
+                        </cac:PartyIdentification>
+                        <cac:PartyName>
+                           <cbc:Name languageID="POL">Krajowa Izba Odwoławcza</cbc:Name>
+                        </cac:PartyName>
+                        <cac:PostalAddress>
+                           <cbc:StreetName>ul. Postępu 17a</cbc:StreetName>
+                           <cbc:CityName>Warszawa</cbc:CityName>
+                           <cbc:PostalZone>02-676</cbc:PostalZone>
+                           <cbc:CountrySubentityCode listName="nuts">PL911</cbc:CountrySubentityCode>
+                           <cac:Country>
+                              <cbc:IdentificationCode listName="country">POL</cbc:IdentificationCode>
+                           </cac:Country>
+                        </cac:PostalAddress>
+                        <cac:PartyLegalEntity>
+                           <cbc:CompanyID>010828091</cbc:CompanyID>
+                        </cac:PartyLegalEntity>
+                        <cac:Contact>
+                           <cbc:Telephone>(22) 458 78 01</cbc:Telephone>
+                           <cbc:ElectronicMail>odwolania@uzp.gov.pl</cbc:ElectronicMail>
+                        </cac:Contact>
+                     </efac:Company>
+                  </efac:Organization>
+                  <efac:Organization>
+                     <efac:Company>
+                        <efbc:CompanySizeCode listName="economic-operator-size">large</efbc:CompanySizeCode>
+                        <cac:PartyIdentification>
+                           <cbc:ID schemeName="organization">ORG-0003</cbc:ID>
+                        </cac:PartyIdentification>
+                        <cac:PartyName>
+                           <cbc:Name languageID="POL">Enigma Systemy Ochrony Informacji Sp. z o.o.</cbc:Name>
+                        </cac:PartyName>
+                        <cac:PostalAddress>
+                           <cbc:StreetName>ul. Jutrzenki 116</cbc:StreetName>
+                           <cbc:CityName>Warszawa</cbc:CityName>
+                           <cbc:PostalZone>02-230</cbc:PostalZone>
+                           <cbc:CountrySubentityCode listName="nuts">PL911</cbc:CountrySubentityCode>
+                           <cac:Country>
+                              <cbc:IdentificationCode listName="country">POL</cbc:IdentificationCode>
+                           </cac:Country>
+                        </cac:PostalAddress>
+                        <cac:PartyLegalEntity>
+                           <cbc:CompanyID>5261029614</cbc:CompanyID>
+                        </cac:PartyLegalEntity>
+                        <cac:Contact>
+                           <cbc:Telephone>(22) 570 57 10</cbc:Telephone>
+                           <cbc:ElectronicMail>biuro@enigma.com.pl</cbc:ElectronicMail>
+                        </cac:Contact>
+                     </efac:Company>
+                  </efac:Organization>
+                  <efac:Organization>
+                     <efac:Company>
+                        <efbc:CompanySizeCode listName="economic-operator-size">large</efbc:CompanySizeCode>
+                        <cac:PartyIdentification>
+                           <cbc:ID schemeName="organization">ORG-0004</cbc:ID>
+                        </cac:PartyIdentification>
+                        <cac:PartyName>
+                           <cbc:Name languageID="POL">COIG S.A.</cbc:Name>
+                        </cac:PartyName>
+                        <cac:PostalAddress>
+                           <cbc:StreetName>ul. Mikołowska 100</cbc:StreetName>
+                           <cbc:CityName>Katowice</cbc:CityName>
+                           <cbc:PostalZone>40-065</cbc:PostalZone>
+                           <cbc:CountrySubentityCode listName="nuts">PL22A</cbc:CountrySubentityCode>
+                           <cac:Country>
+                              <cbc:IdentificationCode listName="country">POL</cbc:IdentificationCode>
+                           </cac:Country>
+                        </cac:PostalAddress>
+                        <cac:PartyLegalEntity>
+                           <cbc:CompanyID>6340134205</cbc:CompanyID>
+                        </cac:PartyLegalEntity>
+                        <cac:Contact>
+                           <cbc:Telephone>(32) 757 33 50</cbc:Telephone>
+                           <cbc:ElectronicMail>oferty@coig.pl</cbc:ElectronicMail>
+                        </cac:Contact>
+                     </efac:Company>
+                  </efac:Organization>
+                  <efac:Organization>
+                     <efbc:NaturalPersonIndicator>false</efbc:NaturalPersonIndicator>
+                     <efac:Company>
+                        <cbc:WebsiteURI>https://op.europa.eu</cbc:WebsiteURI>
+                        <cac:PartyIdentification>
+                           <cbc:ID schemeName="organization">ORG-0000</cbc:ID>
+                        </cac:PartyIdentification>
+                        <cac:PartyName>
+                           <cbc:Name languageID="POL">Publications Office of the European Union</cbc:Name>
+                        </cac:PartyName>
+                        <cac:PostalAddress>
+                           <cbc:CityName>Luxembourg</cbc:CityName>
+                           <cbc:PostalZone>2417</cbc:PostalZone>
+                           <cbc:CountrySubentityCode listName="nuts">LU000</cbc:CountrySubentityCode>
+                           <cac:Country>
+                              <cbc:IdentificationCode listName="country">LUX</cbc:IdentificationCode>
+                           </cac:Country>
+                        </cac:PostalAddress>
+                        <cac:PartyLegalEntity>
+                           <cbc:CompanyID>PUBL</cbc:CompanyID>
+                        </cac:PartyLegalEntity>
+                        <cac:Contact>
+                           <cbc:Telephone>+352 29291</cbc:Telephone>
+                           <cbc:ElectronicMail>ted@publications.europa.eu</cbc:ElectronicMail>
+                        </cac:Contact>
+                     </efac:Company>
+                  </efac:Organization>
+               </efac:Organizations>
+            <efac:Publication><efbc:NoticePublicationID schemeName="ojs-notice-id">00674771-2026</efbc:NoticePublicationID><efbc:GazetteID schemeName="ojs-id">190/2026</efbc:GazetteID><efbc:PublicationDate>2026-10-01+02:00</efbc:PublicationDate></efac:Publication></efext:EformsExtension>
+         </ext:ExtensionContent>
+      </ext:UBLExtension>
+   </ext:UBLExtensions>
+   <cbc:UBLVersionID>2.3</cbc:UBLVersionID>
+   <cbc:CustomizationID>eforms-sdk-1.14</cbc:CustomizationID>
+   <cbc:ID schemeName="notice-id">76b83d4c-5cbb-4b7f-909f-f7b650f32d1b</cbc:ID>
+   <cbc:ContractFolderID>09204df2-8416-4ce6-a62b-0a731a686142</cbc:ContractFolderID>
+   <cbc:IssueDate>2026-09-29Z</cbc:IssueDate>
+   <cbc:IssueTime>14:40:23Z</cbc:IssueTime>
+   <cbc:VersionID>01</cbc:VersionID>
+   <cbc:RegulatoryDomain>32014L0024</cbc:RegulatoryDomain>
+   <cbc:NoticeTypeCode listName="result">can-standard</cbc:NoticeTypeCode>
+   <cbc:NoticeLanguageCode listName="language">POL</cbc:NoticeLanguageCode>
+   <cac:ContractingParty>
+      <cac:ContractingPartyType>
+         <cbc:PartyTypeCode listName="buyer-legal-type">ra</cbc:PartyTypeCode>
+      </cac:ContractingPartyType>
+      <cac:ContractingActivity>
+         <cbc:ActivityTypeCode listName="authority-activity">gen-pub</cbc:ActivityTypeCode>
+      </cac:ContractingActivity>
+      <cac:Party>
+         <cac:PartyIdentification>
+            <cbc:ID schemeName="organization">ORG-0001</cbc:ID>
+         </cac:PartyIdentification>
+         <cac:ServiceProviderParty>
+            <cbc:ServiceTypeCode listName="organisation-role">ted-esen</cbc:ServiceTypeCode>
+            <cac:Party>
+               <cac:PartyIdentification>
+                  <cbc:ID schemeName="organization">ORG-0000</cbc:ID>
+               </cac:PartyIdentification>
+            </cac:Party>
+         </cac:ServiceProviderParty>
+      </cac:Party>
+   </cac:ContractingParty>
+   <cac:TenderingTerms>
+      <cac:ProcurementLegislationDocumentReference>
+         <cbc:ID>LocalLegalBasis</cbc:ID>
+         <cbc:DocumentDescription languageID="POL">art. 132 ustawy z dnia 11 września 2019 r. Prawo zamówień publicznych (t.j. Dz.U. z 2026 r., poz. 793)</cbc:DocumentDescription>
+      </cac:ProcurementLegislationDocumentReference>
+   </cac:TenderingTerms>
+   <cac:TenderingProcess>
+      <cbc:ProcedureCode listName="procurement-procedure-type">open</cbc:ProcedureCode>
+      <cac:NoticeDocumentReference>
+         <cbc:ID schemeName="ojs-notice-id">547938-2026</cbc:ID>
+      </cac:NoticeDocumentReference>
+      <cac:ProcessJustification>
+         <cbc:ProcessReasonCode listName="accelerated-procedure">true</cbc:ProcessReasonCode>
+         <cbc:ProcessReason languageID="POL">Zamawiający opublikował wstępne ogłoszenie informacyjne, o którym mowa w art. 89 ustawy Pzp zawierające wszystkie informacje wymagane dla ogłoszenia o zamówieniu, w zakresie, w jakim były one dostępne w chwili publikacji wstępnego ogłoszenia informacyjnego, które zostało przekazane do publikacji Urzędowi Publikacji Unii Europejskiej i zamieszczone na stronie internetowej Zamawiającego na co najmniej 35 dni i nie więcej niż 12 miesięcy przed dniem przekazania ogłoszenia o zamówieniu Urzędowi Publikacji Unii Europejskiej. 
+Wstępne ogłoszenie informacyjne zostało przekazane do publikacji w dniu 14.01.2026 r. i opublikowane w Dzienniku Urzędowym Unii Europejskiej pod numerem: 2026/S 10-27925 z dnia 15.01.2026 r. Numer publikacji ogłoszenia: 27925-2026, Numer wydania Dz.U. S: 10/2026, Data publikacji: 15/01/2026.</cbc:ProcessReason>
+      </cac:ProcessJustification>
+   </cac:TenderingProcess>
+   <cac:ProcurementProject>
+      <cbc:ID schemeName="InternalID">IT-II.272.1.2026</cbc:ID>
+      <cbc:Name languageID="POL">Wsparcie posiadanego zintegrowanego systemu informatycznego</cbc:Name>
+      <cbc:Description languageID="POL">1.	Przedmiotem zamówienia jest wsparcie posiadanego przez Zamawiającego zintegrowanego systemu informatycznego.
+2.	Zamówienie będzie udzielone w 2 częściach:
+1)	Część 1 – System obiegu dokumentów oraz portalu pracowniczego z elementami: prezentacji informacji kadrowych, obsługi wniosków (m.in. wniosków o nieobecność, zfśs, szkoleniowych, ocena pracownicza, plan urlopowy, plan szkoleń, upoważnienia), obsługi aktów własnych, obsługi rezerwacji zasobów.
+2)	Część 2 – System kadrowo płacowy KSAT.
+3.	Warunki realizacji zamówienia wraz ze szczegółowym opisem przedmiotu zamówienia dla każdej części zawarte są w projektowanych postanowieniach umowy w sprawie zamówienia publicznego, które zostaną wprowadzone do umowy w sprawie zamówienia publicznego – wzorze umowy dla danej części, które stanowią odpowiednio załącznik nr 1C do swz dla części 1 oraz załącznik nr 1D do swz dla części 2 (zwane są dalej wzorem/wzorami umowy).
+4.	Jeśli w opisie przedmiotu zamówienia dla części 2 występują: nazwy znaków towarowych, patentów lub pochodzenia, źródła lub szczególnego procesu, który charakteryzuje produkty lub usługi dostarczane przez konkretnego wykonawcę (w szczególności TeamViewer), należy to traktować jedynie jako pomoc w opisie przedmiotu zamówienia. W każdym przypadku dopuszczalne są produkty równoważne pod względem cech oprogramowania określonych w umowie. Zamawiający dokona oceny równoważności pod względem tych cech. 
+W celu wykazania równoważności wykonawca zobowiązany jest przedstawić wraz z ofertą lub na wezwanie Zamawiającego dokumentację producenta, kartę katalogową, specyfikację techniczną lub inne dokumenty potwierdzające spełnienie wszystkich wymaganych cech oprogramowania określonych w umowie. Ciężar wykazania równoważności spoczywa na wykonawcy.
+5.	Zamawiający określa, że w przypadku części 1 zamówienia wykonawca będzie zobowiązany do przeniesienia na Zamawiającego autorskich praw majątkowych do wykonanych utworów, zgodnie z umową.
+6.	Zamawiający stosownie do dyspozycji wynikającej z art. 95 ustawy określa, że w żadnej części zamówienia nie wymaga zatrudnienia przez wykonawcę lub podwykonawcę na podstawie stosunku pracy osób wykonujących czynności w zakresie realizacji zamówienia.
+7. Wartość zamówienia wynosi: 2 163 759,70 zł  (bez podatku od towarów i usług) w tym część 1: 1 764 453,40 zł, część 2: 399 306,30 zł.
+8. Zamówienie w każdej części należy wykonać przez okres 12 miesięcy liczonych od dnia rozpoczęcia świadczenia usług, z uwzględnieniem, że:
+1)	dla części 1 rozpoczęcie świadczenia usług nastąpi nie wcześniej niż 4 listopada 2026 r. o ile umowa zostanie zawarta przed tym dniem, a w przypadku zawarcia umowy po tej dacie – z dniem zawarcia umowy,
+2)	dla części 2 rozpoczęcie świadczenia usług nastąpi nie wcześniej niż 1 grudnia 2026 r. o ile umowa zostanie zawarta przed tym dniem, a w przypadku zawarcia umowy po tej dacie – z dniem zawarcia umowy.</cbc:Description>
+      <cbc:ProcurementTypeCode listName="contract-nature">services</cbc:ProcurementTypeCode>
+      <cbc:Note languageID="POL">Wymagania dla obu części zamówienia:
+I. O udzielenie zamówienia mogą ubiegać się wykonawcy, którzy: 
+1)	nie podlegają wykluczeniu z postępowania na podstawie art. 108 ust. 1 oraz art. 109 ust. 1 pkt 2) lit a) i lit. b), pkt. 3), pkt 8) i pkt 10) ustawy, 
+2)	nie podlegają wykluczeniu z postępowania na podstawie art. 7 ust. 1 ustawy z dnia 13 kwietnia 2022 r. o szczególnych rozwiązaniach w zakresie przeciwdziałania wspieraniu agresji na Ukrainę oraz służących ochronie bezpieczeństwa narodowego,
+3)	nie podlegają zakazowi udzielania lub dalszego wykonywania wszelkich zamówień publicznych na podstawie artykułu 5k ust. 1 Rozporządzenia Rady (UE) Nr 833/2014 z dnia 31 lipca 2014 r. dotyczącego środków ograniczających w związku z działaniami Rosji destabilizującymi sytuację na Ukrainie (Dz. Urz. UE L 229 z 31.07.2014, str. 1, z późn. zm.).
+Z uwagi na wartość zamówienia Zamawiający odstępuje od przesłanki wykluczania wykonawcy z postępowania, o której mowa w art. 108 ust. 2 ustawy, ponieważ nie ma ona zastosowania w niniejszym postępowaniu.
+II. Oświadczenie na formularzu jednolitego europejskiego dokumentu zamówienia oraz podmiotowe środki dowodowe składane na wezwanie Zamawiającego.
+Przed wyborem najkorzystniejszej oferty Zamawiający wezwie wykonawcę, którego oferta została najwyżej oceniona, do złożenia w wyznaczonym terminie:
+1.	Oświadczenia o niepodleganiu wykluczeniu z postępowania, w zakresie wskazanym przez Zamawiającego. Oświadczenie, stanowi dowód potwierdzający brak podstaw wykluczenia z postępowania na dzień składania ofert, tymczasowo zastępujący wymagane przez Zamawiającego podmiotowe środki dowodowe.
+2.	Oświadczenie, o którym mowa w ust. 1, składa się na formularzu jednolitego europejskiego dokumentu zamówienia, sporządzonym zgodnie ze wzorem standardowego formularza określonego w rozporządzeniu wykonawczym Komisji (UE) 2016/7 z dnia 5 stycznia 2016 r. Ustanawiającym standardowy formularz jednolitego europejskiego dokumentu zamówienia (Dz. Urz. UE L 3 z 06.01.2016, str. 16), zwanym dalej „jednolitym dokumentem lub JEDZ”, którego wzór stanowi załącznik nr 3 do swz.
+Zamawiający informuje, że wykonawca wypełnia oświadczenie w zakresie wskazanym przez Zamawiającego.
+Instrukcja wypełniania JEDZ jest zamieszczona na stronie internetowej Urzędu Zamówień Publicznych, pod adresem: https://www.gov.pl/web/uzp/jedz
+UWAGA! Zamawiający zaleca wypełnienie formularza JEDZ (ESPD) za pomocą serwisu dostępnego pod adresem: https://espd.uzp.gov.pl/. W tym celu przygotowany przez Zamawiającego jednolity europejski dokument zamówienia (ESPD) w formacie *xml, stanowiący załącznik  nr 3A do swz należy pobrać ze strony internetowej prowadzonego postępowania (e-Zamówienia), zapisać na dysku, a następnie zaimportować do wyżej wymienionego serwisu oraz postępując zgodnie z zamieszczoną tam instrukcją wypełnić wzór elektronicznego formularza ESPD. Serwis ESPD nie archiwizuje plików.
+3.	W przypadku wspólnego ubiegania się o zamówienie przez wykonawców, oświadczenie, o którym mowa w ust. 1, składa każdy z wykonawców. Oświadczenia te potwierdzają brak podstaw wykluczenia z postępowania.
+4.	Wykonawca może wykorzystać jednolity dokument złożony w odrębnym postępowaniu o udzielenie zamówienia, jeżeli potwierdzi, że informacje w nim zawarte pozostają prawidłowe.
+5. Na potwierdzenie braku podstaw wykluczenia Zamawiający żąda następujących podmiotowych środków dowodowych:
+1) informacji z Krajowego Rejestru Karnego, sporządzonej nie wcześniej niż 6 miesięcy przed jej złożeniem, w zakresie:
+a) art. 108 ust. 1 pkt 1 i 2 ustawy z dnia 11 września 2019 r. – Prawo zamówień publicznych, zwanej dalej „ustawą”,
+b) art. 108 ust. 1 pkt 4 ustawy, dotyczącej orzeczenia zakazu ubiegania się o zamówienie publiczne tytułem środka karnego,
+c) art. 109 ust. 1 pkt 2 lit. a ustawy,
+d) art. 109 ust. 1 pkt 2 lit. b ustawy, dotyczącej ukarania za wykroczenie, za które wymierzono karę aresztu,
+e) art. 109 ust. 1 pkt 3 ustawy, dotyczącej skazania za przestępstwo lub ukarania za wykroczenie, za które wymierzono karę aresztu;
+2) oświadczenia wykonawcy, w zakresie art. 108 ust. 1 pkt 5 ustawy, o braku przynależności do tej samej grupy kapitałowej w rozumieniu ustawy z dnia 16 lutego 2007 r. o ochronie konkurencji i konsumentów (Dz. U. z 2020 r. poz. 1076 i 1086), z innym wykonawcą, który złożył odrębną ofertę w postępowaniu, albo oświadczenia o przynależności do tej samej grupy kapitałowej wraz z dokumentami lub informacjami potwierdzającymi przygotowanie oferty w postępowaniu niezależnie od innego wykonawcy należącego do tej samej grupy kapitałowej. Wzór oświadczenia stanowi załącznik nr 4 do swz;
+3) oświadczenia wykonawcy o aktualności informacji zawartych w oświadczeniu, o którym mowa w ust. 1, w zakresie podstaw wykluczenia z postępowania wskazanych przez Zamawiającego, o których mowa w:
+a) art. 108 ust. 1 pkt 3 ustawy,
+b) art. 108 ust. 1 pkt 4 ustawy, dotyczących orzeczenia zakazu ubiegania się o zamówienie publiczne tytułem środka zapobiegawczego,
+c) art. 108 ust. 1 pkt 5 ustawy, dotyczących zawarcia z innymi wykonawcami porozumienia mającego na celu zakłócenie konkurencji,
+d) art. 108 ust. 1 pkt 6 ustawy,
+e) art. 109 ust. 1 pkt 2 lit. b ustawy, dotyczących ukarania za wykroczenie, za które wymierzono karę ograniczenia wolności lub karę grzywny,
+f) art. 109 ust. 1 pkt 3 ustawy, dotyczących ukarania za wykroczenie, za które wymierzono karę ograniczenia wolności lub karę grzywny,
+g) art. 109 ust. 1 pkt 8 i 10) ustawy,
+wzór oświadczenia stanowi załącznik nr 5 do swz.
+6.	Jeżeli wykonawca ma siedzibę lub miejsce zamieszkania poza granicami Rzeczypospolitej Polskiej, zamiast informacji z Krajowego Rejestru Karnego, o której mowa w ust. 5 pkt 1) – składa informację z odpowiedniego rejestru, takiego jak rejestr sądowy, albo, w przypadku braku takiego rejestru, inny równoważny dokument wydany przez właściwy organ sądowy lub administracyjny kraju, w którym wykonawca ma siedzibę lub miejsce zamieszkania lub miejsce zamieszkania ma osoba, której dotyczy informacja albo dokument, w zakresie, o którym mowa w ust. 5 pkt 1).
+7.	Dokument, o którym mowa w ust. 6 powinien być wystawiony nie wcześniej niż 6 miesięcy przed jego złożeniem.
+8.	Jeżeli w kraju, w którym wykonawca ma siedzibę lub miejsce zamieszkania lub miejsce zamieszkania ma osoba, której dokument dotyczy, nie wydaje się dokumentów, o których mowa w ust. 6, lub gdy dokumenty te nie odnoszą się do wszystkich przypadków, o których mowa w art. 108 ust. 1 pkt 1, 2 i 4, art. 109 ust. 1 pkt 2 lit. a i b oraz pkt 3 ustawy, zastępuje się je odpowiednio w całości lub w części dokumentem zawierającym odpowiednio oświadczenie wykonawcy, ze wskazaniem osoby albo osób uprawnionych do jego reprezentacji, lub oświadczenie osoby, której dokument miał dotyczyć, złożone pod przysięgą, lub, jeżeli w kraju, w którym wykonawca ma siedzibę lub miejsce zamieszkania lub miejsce zamieszkania ma osoba, której dokument miał dotyczyć, nie ma przepisów o oświadczeniu pod przysięgą, złożone przed organem sądowym lub administracyjnym, notariuszem, organem samorządu zawodowego lub gospodarczego, właściwym ze względu na siedzibę lub miejsce zamieszkania wykonawcy lub miejsce zamieszkania osoby, której dokument miał dotyczyć. Przepis ust. 7 stosuje się.
+9.	W przypadku wykonawców wspólnie ubiegających się o udzielenie zamówienia, podmiotowe środki dowodowe na potwierdzenie braku podstaw wykluczenia wymienione w ust. 5 składa każdy z wykonawców wspólnie ubiegających się o udzielenie zamówienia.
+Cd. w informacjach dodatkowych części 1 w pkt. 5.1.6 niniejszego ogłoszenia.</cbc:Note>
+      <cac:MainCommodityClassification>
+         <cbc:ItemClassificationCode listName="cpv">72253200</cbc:ItemClassificationCode>
+      </cac:MainCommodityClassification>
+      <cac:RealizedLocation>
+         <cbc:Description languageID="POL">Miejsce realizacji zamówienia winno być zgodne z dokumentami zamówienia.</cbc:Description>
+         <cac:Address>
+            <cbc:CountrySubentityCode listName="nuts">PL213</cbc:CountrySubentityCode>
+            <cac:Country>
+               <cbc:IdentificationCode listName="country">POL</cbc:IdentificationCode>
+            </cac:Country>
+         </cac:Address>
+      </cac:RealizedLocation>
+   </cac:ProcurementProject>
+   <cac:ProcurementProjectLot>
+      <cbc:ID schemeName="Lot">LOT-0001</cbc:ID>
+      <cac:TenderingTerms>
+         <cbc:FundingProgramCode listName="eu-funded">no-eu-funds</cbc:FundingProgramCode>
+         <cac:AwardingTerms>
+            <cac:AwardingCriterion>
+               <cac:SubordinateAwardingCriterion>
+                  <ext:UBLExtensions>
+                     <ext:UBLExtension>
+                        <ext:ExtensionContent>
+                           <efext:EformsExtension>
+                              <efac:AwardCriterionParameter>
+                                 <efbc:ParameterCode listName="number-weight">poi-exa</efbc:ParameterCode>
+                                 <efbc:ParameterNumeric>60</efbc:ParameterNumeric>
+                              </efac:AwardCriterionParameter>
+                           </efext:EformsExtension>
+                        </ext:ExtensionContent>
+                     </ext:UBLExtension>
+                  </ext:UBLExtensions>
+                  <cbc:AwardingCriterionTypeCode listName="award-criterion-type">price</cbc:AwardingCriterionTypeCode>
+                  <cbc:Name languageID="POL">Cena wykonania zamówienia</cbc:Name>
+                  <cbc:Description languageID="POL">1) Ocena ofert w kryterium „Cena wykonania zamówienia” zostanie dokonana według wzoru:
+Cena=[(Najniższa cena wykonania zamówienia spośród ofert niepodlegających odrzuceniu)/(Cena wykonania zamówienia oferty ocenianej)]  x 60 pkt</cbc:Description>
+               </cac:SubordinateAwardingCriterion>
+               <cac:SubordinateAwardingCriterion>
+                  <ext:UBLExtensions>
+                     <ext:UBLExtension>
+                        <ext:ExtensionContent>
+                           <efext:EformsExtension>
+                              <efac:AwardCriterionParameter>
+                                 <efbc:ParameterCode listName="number-weight">poi-exa</efbc:ParameterCode>
+                                 <efbc:ParameterNumeric>20</efbc:ParameterNumeric>
+                              </efac:AwardCriterionParameter>
+                           </efext:EformsExtension>
+                        </ext:ExtensionContent>
+                     </ext:UBLExtension>
+                  </ext:UBLExtensions>
+                  <cbc:AwardingCriterionTypeCode listName="award-criterion-type">quality</cbc:AwardingCriterionTypeCode>
+                  <cbc:Name languageID="POL">Czas usunięcia awarii</cbc:Name>
+                  <cbc:Description languageID="POL">2)	Ocena ofert w kryterium „Czas usunięcia awarii” zostanie dokonana według następujących zasad:
+Jeśli Wykonawca zaoferuje czas usunięcia awarii od momentu przekazania zgłoszenia do Wykonawcy, wynoszący:
+-	do 8 godzin – oferta otrzyma 20 pkt,
+-	powyżej 8 godzin do 16 godzin – oferta otrzyma 10 pkt,
+-	powyżej 16 godzin do 20 godzin – oferta otrzyma 5 pkt,
+-	powyżej 20 godzin do 23 godzin – oferta otrzyma 1 pkt,
+-	24 godziny – oferta otrzyma 0 pkt</cbc:Description>
+               </cac:SubordinateAwardingCriterion>
+               <cac:SubordinateAwardingCriterion>
+                  <ext:UBLExtensions>
+                     <ext:UBLExtension>
+                        <ext:ExtensionContent>
+                           <efext:EformsExtension>
+                              <efac:AwardCriterionParameter>
+                                 <efbc:ParameterCode listName="number-weight">poi-exa</efbc:ParameterCode>
+                                 <efbc:ParameterNumeric>10</efbc:ParameterNumeric>
+                              </efac:AwardCriterionParameter>
+                           </efext:EformsExtension>
+                        </ext:ExtensionContent>
+                     </ext:UBLExtension>
+                  </ext:UBLExtensions>
+                  <cbc:AwardingCriterionTypeCode listName="award-criterion-type">quality</cbc:AwardingCriterionTypeCode>
+                  <cbc:Name languageID="POL">Czas usunięcia błędu</cbc:Name>
+                  <cbc:Description languageID="POL">3)	Ocena ofert w kryterium „Czas usunięcia błędu” zostanie dokonana według następujących zasad:
+Jeśli Wykonawca zaoferuje czas usunięcia błędu od momentu przekazania zgłoszenia do Wykonawcy, wynoszący:
+-	do 16 godzin – oferta otrzyma 10 pkt,
+-	powyżej 16 godzin do 24 godzin – oferta otrzyma 8 pkt,
+-	powyżej 24 godzin do 32 godzin – oferta otrzyma 5 pkt,
+-	powyżej 32 godzin do 47 godzin – oferta otrzyma 2 pkt,
+-	48 godziny – oferta otrzyma 0 pkt</cbc:Description>
+               </cac:SubordinateAwardingCriterion>
+               <cac:SubordinateAwardingCriterion>
+                  <ext:UBLExtensions>
+                     <ext:UBLExtension>
+                        <ext:ExtensionContent>
+                           <efext:EformsExtension>
+                              <efac:AwardCriterionParameter>
+                                 <efbc:ParameterCode listName="number-weight">poi-exa</efbc:ParameterCode>
+                                 <efbc:ParameterNumeric>10</efbc:ParameterNumeric>
+                              </efac:AwardCriterionParameter>
+                           </efext:EformsExtension>
+                        </ext:ExtensionContent>
+                     </ext:UBLExtension>
+                  </ext:UBLExtensions>
+                  <cbc:AwardingCriterionTypeCode listName="award-criterion-type">quality</cbc:AwardingCriterionTypeCode>
+                  <cbc:Name languageID="POL">Czas usunięcia usterki</cbc:Name>
+                  <cbc:Description languageID="POL">4)	Ocena ofert w kryterium „Czas usunięcia usterki” zostanie dokonana według następujących zasad:
+Jeśli Wykonawca zaoferuje czas usunięcia usterki od momentu przekazania zgłoszenia do Wykonawcy, wynoszący w pełnych dniach roboczych:
+-	do 2 dni roboczych – oferta otrzyma 10 pkt,
+-	od 3 do 6 dni roboczych – oferta otrzyma 5 pkt,
+-	7 dni roboczych – oferta otrzyma 0 pkt</cbc:Description>
+               </cac:SubordinateAwardingCriterion>
+            </cac:AwardingCriterion>
+         </cac:AwardingTerms>
+         <cac:AppealTerms>
+            <cac:PresentationPeriod>
+               <cbc:Description languageID="POL">1.	Wykonawcy oraz innemu podmiotowi, jeżeli ma lub miał interes w uzyskaniu zamówienia oraz poniósł lub może ponieść szkodę w wyniku naruszenia przez Zamawiającego przepisów ustawy przysługują środki ochrony prawnej.
+2.	Środki ochrony prawnej wobec ogłoszenia wszczynającego postępowanie o udzielenie zamówienia oraz dokumentów zamówienia przysługują również organizacjom wpisanym na listę, o której mowa w art. 469 pkt 15 ustawy, oraz Rzecznikowi Małych i Średnich Przedsiębiorców. 
+3.	Przepisy dotyczące środków ochrony prawnej są określone w dziale IX ustawy.
+4.	Odwołanie przysługuje na niezgodną z przepisami ustawy czynność Zamawiającego, podjętą w postępowaniu o udzielenie zamówienia, w tym na projektowane postanowienie umowy oraz zaniechanie czynności w postępowaniu o udzielenie zamówienia, do której Zamawiający był obowiązany na podstawie ustawy.
+5.	Na orzeczenie Izby oraz postanowienie Prezesa Izby, o którym mowa w art. 519 
+ust. 1 ustawy, stronom oraz uczestnikom postępowania odwoławczego przysługuje skarga do sądu.</cbc:Description>
+            </cac:PresentationPeriod>
+            <cac:AppealReceiverParty>
+               <cac:PartyIdentification>
+                  <cbc:ID>ORG-0002</cbc:ID>
+               </cac:PartyIdentification>
+            </cac:AppealReceiverParty>
+         </cac:AppealTerms>
+      </cac:TenderingTerms>
+      <cac:TenderingProcess>
+         <cbc:GovernmentAgreementConstraintIndicator>false</cbc:GovernmentAgreementConstraintIndicator>
+         <cac:NoticeDocumentReference>
+            <cbc:ID>27925-2026</cbc:ID>
+         </cac:NoticeDocumentReference>
+         <cac:AuctionTerms>
+            <cbc:AuctionConstraintIndicator>false</cbc:AuctionConstraintIndicator>
+         </cac:AuctionTerms>
+         <cac:ContractingSystem>
+            <cbc:ContractingSystemTypeCode listName="framework-agreement">none</cbc:ContractingSystemTypeCode>
+         </cac:ContractingSystem>
+         <cac:ContractingSystem>
+            <cbc:ContractingSystemTypeCode listName="dps-usage">none</cbc:ContractingSystemTypeCode>
+         </cac:ContractingSystem>
+      </cac:TenderingProcess>
+      <cac:ProcurementProject>
+         <cbc:ID schemeName="InternalID">IT-II.272.1.2026 część 1</cbc:ID>
+         <cbc:Name languageID="POL">Część 1 – System obiegu dokumentów oraz portalu pracowniczego z elementami: prezentacji informacji kadrowych, obsługi wniosków (m.in. wniosków o nieobecność, zfśs, szkoleniowych, ocena pracownicza, plan urlopowy, plan szkoleń, upoważnienia), obsługi aktów własnych, obsługi rezerwacji zasobów.</cbc:Name>
+         <cbc:Description languageID="POL">1.	Przedmiotem zamówienia jest wsparcie posiadanego przez Zamawiającego zintegrowanego systemu informatycznego.
+2.	Zamówienie będzie udzielone w 2 częściach:
+1)	Część 1 – System obiegu dokumentów oraz portalu pracowniczego z elementami: prezentacji informacji kadrowych, obsługi wniosków (m.in. wniosków o nieobecność, zfśs, szkoleniowych, ocena pracownicza, plan urlopowy, plan szkoleń, upoważnienia), obsługi aktów własnych, obsługi rezerwacji zasobów.
+2)	Część 2 – System kadrowo płacowy KSAT.
+3.	Warunki realizacji zamówienia wraz ze szczegółowym opisem przedmiotu zamówienia dla każdej części zawarte są w projektowanych postanowieniach umowy w sprawie zamówienia publicznego, które zostaną wprowadzone do umowy w sprawie zamówienia publicznego – wzorze umowy dla danej części, które stanowią odpowiednio załącznik nr 1C do swz dla części 1 oraz załącznik nr 1D do swz dla części 2 (zwane są dalej wzorem/wzorami umowy).
+4.	Zamawiający określa, że w przypadku części 1 zamówienia wykonawca będzie zobowiązany do przeniesienia na Zamawiającego autorskich praw majątkowych do wykonanych utworów, zgodnie z umową.
+5.	Zamawiający stosownie do dyspozycji wynikającej z art. 95 ustawy określa, że w żadnej części zamówienia nie wymaga zatrudnienia przez wykonawcę lub podwykonawcę na podstawie stosunku pracy osób wykonujących czynności w zakresie realizacji zamówienia.
+6. Wartość zamówienia wynosi: część 1: 1 764 453,40 zł (bez podatku od towarów i usług).
+7. Zamówienie w każdej części należy wykonać przez okres 12 miesięcy liczonych od dnia rozpoczęcia świadczenia usług, z uwzględnieniem, że:
+1)	dla części 1 rozpoczęcie świadczenia usług nastąpi nie wcześniej niż 4 listopada 2026 r. o ile umowa zostanie zawarta przed tym dniem, a w przypadku zawarcia umowy po tej dacie – z dniem zawarcia umowy.</cbc:Description>
+         <cbc:ProcurementTypeCode listName="contract-nature">services</cbc:ProcurementTypeCode>
+         <cbc:Note languageID="POL">cd. z pkt 2.1.4 niniejszego ogłoszenia
+10.	Wykonawca zamiast odpowiednich podmiotowych środków dowodowych wymaganych na potwierdzenie braku podstaw wykluczenia z postępowania może złożyć certyfikat wykonawcy zamówień publicznych, o którym mowa w art. 124 ust. 2 ustawy Pzp, potwierdzający udzielenie certyfikacji w zakresie niepodlegania wykluczeniu.
+11.	W oświadczeniu JEDZ (o którym mowa w pkt. 9.2 ust. 1 swz), wykonawca wskazuje, czy będzie posługiwał się certyfikatem, o którym mowa w art. 124 ust. 2 ustawy Pzp [wypełniając właściwe informacje w Części II JEDZ: Informacje dotyczące wykonawcy w części Jeżeli dotyczy, czy wykonawca jest wpisany do urzędowego wykazu zatwierdzonych wykonawców lub posiada równoważne zaświadczenie (np. w ramach krajowego systemu (wstępnego) kwalifikowania)]. W przypadku gdy wykonawca będzie posługiwał się tym certyfikatem, w oświadczeniu podaje numer i oznaczenie tego certyfikatu, nazwę podmiotu certyfikującego, który wydał ten certyfikat, okres ważności certyfikacji wykonawcy zamówienia publicznego oraz wskazuje, w zakresie których podstaw wykluczenia będzie posługiwał się tym certyfikatem.
+12.	Certyfikat zastępuje odpowiednie podmiotowe środki dowodowe wyłącznie w zakresie, w jakim z jego treści wynika potwierdzenie braku podstaw wykluczenia z postępowania wymaganych przez Zamawiającego w niniejszym postępowaniu. Jeżeli certyfikat obejmuje wyłącznie część podstaw wykluczenia z postępowania, wykonawca jest obowiązany wykazać pozostały zakres zgodnie z wymaganiami określonymi w swz.
+13.	Zamawiający oceni czy przedstawiony certyfikat potwierdza spełnianie wymagań określonych w niniejszej swz, uwzględniając zakres certyfikacji, okres jej ważności, status certyfikacji ujawniony w bazie certyfikacji oraz zgodność certyfikatu z wymaganiami określonymi w niniejszej swz.
+14.	W przypadku zawieszenia ważności certyfikacji wykonawcy na podstawie art. 12 ust. 1 ustawy z dnia 5 sierpnia 2025 r. o certyfikacji wykonawców zamówień publicznych, Zamawiający wezwie wykonawcę do złożenia, w wyznaczonym terminie nie krótszym niż 5 dni licząc od dnia wezwania, podmiotowych środków dowodowych w zakresie, w jakim złożony certyfikat, o którym mowa w art. 124 ust. 2 ustawy Pzp, miał potwierdzać brak podstaw wykluczenia z postępowania na potrzeby prowadzonego postępowania o udzielenie zamówienia. Przepisy art. 128 ust. 2-5 ustawy Pzp stosuje się odpowiednio.
+15.	Złożenie certyfikatu nie ogranicza uprawnień Zamawiającego do żądania wyjaśnień w przypadkach przewidzianych przepisami ustawy Pzp oraz ustawy o certyfikacji wykonawców zamówień publicznych, w szczególności w razie powzięcia uzasadnionych wątpliwości co  do zakresu certyfikacji, jej aktualności albo zgodności certyfikatu z wymaganiami niniejszego postępowania.
+16.	W przypadku wspólnego ubiegania się o udzielenie zamówienia przez wykonawców przepisy dotyczące certyfikatu wykonawcy stosuje się odpowiednio do wykonawcy wspólnie ubiegającego się o udzielenie zamówienia – w zakresie, w jakim certyfikat ma potwierdzać brak podstaw wykluczenia z postępowania.
+17.	Wykonawca nie jest zobowiązany do złożenia podmiotowych środków dowodowych, które Zamawiający posiada, jeżeli wykonawca wskaże te środki oraz potwierdzi ich prawidłowość i aktualność.
+18.	Zamawiający nie wezwie wykonawcy do złożenia podmiotowych środków dowodowych, jeżeli może je uzyskać za pomocą bezpłatnych i ogólnodostępnych baz danych, w szczególności rejestrów publicznych w rozumieniu ustawy z dnia 17 lutego 2005 r. o informatyzacji działalności podmiotów realizujących zadania publiczne, o ile wykonawca wskazał w jednolitym dokumencie lub w formularzu oferty dane umożliwiające dostęp do tych środków.</cbc:Note>
+         <cac:MainCommodityClassification>
+            <cbc:ItemClassificationCode listName="cpv">72253200</cbc:ItemClassificationCode>
+         </cac:MainCommodityClassification>
+         <cac:RealizedLocation>
+            <cbc:Description languageID="POL">Miejsce realizacji zamówienia winno być zgodne z dokumentami zamówienia.</cbc:Description>
+            <cac:Address>
+               <cbc:CountrySubentityCode listName="nuts">PL213</cbc:CountrySubentityCode>
+               <cac:Country>
+                  <cbc:IdentificationCode listName="country">POL</cbc:IdentificationCode>
+               </cac:Country>
+            </cac:Address>
+         </cac:RealizedLocation>
+         <cac:PlannedPeriod>
+            <cbc:DurationMeasure unitCode="MONTH">12</cbc:DurationMeasure>
+         </cac:PlannedPeriod>
+      </cac:ProcurementProject>
+   </cac:ProcurementProjectLot>
+   <cac:ProcurementProjectLot>
+      <cbc:ID schemeName="Lot">LOT-0002</cbc:ID>
+      <cac:TenderingTerms>
+         <cbc:FundingProgramCode listName="eu-funded">no-eu-funds</cbc:FundingProgramCode>
+         <cac:AwardingTerms>
+            <cac:AwardingCriterion>
+               <cac:SubordinateAwardingCriterion>
+                  <ext:UBLExtensions>
+                     <ext:UBLExtension>
+                        <ext:ExtensionContent>
+                           <efext:EformsExtension>
+                              <efac:AwardCriterionParameter>
+                                 <efbc:ParameterCode listName="number-weight">poi-exa</efbc:ParameterCode>
+                                 <efbc:ParameterNumeric>60</efbc:ParameterNumeric>
+                              </efac:AwardCriterionParameter>
+                           </efext:EformsExtension>
+                        </ext:ExtensionContent>
+                     </ext:UBLExtension>
+                  </ext:UBLExtensions>
+                  <cbc:AwardingCriterionTypeCode listName="award-criterion-type">price</cbc:AwardingCriterionTypeCode>
+                  <cbc:Name languageID="POL">Cena wykonania zamówienia</cbc:Name>
+                  <cbc:Description languageID="POL">1) Ocena ofert w kryterium „Cena wykonania zamówienia” zostanie dokonana według wzoru:
+Cena=[(Najniższa cena wykonania zamówienia spośród ofert niepodlegających odrzuceniu)/(Cena wykonania zamówienia oferty ocenianej)]  x 60 pkt</cbc:Description>
+               </cac:SubordinateAwardingCriterion>
+               <cac:SubordinateAwardingCriterion>
+                  <ext:UBLExtensions>
+                     <ext:UBLExtension>
+                        <ext:ExtensionContent>
+                           <efext:EformsExtension>
+                              <efac:AwardCriterionParameter>
+                                 <efbc:ParameterCode listName="number-weight">poi-exa</efbc:ParameterCode>
+                                 <efbc:ParameterNumeric>20</efbc:ParameterNumeric>
+                              </efac:AwardCriterionParameter>
+                           </efext:EformsExtension>
+                        </ext:ExtensionContent>
+                     </ext:UBLExtension>
+                  </ext:UBLExtensions>
+                  <cbc:AwardingCriterionTypeCode listName="award-criterion-type">quality</cbc:AwardingCriterionTypeCode>
+                  <cbc:Name languageID="POL">Czas usunięcia błędu krytycznego</cbc:Name>
+                  <cbc:Description languageID="POL">2)	Ocena ofert w kryterium „Czas usunięcia błędu krytycznego” zostanie dokonana według następujących zasad:
+Jeśli Wykonawca zaoferuje czas usunięcia błędu krytycznego od momentu przekazania zgłoszenia, wynoszący:
+-	do 16 godzin – oferta otrzyma 20 pkt,
+-	powyżej 16 godzin do 24 godzin – oferta otrzyma 10 pkt,
+-	powyżej 24 godzin do 32 godzin – oferta otrzyma 5 pkt,
+-	powyżej 32 godzin do 47 godzin – oferta otrzyma 1 pkt,
+-	48 godziny – oferta otrzyma 0 pkt</cbc:Description>
+               </cac:SubordinateAwardingCriterion>
+               <cac:SubordinateAwardingCriterion>
+                  <ext:UBLExtensions>
+                     <ext:UBLExtension>
+                        <ext:ExtensionContent>
+                           <efext:EformsExtension>
+                              <efac:AwardCriterionParameter>
+                                 <efbc:ParameterCode listName="number-weight">poi-exa</efbc:ParameterCode>
+                                 <efbc:ParameterNumeric>10</efbc:ParameterNumeric>
+                              </efac:AwardCriterionParameter>
+                           </efext:EformsExtension>
+                        </ext:ExtensionContent>
+                     </ext:UBLExtension>
+                  </ext:UBLExtensions>
+                  <cbc:AwardingCriterionTypeCode listName="award-criterion-type">quality</cbc:AwardingCriterionTypeCode>
+                  <cbc:Name languageID="POL">Czas usunięcia błędu wysokiego</cbc:Name>
+                  <cbc:Description languageID="POL">3)	Ocena ofert w kryterium „Czas usunięcia błędu wysokiego” zostanie dokonana według następujących zasad:
+Jeśli Wykonawca zaoferuje czas usunięcia błędu wysokiego od momentu przekazania zgłoszenia, wynoszący w pełnych dniach roboczych:
+-	do 10 dni roboczych – oferta otrzyma 10 pkt,
+-	od 11 do 20 dni roboczych – oferta otrzyma 5 pkt,
+-	od 21 do 29 dni roboczych – oferta otrzyma 2 pkt,
+-	30 dni roboczych – oferta otrzyma 0 pkt</cbc:Description>
+               </cac:SubordinateAwardingCriterion>
+               <cac:SubordinateAwardingCriterion>
+                  <ext:UBLExtensions>
+                     <ext:UBLExtension>
+                        <ext:ExtensionContent>
+                           <efext:EformsExtension>
+                              <efac:AwardCriterionParameter>
+                                 <efbc:ParameterCode listName="number-weight">poi-exa</efbc:ParameterCode>
+                                 <efbc:ParameterNumeric>10</efbc:ParameterNumeric>
+                              </efac:AwardCriterionParameter>
+                           </efext:EformsExtension>
+                        </ext:ExtensionContent>
+                     </ext:UBLExtension>
+                  </ext:UBLExtensions>
+                  <cbc:AwardingCriterionTypeCode listName="award-criterion-type">quality</cbc:AwardingCriterionTypeCode>
+                  <cbc:Name languageID="POL">Czas usunięcia błędu średniego</cbc:Name>
+                  <cbc:Description languageID="POL">4)	Ocena ofert w kryterium „Czas usunięcia błędu średniego” zostanie dokonana według następujących zasad:
+Jeśli Wykonawca zaoferuje czas usunięcia błędu średniego od momentu przekazania zgłoszenia, wynoszący w pełnych dniach roboczych:
+-	do 30 dni roboczych – oferta otrzyma 10 pkt,
+-	od 31 do 45 dni roboczych – oferta otrzyma 5 pkt,
+-	od 46 do 59 dni roboczych – oferta otrzyma 2 pkt,
+-	60 dni roboczych – oferta otrzyma 0 pkt</cbc:Description>
+               </cac:SubordinateAwardingCriterion>
+            </cac:AwardingCriterion>
+         </cac:AwardingTerms>
+         <cac:AppealTerms>
+            <cac:PresentationPeriod>
+               <cbc:Description languageID="POL">1.	Wykonawcy oraz innemu podmiotowi, jeżeli ma lub miał interes w uzyskaniu zamówienia oraz poniósł lub może ponieść szkodę w wyniku naruszenia przez Zamawiającego przepisów ustawy przysługują środki ochrony prawnej.
+2.	Środki ochrony prawnej wobec ogłoszenia wszczynającego postępowanie o udzielenie zamówienia oraz dokumentów zamówienia przysługują również organizacjom wpisanym na listę, o której mowa w art. 469 pkt 15 ustawy, oraz Rzecznikowi Małych i Średnich Przedsiębiorców. 
+3.	Przepisy dotyczące środków ochrony prawnej są określone w dziale IX ustawy.
+4.	Odwołanie przysługuje na niezgodną z przepisami ustawy czynność Zamawiającego, podjętą w postępowaniu o udzielenie zamówienia, w tym na projektowane postanowienie umowy oraz zaniechanie czynności w postępowaniu o udzielenie zamówienia, do której Zamawiający był obowiązany na podstawie ustawy.
+5.	Na orzeczenie Izby oraz postanowienie Prezesa Izby, o którym mowa w art. 519 
+ust. 1 ustawy, stronom oraz uczestnikom postępowania odwoławczego przysługuje skarga do sądu.</cbc:Description>
+            </cac:PresentationPeriod>
+            <cac:AppealReceiverParty>
+               <cac:PartyIdentification>
+                  <cbc:ID>ORG-0002</cbc:ID>
+               </cac:PartyIdentification>
+            </cac:AppealReceiverParty>
+         </cac:AppealTerms>
+      </cac:TenderingTerms>
+      <cac:TenderingProcess>
+         <cbc:GovernmentAgreementConstraintIndicator>false</cbc:GovernmentAgreementConstraintIndicator>
+         <cac:NoticeDocumentReference>
+            <cbc:ID>27925-2026</cbc:ID>
+         </cac:NoticeDocumentReference>
+         <cac:AuctionTerms>
+            <cbc:AuctionConstraintIndicator>false</cbc:AuctionConstraintIndicator>
+         </cac:AuctionTerms>
+         <cac:ContractingSystem>
+            <cbc:ContractingSystemTypeCode listName="framework-agreement">none</cbc:ContractingSystemTypeCode>
+         </cac:ContractingSystem>
+         <cac:ContractingSystem>
+            <cbc:ContractingSystemTypeCode listName="dps-usage">none</cbc:ContractingSystemTypeCode>
+         </cac:ContractingSystem>
+      </cac:TenderingProcess>
+      <cac:ProcurementProject>
+         <cbc:ID schemeName="InternalID">IT-II.272.1.2026 część 2</cbc:ID>
+         <cbc:Name languageID="POL">Część 2 – System kadrowo płacowy KSAT</cbc:Name>
+         <cbc:Description languageID="POL">1.	Przedmiotem zamówienia jest wsparcie posiadanego przez Zamawiającego zintegrowanego systemu informatycznego.
+2.	Zamówienie będzie udzielone w 2 częściach:
+1)	Część 1 – System obiegu dokumentów oraz portalu pracowniczego z elementami: prezentacji informacji kadrowych, obsługi wniosków (m.in. wniosków o nieobecność, zfśs, szkoleniowych, ocena pracownicza, plan urlopowy, plan szkoleń, upoważnienia), obsługi aktów własnych, obsługi rezerwacji zasobów.
+2)	Część 2 – System kadrowo płacowy KSAT.
+3.	Warunki realizacji zamówienia wraz ze szczegółowym opisem przedmiotu zamówienia dla każdej części zawarte są w projektowanych postanowieniach umowy w sprawie zamówienia publicznego, które zostaną wprowadzone do umowy w sprawie zamówienia publicznego – wzorze umowy dla danej części, które stanowią odpowiednio załącznik nr 1C do swz dla części 1 oraz załącznik nr 1D do swz dla części 2 (zwane są dalej wzorem/wzorami umowy).
+4.	Jeśli w opisie przedmiotu zamówienia dla części 2 występują: nazwy znaków towarowych, patentów lub pochodzenia, źródła lub szczególnego procesu, który charakteryzuje produkty lub usługi dostarczane przez konkretnego wykonawcę (w szczególności TeamViewer), należy to traktować jedynie jako pomoc w opisie przedmiotu zamówienia. W każdym przypadku dopuszczalne są produkty równoważne pod względem cech oprogramowania określonych w umowie. Zamawiający dokona oceny równoważności pod względem tych cech. 
+W celu wykazania równoważności wykonawca zobowiązany jest przedstawić wraz z ofertą lub na wezwanie Zamawiającego dokumentację producenta, kartę katalogową, specyfikację techniczną lub inne dokumenty potwierdzające spełnienie wszystkich wymaganych cech oprogramowania określonych w umowie. Ciężar wykazania równoważności spoczywa na wykonawcy.
+5.	Zamawiający stosownie do dyspozycji wynikającej z art. 95 ustawy określa, że w żadnej części zamówienia nie wymaga zatrudnienia przez wykonawcę lub podwykonawcę na podstawie stosunku pracy osób wykonujących czynności w zakresie realizacji zamówienia.
+6. Wartość zamówienia wynosi: część 2: 399 306,30 zł (bez podatku od towarów i usług).
+7. Zamówienie w każdej części należy wykonać przez okres 12 miesięcy liczonych od dnia rozpoczęcia świadczenia usług, z uwzględnieniem, że:
+1)	dla części 2 rozpoczęcie świadczenia usług nastąpi nie wcześniej niż 1 grudnia 2026 r. o ile umowa zostanie zawarta przed tym dniem, a w przypadku zawarcia umowy po tej dacie – z dniem zawarcia umowy.</cbc:Description>
+         <cbc:ProcurementTypeCode listName="contract-nature">services</cbc:ProcurementTypeCode>
+         <cac:MainCommodityClassification>
+            <cbc:ItemClassificationCode listName="cpv">72253200</cbc:ItemClassificationCode>
+         </cac:MainCommodityClassification>
+         <cac:RealizedLocation>
+            <cbc:Description languageID="POL">Miejsce realizacji zamówienia winno być zgodne z dokumentami zamówienia.</cbc:Description>
+            <cac:Address>
+               <cbc:CountrySubentityCode listName="nuts">PL213</cbc:CountrySubentityCode>
+               <cac:Country>
+                  <cbc:IdentificationCode listName="country">POL</cbc:IdentificationCode>
+               </cac:Country>
+            </cac:Address>
+         </cac:RealizedLocation>
+         <cac:PlannedPeriod>
+            <cbc:DurationMeasure unitCode="MONTH">12</cbc:DurationMeasure>
+         </cac:PlannedPeriod>
+      </cac:ProcurementProject>
+   </cac:ProcurementProjectLot>
+   <cac:TenderResult>
+      <cbc:AwardDate>2000-01-01Z</cbc:AwardDate>
+   </cac:TenderResult>
+</ContractAwardNotice>

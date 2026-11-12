@@ -16,6 +16,8 @@ tenderkit --db notices.sqlite3 export --profile oprogramowanie --format jsonl
 
 The default fetch window covers 30 calendar days including today in Warsaw. Use `--from` and `--to` for an inclusive window or repeat `--source` to select adapters. Publication date and bid deadline are separate filters.
 
+Add `--results` to fetch formal result notices next to contract notices. Built-in profiles stay contract-only so the default notice set does not change.
+
 Built-in profiles include `leki` (medicines), `oprogramowanie` (software), and `wyroby-medyczne` (medical devices). Pass a TOML file to `--profile` for a custom profile:
 
 ```toml
@@ -27,6 +29,20 @@ deadline_days = { min = 1, max = 60 }
 ```
 
 Region codes refer to the buyer's location. A CPV ending in `*` matches a prefix. Required keywords and CPV restrictions are applied together, and exclusions take precedence.
+
+## Results
+
+Formal awards are available per lot, linked to their procedure through `procedure_id`:
+
+```sh
+tenderkit --db notices.sqlite3 fetch --profile oprogramowanie --results
+tenderkit --db notices.sqlite3 results --source BZP --number '2026/BZP …/01'
+tenderkit --db notices.sqlite3 results --buyer 'Kraków' --cpv '72*'
+```
+
+`results --number` returns the contract and result notices of one procedure plus the latest award for each lot: contractor name and identifier, selected price and currency, bid count, date and status (`AWARDED` or `CANCELLED`). `results --buyer` and `--cpv` search stored awards, one latest record per procedure and lot.
+
+BZP results come from `TenderResultNotice` sections. TED results come from `can-standard` notices; per-lot winners and prices are read from the public notice XML because the Search API arrays carry no lot join. One XML request is made per award notice at a conservative pace, so a run with more than 1000 award notices fails and asks for a narrower window. Only formal source facts are mapped: extracting prices from bid forms stays in the industry project. In `list-documents`, the bid-opening information is marked with `kind: "bid_opening"` from its filename; the content is never parsed there.
 
 ## Local browser view
 
@@ -61,7 +77,7 @@ python -m pip install 'tenderkit[mcp,documents]'
 tenderkit --db notices.sqlite3 mcp
 ```
 
-Configure your client with the absolute path to the installed `tenderkit` executable, and arguments `["--db", "/absolute/path/notices.sqlite3", "mcp"]`. Search with `search_notices`, inspect a record with `get_notice`, and use `list_documents`, `fetch_documents`, and `read_document` for attachments. Use `--profile-file` at startup to register custom profiles.
+Configure your client with the absolute path to the installed `tenderkit` executable, and arguments `["--db", "/absolute/path/notices.sqlite3", "mcp"]`. Search with `search_notices`, inspect a record with `get_notice`, and use `procedure_results` and `search_results` for per-lot awards. Use `list_documents`, `fetch_documents`, and `read_document` for attachments. Use `--profile-file` at startup to register custom profiles.
 
 ## Develop
 

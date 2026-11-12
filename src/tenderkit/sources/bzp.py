@@ -5,6 +5,7 @@ from zoneinfo import ZoneInfo
 
 WARSAW = ZoneInfo('Europe/Warsaw')
 FRESH_NOTICE_TYPES = ('ContractNotice', 'SmallContractNotice', 'CompetitionNotice')
+RESULT_NOTICE_TYPES = ('TenderResultNotice',)
 ENDPOINT = 'https://ezamowienia.gov.pl/mo-board/api/v1/notice'
 
 
@@ -119,7 +120,10 @@ class Bzp:
 
     def fetch(self, start, end, query):
         from tenderkit.sources.mapping import bzp_notice
-        kinds = tuple(k for k in query.notice_types if k in FRESH_NOTICE_TYPES) if query.notice_types else FRESH_NOTICE_TYPES
+        known = FRESH_NOTICE_TYPES + RESULT_NOTICE_TYPES
+        kinds = tuple(k for k in query.notice_types if k in known) if query.notice_types else FRESH_NOTICE_TYPES
+        if query.include_results:
+            kinds = kinds + tuple(k for k in RESULT_NOTICE_TYPES if k not in kinds)
         found = {}
         for kind in kinds:
             for prefix in query.cpv_prefixes or ('',):

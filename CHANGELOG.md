@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+
+- Fetch formal result notices with `fetch --results` and read them with `results` or the MCP `procedure_results` and `search_results` tools: contractor, selected price, bid count and status per lot, linked to the contract notice through `procedure_id`.
+- Mark the bid-opening information in document listings with `kind: "bid_opening"`, inferred from the filename only.
+
 ## 0.1.0
 
 - Fetch Polish procurement notices from BZP and TED, store them in SQLite and filter them with TOML profiles.

@@ -1,11 +1,13 @@
 """One application path for CLI and MCP: fetch to SQLite, then filter the same notices."""
-from dataclasses import asdict
+from dataclasses import asdict, replace
 from datetime import date, datetime, timedelta
 from importlib.metadata import entry_points
+import json
 from zoneinfo import ZoneInfo
 
 from tenderkit.interfaces import Source
-from tenderkit.serialization import notice_record
+from tenderkit.profile import fold
+from tenderkit.serialization import dumps, notice_record
 from tenderkit.sources.bzp import Bzp
 from tenderkit.sources.ted import Ted
 
@@ -36,11 +38,13 @@ def sources():
     return registered
 
 
-def refresh(state, profile, start, end, adapters=None):
+def refresh(state, profile, start, end, adapters=None, include_results=False):
     start, end = window(start, end)
     adapters = sources() if adapters is None else adapters
     summaries = []
     query = profile.source_query()
+    if include_results:
+        query = replace(query, include_results=True)
     for source, adapter in adapters.items():
         try:
             notices = []
@@ -79,3 +83,72 @@ def search(state, profile, *, start=None, end=None, limit=100, offset=0, source_
             break
         found.append(notice_record(notice, raw=False))
     return dict(notices=found, offset=offset, next_offset=offset + len(found) if more else None)
+
+
+def _award_record(award, notice):
+    record = json_roundtrip(asdict(award))
+    return dict(record, source=notice.source, number=notice.number,
+                published=str(notice.published) if notice.published else None,
+                title=notice.title, buyer_name=notice.buyer_name)
+
+
+def json_roundtrip(value):
+    return json.loads(dumps(value))
+
+
+def latest_awards(notices):
+    """Latest formal result per source, procedure and lot; a later notice replaces an earlier one."""
+    latest = {}
+    for notice in sorted(notices, key=lambda n: (n.published or date.min, n.number)):
+        if not notice.awards:
+            continue
+        key = notice.procedure_id or notice.number
+        for award in notice.awards:
+            latest[(notice.source, key, award.lot)] = (award, notice)
+    return [latest[key] for key in sorted(latest, key=lambda k: (k[0], k[1], k[2]))]
+
+
+def procedure_results(state, source, number):
+    """One procedure's contract and result notices, linked by procedure_id, with the latest award per lot."""
+    notice = state.get(source, number)
+    if notice is None:
+        raise ValueError('Notice not found in local state')
+    related = [notice]
+    if notice.procedure_id:
+        related = [n for n in state.notices(sources=(source,)) if n.procedure_id == notice.procedure_id]
+        if not any(n.number == notice.number for n in related):
+            related.append(notice)
+    related.sort(key=lambda n: (n.published or date.min, n.number))
+    return dict(
+        notice=notice_record(notice, raw=False),
+        procedure_id=notice.procedure_id,
+        contracts=[notice_record(n, raw=False) for n in related if not n.awards],
+        results=[notice_record(n, raw=False) for n in related if n.awards],
+        awards=[_award_record(award, owner) for award, owner in latest_awards(related)])
+
+
+def search_results(state, *, buyer=None, cpv=(), start=None, end=None, limit=100, offset=0, source_names=()):
+    """Earlier awards by buyer text and CPV, latest per procedure and lot, paginated like notice search."""
+    if type(limit) is not int or not 1 <= limit <= MAX_RESULTS or type(offset) is not int or not 0 <= offset <= MAX_NOTICES:
+        raise ValueError('Invalid result limit or offset')
+    if start is not None or end is not None:
+        start, end = window(start, end)
+    patterns = tuple(str(code).strip() for code in cpv)
+    if any(not pattern or not (pattern.rstrip('*').isdigit()) for pattern in patterns):
+        raise ValueError('Result CPV must be digits, optionally ending in *')
+    folded_buyer = fold(buyer) if buyer else None
+    candidates = []
+    for notice in state.notices(start, end, source_names):
+        if not notice.awards:
+            continue
+        if folded_buyer and folded_buyer not in fold(notice.buyer_name):
+            continue
+        if patterns and not any(
+                str(code).startswith(pattern[:-1]) if pattern.endswith('*') else str(code) == pattern
+                for pattern in patterns for code in notice.cpv):
+            continue
+        candidates.append(notice)
+    awards = [_award_record(award, owner) for award, owner in latest_awards(candidates)]
+    page = awards[offset:offset + limit]
+    return dict(awards=page, offset=offset, total=len(awards),
+                next_offset=offset + len(page) if offset + len(page) < len(awards) else None)

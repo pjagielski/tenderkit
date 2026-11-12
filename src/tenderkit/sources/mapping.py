@@ -1,10 +1,11 @@
 """Source-specific fields to the industry-independent Notice model."""
+from collections import defaultdict
 from datetime import date, datetime
 from decimal import Decimal, InvalidOperation
 import html
 import re
 
-from tenderkit.model import Lot, Notice
+from tenderkit.model import Award, Lot, Notice
 
 REFERENCE = re.compile(r'4\.1\.2\.\)\s*Numer referencyjny:\s*(.+?)\s+\d\.\d\.\d+\.\)')
 PLATFORM_URL = re.compile(r'Adres strony internetowej prowadzonego post.powania.{0,300}?(https?://\s*\S+|www\.\S+)')
@@ -87,9 +88,82 @@ def bzp_notice(raw):
         platform_url=re.sub(r'\s+', '', platform[1]) if platform else None,
         url=f"https://ezamowienia.gov.pl/mo-client-board/bzp/notice-details/id/{raw['objectId']}",
         notice_type=raw.get('noticeType'), raw=raw,
+        awards=bzp_awards(raw),
         lot_count=int(re.search(r'Liczba części:\s*(\d+)', text)[1]) if re.search(r'Liczba części:\s*(\d+)', text)
         else 1 if re.search(r'Możliwe jest składanie ofert częściowych:\s*Nie', text) else None,
     )
+
+
+def bzp_blocks(body):
+    """(label, value) pairs of one BZP HTML body, the same h3 layout the reader uses."""
+    main = re.search(r'<main\b[^>]*>(.*?)</main>', body or '', re.S | re.I)
+    if main:
+        body = main[1]
+    found = []
+    for heading, value in re.findall(r'<h3\b[^>]*>(.*?)</h3>(.*?)(?=<h[23]\b|</main>|</body>|$)', body, re.S | re.I):
+        inline = re.findall(r'<span\b[^>]*>(.*?)</span>', heading, re.S | re.I)
+        label = re.sub(r'<span\b[^>]*>.*?</span>', '', heading, flags=re.S | re.I)
+        found.append((html_to_text(label).strip(), html_to_text(' '.join(inline) + ' ' + value).strip()))
+    return found
+
+
+def bzp_fields(body):
+    fields = defaultdict(list)
+    for label, value in bzp_blocks(body):
+        code = re.match(r'^(\d+(?:\.\d+)*)\.?\)', label)
+        if code:
+            fields[code[1]].append((label, value))
+    return fields
+
+
+def _one(fields, code):
+    entries = fields.get(code, [])
+    return entries[0][1] if len(entries) == 1 else None
+
+
+def _bid_amount(fields, code):
+    value = _one(fields, code)
+    matched = re.fullmatch(r'\s*([\d\s\u00a0]+,\d{2})\s+(PLN)\s*', value or '')
+    if not matched:
+        return None, None
+    return Decimal(re.sub(r'\s+', '', matched[1]).replace(',', '.')), matched[2]
+
+
+def bzp_awards(raw):
+    """Formal per-lot results from a TenderResultNotice; unparsed sections yield no award, never a guess."""
+    if raw.get('noticeType') != 'TenderResultNotice':
+        return ()
+    body = raw.get('htmlBody') or ''
+    sections = [match for match in re.finditer(r'<h2\b[^>]*>(.*?)</h2>', body, re.I | re.S)
+                if re.search(r'\bSEKCJA\s+V\b', match[1])]
+    published = day(raw.get('publicationDate'))
+    awards = []
+    for index, section in enumerate(sections):
+        heading = html_to_text(section[1]).strip()
+        content = body[section.end():sections[index + 1].start() if index + 1 < len(sections) else len(body)]
+        fields = bzp_fields(content)
+        status = _one(fields, '5.1')
+        if not status:
+            continue
+        lot = re.search(r'dla części\s+(\d+)(?![\w])', heading, re.I)
+        lot = lot[1] if lot else '__all__'
+        normalized = status.casefold()
+        if 'unieważn' in normalized and 'zawarciem umowy' not in normalized:
+            awards.append(Award(lot=lot, status='CANCELLED', offers=_offer_count(fields), date=published))
+        elif 'zawarciem umowy' in normalized:
+            winner = _one(fields, '7.3.1')
+            if _one(fields, '7.1') != 'Nie':
+                continue    # consortium or unknown structure: do not invent a single contractor
+            price, currency = _bid_amount(fields, '6.4')
+            awards.append(Award(lot=lot, status='AWARDED', contractor=winner,
+                                contractor_id=_one(fields, '7.3.2'), price=price, currency=currency,
+                                offers=_offer_count(fields), date=published))
+    return tuple(awards)
+
+
+def _offer_count(fields):
+    count = _one(fields, '6.1')
+    return int(count) if count and count.isdigit() else None
 
 
 def ted_notice(raw):

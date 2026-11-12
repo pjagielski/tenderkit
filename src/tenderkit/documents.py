@@ -1,5 +1,5 @@
 """One bounded document workflow for CLI, queue and MCP."""
-from dataclasses import asdict
+from dataclasses import asdict, replace
 from datetime import datetime, timezone
 from pathlib import Path
 import tempfile
@@ -7,8 +7,22 @@ import tempfile
 from tenderkit.limits import MAX_DOCUMENTS, MAX_JOB_BYTES, MAX_LISTED
 from tenderkit.platforms import detect, platforms
 from tenderkit.platforms.backends import FetchError
+from tenderkit.profile import fold
 from tenderkit.queue import Queue, worker_lock
 from tenderkit.store.documents import DocumentStore, StoreError
+
+BID_OPENING = ('otwarcia ofert', 'otwarcie ofert', 'opening of tenders', 'opening of offers')
+
+
+def document_kind(name):
+    """A filename-only marker for well-known public documents; content is never parsed here."""
+    folded = fold(name)
+    return 'bid_opening' if any(phrase in folded for phrase in BID_OPENING) else None
+
+
+def with_kind(ref):
+    kind = document_kind(ref.name)
+    return replace(ref, metadata={**ref.metadata, 'kind': kind}) if kind else ref
 
 
 class Documents:
@@ -33,6 +47,7 @@ class Documents:
             refs = adapter.documents(link)
             if len(refs) > MAX_LISTED:
                 raise FetchError('TOO_MANY_DOCUMENTS')
+            refs = [with_kind(ref) for ref in refs]
             # Repeated links identify one file even if the platform displays it twice.
             refs = list({ref.key: ref for ref in refs}.values())
             self.state.save_listing(source, number, refs, link)
@@ -67,7 +82,9 @@ class Documents:
         refs = self.state.listing(source, number)
         downloaded = self.state.documents(source, number)
         link = self.state.procedure_link(source, number)
-        return dict(documents=[dict(ref, downloaded=downloaded.get(ref['key'])) for ref in refs[offset:offset+limit]],
+        return dict(documents=[dict(ref, kind=(ref.get('metadata') or {}).get('kind'),
+                                   downloaded=downloaded.get(ref['key']))
+                               for ref in refs[offset:offset+limit]],
                     total=len(refs), next_offset=offset+limit if offset+limit < len(refs) else None,
                     can_download=bool(adapter and getattr(adapter, 'can_download', True)),
                     procedure_url=link['url'] if link else None)
