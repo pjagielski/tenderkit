@@ -16,7 +16,7 @@ from tenderkit.interfaces import SourceQuery
 from tenderkit.model import Lot, Notice
 from tenderkit.profile import DeadlineRange, Profile, ValueRange, profile_from_dict
 from tenderkit.profiles import builtin_profiles
-from tenderkit.serialization import notice_record
+from tenderkit.serialization import notice_from_record, notice_record
 from tenderkit.service import filtered, refresh, search, window
 from tenderkit.sources.bzp import Bzp, FetchFailure
 from tenderkit.sources.mapping import bzp_notice, ted_notice
@@ -38,6 +38,28 @@ def ted_raw(number='1', **extra):
 
 
 class SourceTests(unittest.TestCase):
+    def test_scope_is_read_from_sources_and_old_cached_payloads(self):
+        bzp = bzp_notice(bzp_raw(htmlBody='<h3>Część 2</h3>'
+            '<h3>4.2.1.) Nazwa części: <span>System obiegu dokumentów</span></h3>'
+            '<h3>4.2.2.) Krótki opis przedmiotu zamówienia</h3><p>Integracja i wdrożenie.</p>'
+            '<h3>4.2.6.) Główny kod CPV:</h3>72000000'))
+        self.assertEqual(bzp.description, 'Integracja i wdrożenie.')
+        self.assertEqual(bzp.lots, (Lot('2', 'System obiegu dokumentów'),))
+        ted = ted_notice(ted_raw(**{'description-proc': {'pol': 'Zakup sprzętu'},
+            'description-lot': {'pol': ['Dostawa strzykawek', 'Dostawa rękawic']},
+            'title-lot': {'pol': ['Rękawice', 'Strzykawki'], 'eng': ['Gloves', 'Syringes']},
+            'identifier-lot': ['LOT-0001', 'LOT-0002']}))
+        self.assertEqual(ted.description, 'Zakup sprzętu\n\nDostawa strzykawek\n\nDostawa rękawic')
+        self.assertEqual(ted.lot_titles, ('Rękawice', 'Strzykawki'))
+        self.assertEqual(ted.lots, (Lot('LOT-0001'), Lot('LOT-0002')))
+        for notice in (bzp, ted):
+            record = notice_record(notice)
+            self.assertEqual(notice_from_record(record), notice)
+            del record['description'], record['lot_titles']
+            if notice.source == 'BZP':
+                record['lots'] = []
+            self.assertEqual(notice_from_record(record), notice)
+
     def test_stdlib_transport_sets_identity_and_bounds_response_size(self):
         response = mock.MagicMock(code=200)
         response.__enter__.return_value = response

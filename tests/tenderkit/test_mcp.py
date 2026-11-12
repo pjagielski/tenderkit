@@ -27,6 +27,7 @@ class McpTests(unittest.IsolatedAsyncioTestCase):
         self.profile = builtin_profiles()['leki']
         self.notice = Notice('TED', 'one', procedure_id='proc-1', title='Dostawa leków', cpv=('33600000',),
             published=date(2026, 11, 1), notice_type='cn-standard',
+            description='Preparaty onkologiczne',
             platform_url='https://platformazakupowa.pl/transakcja/1', lots=(Lot('LOT-0001'),))
         self.result = Notice('TED', 'two', procedure_id='proc-1', title='Wynik: dostawa leków', cpv=('33600000',),
             published=date(2026, 11, 10), notice_type='can-standard',
@@ -43,6 +44,10 @@ class McpTests(unittest.IsolatedAsyncioTestCase):
         result = await client.call_tool('search_notices', {'profile': 'leki'})
         self.assertFalse(result.is_error)
         self.assertEqual(result.structured_content['notices'], search(self.state, self.profile)['notices'])
+        matched = await client.call_tool('search_notices', {'profile': 'leki', 'keywords_any': ['onkologiczn']})
+        self.assertFalse(matched.is_error)
+        self.assertEqual(matched.structured_content['notices'][0]['keyword_matches'],
+                         [{'keyword': 'onkologiczn', 'field': 'description'}])
         notice = await client.call_tool('get_notice', {'source': 'TED', 'number': 'one'})
         self.assertEqual(notice.structured_content['notice']['lots'][0]['number'], 'LOT-0001')
         procedure = await client.call_tool('procedure_results', {'source': 'TED', 'number': 'two'})

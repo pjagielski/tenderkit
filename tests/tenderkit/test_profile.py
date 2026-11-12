@@ -5,6 +5,7 @@ import unittest
 
 from tenderkit import Notice, Profile, load_profile
 from tenderkit.interfaces import Platform, Source, SourceQuery
+from tenderkit.model import Lot
 from tenderkit.profile import fold
 
 
@@ -45,6 +46,30 @@ class ProfileTests(unittest.TestCase):
         self.assertFalse(profile.matches(Notice('BZP', '2', title='Leki weterynaryjne', cpv=('33600000',))))
         self.assertFalse(profile.matches(Notice('BZP', '3', title='Dostawa rękawic', cpv=('33600000',))))
         self.assertFalse(profile.matches(Notice('BZP', '4', title='Dostawa leków', cpv=('33100000',))))
+
+    def test_keywords_match_word_starts_and_allow_explicit_substrings(self):
+        prefix = Profile('prefix', keywords_any=('lek',))
+        substring = Profile('substring', keywords_any=('*lek*',))
+        for title in ('Dostawa sprzętu elektrycznego', 'Wymiana kolektorów'):
+            self.assertFalse(prefix.matches_text(title), title)
+            self.assertTrue(substring.matches_text(title), title)
+        for title in ('Dostawa leków', 'Leki', 'Zakup (lekami)'):
+            self.assertTrue(prefix.matches_text(title), title)
+        self.assertTrue(Profile('exclude', exclude_keywords=('lek',)).matches_text('Sprzęt elektryczny'))
+
+    def test_phrases_and_exclusions_use_each_searchable_field(self):
+        notice = Notice('BZP', '1', title='Dostawa', description='Utrzymanie SYSTEMU\nINFORMATYCZNEGO',
+                        lots=(Lot('2', 'Systemu informatycznego i oprogramowania'),))
+        profile = Profile('it', keywords_any=('systemu informatyczn', 'oprogramowan'))
+        self.assertTrue(profile.matches(notice))
+        self.assertEqual(profile.keyword_matches(notice), [
+            {'keyword': 'systemu informatyczn', 'field': 'description'},
+            {'keyword': 'systemu informatyczn', 'field': 'lot_title', 'lot': '2'},
+            {'keyword': 'oprogramowan', 'field': 'lot_title', 'lot': '2'},
+        ])
+        self.assertFalse(Profile('excluded', exclude_keywords=('oprogramowan',)).matches(notice))
+        self.assertFalse(Profile('split', keywords_any=('system informatyczn',)).matches(
+            Notice('TED', '2', title='System', description='informatyczny')))
 
     def test_the_interfaces_are_checkable_protocols(self):
         class Bzp:

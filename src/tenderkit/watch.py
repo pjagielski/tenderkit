@@ -7,8 +7,8 @@ from urllib.parse import urlsplit
 from urllib.request import HTTPRedirectHandler, Request, build_opener
 
 from tenderkit.queue import worker_lock
-from tenderkit.serialization import dumps, notice_record
-from tenderkit.service import MAX_WINDOW_DAYS, refresh, today
+from tenderkit.serialization import dumps
+from tenderkit.service import MAX_WINDOW_DAYS, matched_notice_record, refresh, today
 from tenderkit.sources.bzp import AMENDMENT_TYPE
 from tenderkit.sources.mapping import first
 
@@ -119,7 +119,7 @@ def _record_events(conn, run_id, profile, source, latest, on):
             on conflict(profile,source,identity) do update set revision=excluded.revision, deadline=excluded.deadline''',
             (*key, revision, deadline))
         event = dict(profile=profile.name, event='updated' if previous else 'new',
-                     changes=changes, notice=notice_record(notice, raw=False))
+                     changes=changes, notice=matched_notice_record(notice, profile))
         if amendment:
             event['amendment'] = dict(number=amendment.number, url=amendment.url)
         conn.execute('insert into watch_events(run_id,profile,payload) values(?,?,?)',

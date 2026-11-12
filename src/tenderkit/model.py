@@ -52,6 +52,8 @@ class Notice:
     raw: dict = field(default_factory=dict, compare=False, repr=False)
     notice_type: str | None = None
     lot_count: int | None = None
+    description: str | None = None
+    lot_titles: tuple[str, ...] = ()              # titles from sources that do not link them to lot IDs
 
 
 @dataclass(frozen=True)
