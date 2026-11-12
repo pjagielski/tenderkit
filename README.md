@@ -16,6 +16,14 @@ tenderkit --db notices.sqlite3 export --profile oprogramowanie --format jsonl
 
 The default fetch window covers 30 calendar days including today in Warsaw. Use `--from` and `--to` for an inclusive window or repeat `--source` to select adapters. Publication date and bid deadline are separate filters.
 
+Set `TENDERKIT_DB` to an absolute path to share one database across commands and working directories. An explicit `--db` overrides it. In PowerShell, the first line sets the path for the current shell and the second saves it for future sessions under your account.
+
+```powershell
+$env:TENDERKIT_DB = 'C:\path\to\.notices.sqlite3'
+[Environment]::SetEnvironmentVariable('TENDERKIT_DB', $env:TENDERKIT_DB, 'User')
+tenderkit status
+```
+
 Add `--results` to fetch formal result notices next to contract notices. Built-in profiles stay contract-only so the default notice set does not change.
 
 Built-in profiles include `leki` (medicines), `oprogramowanie` (software), and `wyroby-medyczne` (medical devices). Pass a TOML file to `--profile` for a custom profile:
@@ -29,6 +37,34 @@ deadline_days = { min = 1, max = 60 }
 ```
 
 Region codes refer to the buyer's location. A CPV ending in `*` matches a prefix. Required keywords and CPV restrictions are applied together, and exclusions take precedence.
+
+## Daily watch
+
+```sh
+tenderkit watch --profile oprogramowanie
+```
+
+Each invocation refreshes the selected sources once. The first run reports the matching notices in its 30-day publication window. Later runs report first-time matches and revisions of reported notices, including a changed deadline that takes the notice out of the profile's date filter. Matching and reporting history are stored in SQLite under the profile's `name`. Use distinct names for distinct watch profiles.
+
+The default window overlaps the last 30 days and extends back to any unfinished interval per source. A failed source writes a diagnostic to stderr and makes the command exit with status 1. Other sources can still produce events. The next default run retries the failed window. `--from` and `--to` run a bounded backfill with the same reporting history. Repeat the same backfill to retry its failures.
+
+Stdout contains one JSON object per event, with `event_id`, `profile`, `event` (`new` or `updated`), `changes` (`version` and/or `deadline`) and `notice`. An unchanged successful run prints nothing and exits 0. BZP amendments are linked by the original notice number and include an `amendment` reference. TED eForms amendments use the published previous-notice identifier. TED deadline comparisons use the earliest bid date in the notice's Search API fields. [TED field list](https://docs.ted.europa.eu/ODS/latest/reuse/field-list.html)
+
+With `--webhook URL`, tenderkit POSTs `{"events": [...]}` in batches of up to 100 before writing each batch to stdout. On delivery failure, the batch is retained. Run with the same webhook option to retry that delivery. Use `event_id` to deduplicate retries if delivery succeeded but the process stopped before recording it.
+
+For a daily cron job at 08:00, use absolute paths to the executable, database and any custom profile file.
+
+```cron
+0 8 * * * TENDERKIT_DB=/home/me/.notices.sqlite3 /home/me/.venv/bin/tenderkit watch --profile /home/me/oprogramowanie.toml >> /home/me/notices.jsonl
+```
+
+In Windows Task Scheduler, add a daily trigger and a **Start a program** action. Use the absolute path to `tenderkit.exe` as **Program/script** and these **Add arguments** values.
+
+```text
+--db "C:\path\to\.notices.sqlite3" watch --profile "C:\path\to\oprogramowanie.toml"
+```
+
+The explicit database path makes the task use the same file under any working directory. To capture stdout, run the command with redirection from a PowerShell script and schedule that script.
 
 ## Results
 
@@ -78,6 +114,8 @@ tenderkit --db notices.sqlite3 mcp
 ```
 
 Configure your client with the absolute path to the installed `tenderkit` executable, and arguments `["--db", "/absolute/path/notices.sqlite3", "mcp"]`. Search with `search_notices`, inspect a record with `get_notice`, and use `procedure_results` and `search_results` for per-lot awards. Use `list_documents`, `fetch_documents`, and `read_document` for attachments. Use `--profile-file` at startup to register custom profiles.
+
+`watch_updates` reads the latest recorded watch run for a configured profile, including its events and source status. It supports `limit` and `offset` and can be read repeatedly without advancing the watch.
 
 ## Develop
 

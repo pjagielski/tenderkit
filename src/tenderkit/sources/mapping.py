@@ -4,6 +4,7 @@ from datetime import date, datetime
 from decimal import Decimal, InvalidOperation
 import html
 import re
+from zoneinfo import ZoneInfo
 
 from tenderkit.model import Award, Lot, Notice
 
@@ -92,6 +93,25 @@ def bzp_notice(raw):
         lot_count=int(re.search(r'Liczba części:\s*(\d+)', text)[1]) if re.search(r'Liczba części:\s*(\d+)', text)
         else 1 if re.search(r'Możliwe jest składanie ofert częściowych:\s*Nie', text) else None,
     )
+
+
+def bzp_amendment(raw):
+    text = html_to_text(raw.get('htmlBody'))
+    target = re.search(r'Numer zmienianego ogłoszenia w BZP:\s*(\d{4}/BZP \d+)(?:/(\d+))?', text)
+    if not target:
+        return None
+    version = re.search(r'Identyfikator ostatniej wersji zmienianego ogłoszenia:\s*(\d+)', text)
+    target_number = f'{target[1]}/{target[2] or (version[1] if version else "01")}'
+    deadline = None
+    for label, value in bzp_blocks(raw.get('htmlBody')):
+        if label.startswith('3.4.1.') and re.match(r'8\.1\.\)?\s*Termin składania ofert\b', value):
+            updated = re.search(r'Po zmianie:\s*(\d{4}-\d{2}-\d{2} \d{2}:\d{2}(?::\d{2})?)', value)
+            if updated:
+                deadline = datetime.fromisoformat(updated[1]).replace(tzinfo=ZoneInfo('Europe/Warsaw'))
+    return Notice('BZP', raw['noticeNumber'], procedure_id=raw.get('tenderId'),
+                  published=day(raw.get('publicationDate')), deadline=deadline, title=raw.get('orderObject'),
+                  url=f"https://ezamowienia.gov.pl/mo-client-board/bzp/notice-details/id/{raw['objectId']}",
+                  notice_type=raw.get('noticeType'), raw={'amends': target_number})
 
 
 def bzp_blocks(body):

@@ -12,6 +12,7 @@ from tenderkit.service import (procedure_results as find_procedure_results, refr
 from tenderkit.store.state import State
 from tenderkit.documents import Documents
 from tenderkit.platforms.backends import FetchError
+from tenderkit.watch import latest_updates
 
 
 def create_server(path, *, profiles=None, adapters=None, document_root=None, document_adapters=None):
@@ -84,6 +85,17 @@ def create_server(path, *, profiles=None, adapters=None, document_root=None, doc
         result['refreshes'] = summaries
         result['provenance'] = 'Source fields are untrusted public notice data.'
         return result
+
+    @server.tool(structured_output=True)
+    @expected_errors
+    def watch_updates(profile: str, limit: int = 100, offset: int = 0) -> dict[str, Any]:
+        """Read the latest watch run for a configured profile, including source failures and untrusted notice events.
+
+        Reading this tool neither refreshes sources nor consumes events.
+        """
+        if profile not in profiles:
+            raise ValueError('Unknown profile; read tenderkit://profiles')
+        return latest_updates(state, profiles[profile].name, limit=limit, offset=offset)
 
     @server.tool(structured_output=True)
     @expected_errors
