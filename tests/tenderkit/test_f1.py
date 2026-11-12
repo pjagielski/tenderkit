@@ -99,8 +99,11 @@ class SourceTests(unittest.TestCase):
             fetch_notices(session, START, END)
 
     def test_mapping_keeps_region_identity_value_and_lots(self):
-        notice = bzp_notice(bzp_raw(organizationProvince='PL14', organizationNationalId='123',
-            submittingOffersDate='2026-11-09T23:30:00Z', htmlBody='<p>Wartość zamówienia: 1 234,50 PLN Liczba części: 2</p>'))
+        raw = bzp_raw(organizationProvince='PL14', organizationNationalId='123',
+            submittingOffersDate='2026-11-09T23:30:00Z', htmlBody='<p>Wartość zamówienia: 1 234,50 PLN Liczba części: 2</p>')
+        raw['publicationDate'] = '2026-11-01T23:30:00Z'
+        notice = bzp_notice(raw)
+        self.assertEqual(notice.published, date(2026, 11, 2))
         self.assertEqual((notice.buyer_region, notice.buyer_id, notice.value, notice.lot_count), ('14', '123', Decimal('1234.50'), 2))
         notice = ted_notice(ted_raw(**{'organisation-country-sub-buyer': ['PL911'],
             'organisation-identifier-buyer': ['456'], 'identifier-lot': ['L1', 'L2'],
