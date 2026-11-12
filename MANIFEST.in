@@ -1,2 +1,4 @@
 include docs/plugins.md
+include CHANGELOG.md
+include examples/oprogramowanie.toml
 recursive-include tests *.py *.json
