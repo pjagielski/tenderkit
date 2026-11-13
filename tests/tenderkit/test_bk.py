@@ -13,7 +13,7 @@ from tenderkit.platforms.backends import FetchError
 from tenderkit.platforms.bk import BkDocuments
 from tenderkit.profiles import builtin_profiles
 from tenderkit.service import refresh, search, sources
-from tenderkit.sources.bk import BASE, Bk, BkIncomplete
+from tenderkit.sources.bk import BASE, Bk, BkIncomplete, _list
 from tenderkit.store.state import State
 
 DAY = date(2026, 11, 12)
@@ -71,6 +71,14 @@ class BkTests(unittest.TestCase):
                 with self.assertRaises(BkIncomplete):
                     list(Bk(self.session).fetch(DAY, DAY, self.profile.source_query()))
                 self.assertEqual(self.session.get.call_count, 4)
+
+    def test_batch_larger_than_the_portal_ui_page_fits_one_request(self):
+        rows = [dict(SUMMARY, id=identifier) for identifier in range(1, 26)]
+        self.session.get.return_value = page(*rows)
+        found = _list(self.session, DAY, DAY, ['72000000-5'])
+        self.assertEqual(set(found), set(range(1, 26)))
+        self.session.get.assert_called_once()
+        self.assertGreaterEqual(dict(self.session.get.call_args.kwargs['params'])['limit'], len(rows))
 
     def test_documents_use_nested_file_id_and_reject_html(self):
         self.session.get.return_value = response(dict(advertisement=DETAIL))

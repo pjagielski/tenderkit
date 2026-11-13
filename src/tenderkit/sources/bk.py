@@ -11,8 +11,10 @@ BASE = f'https://{BK_HOST}'
 WARSAW = ZoneInfo('Europe/Warsaw')
 NOTICE_TYPE = 'BKAnnouncement'
 STATUSES = ('PUBLISHED', 'CLOSED', 'RESOLVED', 'CANCELLED')
-PAGE_SIZE = 20
 MAX_TOTAL = 1000
+# Publication-date ordering can repeat records across page boundaries.
+# Request the bounded batch in one response when the portal permits it.
+PAGE_SIZE = MAX_TOTAL
 CPV_BATCH = 100
 
 
