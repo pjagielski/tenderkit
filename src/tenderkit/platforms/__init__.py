@@ -9,11 +9,15 @@ from tenderkit.platforms.session import PlatformSession
 
 
 def platforms(session=None):
+    from tenderkit.platforms.bk import BkDocuments
+
     session = session or PlatformSession()
     registered = {backend.label: WorkerPlatform(backend) for backend in
                   (PlatformaZakupowa(session, delay=0), Marketplanet(session, delay=0))}
     native = Ezamowienia(session)
     registered[native.name] = native
+    bk = BkDocuments(session)
+    registered[bk.name] = bk
     for entry in entry_points(group='tenderkit.platforms'):
         adapter = entry.load()()
         if not isinstance(adapter, Platform) or adapter.name in registered:

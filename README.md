@@ -78,6 +78,17 @@ watch --profile "C:\path\to\oprogramowanie.toml"
 
 Run the job under the same user account to share the default database. If you use an alternate database, add its absolute path with `--db` before `watch` in the scheduler arguments. To capture stdout, run the command with redirection from a PowerShell script and schedule that script.
 
+## Baza Konkurencyjności
+
+Fetch BK2021 explicitly with `--source BK`. The software profile accepts BK notices under the type `BKAnnouncement`; use that type in custom profiles that restrict notice types.
+
+```sh
+tenderkit fetch --source BK --profile oprogramowanie --from 2026-11-12 --to 2026-11-12
+tenderkit filter --source BK --profile oprogramowanie
+```
+
+BK uses the portal's anonymous search and detail endpoints. The operator has no published integration specification or request quota that we could verify. Tenderkit uses sequential, paced requests and checks each search's reported count, including all public statuses. Start with short date windows because each returned notice requires a detail request. An incomplete refresh fails before storing its results. BK attribution includes the Ministry name, retrieval timestamp, processing note, and original link. Public attachments linked by a notice can be retrieved on demand with the regular document commands. [Access, terms and verification](docs/bk-access.md)
+
 ## Results
 
 Formal awards are available per lot, linked to their procedure through `procedure_id`:

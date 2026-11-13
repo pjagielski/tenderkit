@@ -79,6 +79,8 @@ def _latest_notices(conn, state, profile, source, start, end):
             revision = f'{version:08d}/{published_notice.published}/{published_notice.number}'
         elif source == 'TED':
             identity, revision = _ted_identity(conn, profile, notice)
+        elif source == 'BK':
+            identity, revision = notice.number, f"{notice.raw['version']:020d}"
         else:
             identity, revision = notice.number, notice.number
         prior = latest.get(identity)

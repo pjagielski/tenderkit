@@ -191,7 +191,7 @@ Run tenderkit COMMAND --help for command options.''',
                 return 0 if args.enqueue_only or result['status'] == 'DONE' else 1
             return 0
         if args.command in ('fetch', 'watch'):
-            adapters = sources()
+            adapters = sources(include_bk=True) if 'BK' in (args.source_names or ()) else sources()
             if args.source_names:
                 if set(args.source_names) - set(adapters):
                     raise ValueError('Unknown source')

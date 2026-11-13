@@ -9,6 +9,7 @@ from tenderkit.interfaces import Source
 from tenderkit.profile import fold
 from tenderkit.serialization import dumps, notice_record
 from tenderkit.sources.bzp import Bzp
+from tenderkit.sources.bk import Bk
 from tenderkit.sources.ted import Ted
 
 MAX_WINDOW_DAYS = 120
@@ -28,8 +29,10 @@ def window(start=None, end=None):
     return start, end
 
 
-def sources():
+def sources(*, include_bk=False):
     registered = {'BZP': Bzp(), 'TED': Ted()}
+    if include_bk:
+        registered['BK'] = Bk()
     for entry in entry_points(group='tenderkit.sources'):
         source = entry.load()()
         if not isinstance(source, Source) or source.name in registered:
