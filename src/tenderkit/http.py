@@ -4,7 +4,7 @@ from urllib.error import HTTPError
 from urllib.parse import urlencode
 from urllib.request import Request, urlopen
 
-USER_AGENT = 'tenderkit (+https://github.com/pjagielski/pharma-procurement-pipeline)'
+USER_AGENT = 'tenderkit (+https://github.com/pjagielski/tenderkit)'
 MAX_RESPONSE_BYTES = 20 * 1024 * 1024
 
 

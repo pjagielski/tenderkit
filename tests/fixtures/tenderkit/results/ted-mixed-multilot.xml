@@ -416,7 +416,7 @@
                <efac:Organizations>
                   <efac:Organization>
                      <efac:Company>
-                        <cbc:WebsiteURI>https://bip.malopolska.pl/nowosadecki</cbc:WebsiteURI>
+                        <cbc:WebsiteURI>https://example.invalid</cbc:WebsiteURI>
                         <cbc:EndpointID>https://platformazakupowa.pl/transakcja/1327257</cbc:EndpointID>
                         <cac:PartyIdentification>
                            <cbc:ID schemeName="organization">ORG-0001</cbc:ID>
@@ -425,10 +425,10 @@
                            <cbc:Name languageID="POL">Zamawiający: Powiat Nowosądecki, Kierownik Zamawiającego: Zarząd Powiatu Nowosądeckiego</cbc:Name>
                         </cac:PartyName>
                         <cac:PostalAddress>
-                           <cbc:StreetName>ul. Jagiellońska 33</cbc:StreetName>
+                           <cbc:StreetName>ul. Przykładowa 1</cbc:StreetName>
                            <cbc:Department>Zespół ds. Zamówień Publicznych</cbc:Department>
                            <cbc:CityName>Nowy Sącz</cbc:CityName>
-                           <cbc:PostalZone>33-300</cbc:PostalZone>
+                           <cbc:PostalZone>00-000</cbc:PostalZone>
                            <cbc:CountrySubentityCode listName="nuts">PL218</cbc:CountrySubentityCode>
                            <cac:Country>
                               <cbc:IdentificationCode listName="country">POL</cbc:IdentificationCode>
@@ -437,17 +437,11 @@
                         <cac:PartyLegalEntity>
                            <cbc:CompanyID>491893180</cbc:CompanyID>
                         </cac:PartyLegalEntity>
-                        <cac:Contact>
-                           <cbc:Name>Zespół ds. Zamówień Publicznych</cbc:Name>
-                           <cbc:Telephone>+48 184141600</cbc:Telephone>
-                           <cbc:Telefax>+48 184141700</cbc:Telefax>
-                           <cbc:ElectronicMail>powiat@nowosadecki.pl</cbc:ElectronicMail>
-                        </cac:Contact>
                      </efac:Company>
                   </efac:Organization>
                   <efac:Organization>
                      <efac:Company>
-                        <cbc:WebsiteURI>https://www.gov.pl/web/uzp/krajowa-izba-odwolawcza</cbc:WebsiteURI>
+                        <cbc:WebsiteURI>https://example.invalid</cbc:WebsiteURI>
                         <cbc:EndpointID>https://www.gov.pl/web/uzp/odwolanie</cbc:EndpointID>
                         <cac:PartyIdentification>
                            <cbc:ID schemeName="organization">ORG-0002</cbc:ID>
@@ -456,9 +450,9 @@
                            <cbc:Name languageID="POL">Krajowa Izba Odwoławcza</cbc:Name>
                         </cac:PartyName>
                         <cac:PostalAddress>
-                           <cbc:StreetName>ul. Postępu 17a</cbc:StreetName>
+                           <cbc:StreetName>ul. Przykładowa 1</cbc:StreetName>
                            <cbc:CityName>Warszawa</cbc:CityName>
-                           <cbc:PostalZone>02-676 </cbc:PostalZone>
+                           <cbc:PostalZone>00-000</cbc:PostalZone>
                            <cbc:CountrySubentityCode listName="nuts">PL911</cbc:CountrySubentityCode>
                            <cac:Country>
                               <cbc:IdentificationCode listName="country">POL</cbc:IdentificationCode>
@@ -467,16 +461,11 @@
                         <cac:PartyLegalEntity>
                            <cbc:CompanyID>5262239325</cbc:CompanyID>
                         </cac:PartyLegalEntity>
-                        <cac:Contact>
-                           <cbc:Name>Sekretariat Biura Odwołań</cbc:Name>
-                           <cbc:Telephone>+48 22 458 78 01</cbc:Telephone>
-                           <cbc:Telefax>+48 22 458 78 00</cbc:Telefax>
-                        </cac:Contact>
                      </efac:Company>
                   </efac:Organization>
                   <efac:Organization>
                      <efac:Company>
-                        <cbc:WebsiteURI>www.platformazakupowa.pl</cbc:WebsiteURI>
+                        <cbc:WebsiteURI>https://example.invalid</cbc:WebsiteURI>
                         <cbc:EndpointID>https://platformazakupowa.pl</cbc:EndpointID>
                         <cac:PartyIdentification>
                            <cbc:ID schemeName="organization">ORG-0003</cbc:ID>
@@ -485,9 +474,9 @@
                            <cbc:Name languageID="POL">Open Nexus Sp. z o. o. </cbc:Name>
                         </cac:PartyName>
                         <cac:PostalAddress>
-                           <cbc:StreetName>ul. Bolesława Krzywoustego 3</cbc:StreetName>
+                           <cbc:StreetName>ul. Przykładowa 1</cbc:StreetName>
                            <cbc:CityName>Poznań</cbc:CityName>
-                           <cbc:PostalZone>61-144</cbc:PostalZone>
+                           <cbc:PostalZone>00-000</cbc:PostalZone>
                            <cbc:CountrySubentityCode listName="nuts">PL415</cbc:CountrySubentityCode>
                            <cac:Country>
                               <cbc:IdentificationCode listName="country">POL</cbc:IdentificationCode>
@@ -500,7 +489,7 @@
                   </efac:Organization>
                   <efac:Organization>
                      <efac:Company>
-                        <cbc:WebsiteURI>https://ezamowienia.gov.pl</cbc:WebsiteURI>
+                        <cbc:WebsiteURI>https://example.invalid</cbc:WebsiteURI>
                         <cbc:EndpointID>https://www.gov.pl/web/uzp/kontakt</cbc:EndpointID>
                         <cac:PartyIdentification>
                            <cbc:ID schemeName="organization">ORG-0004</cbc:ID>
@@ -509,9 +498,9 @@
                            <cbc:Name languageID="POL">Urząd Zamówień Publicznych</cbc:Name>
                         </cac:PartyName>
                         <cac:PostalAddress>
-                           <cbc:StreetName>ul. Postępu 17a</cbc:StreetName>
+                           <cbc:StreetName>ul. Przykładowa 1</cbc:StreetName>
                            <cbc:CityName>Warszawa</cbc:CityName>
-                           <cbc:PostalZone>02-676 </cbc:PostalZone>
+                           <cbc:PostalZone>00-000</cbc:PostalZone>
                            <cbc:CountrySubentityCode listName="nuts">PL911</cbc:CountrySubentityCode>
                            <cac:Country>
                               <cbc:IdentificationCode listName="country">POL</cbc:IdentificationCode>
@@ -520,12 +509,6 @@
                         <cac:PartyLegalEntity>
                            <cbc:CompanyID>010828091</cbc:CompanyID>
                         </cac:PartyLegalEntity>
-                        <cac:Contact>
-                           <cbc:Name>Platforma e-Zamówienia</cbc:Name>
-                           <cbc:Telephone>+48 22 458 77 99 </cbc:Telephone>
-                           <cbc:Telefax>+48 22 458 77 00</cbc:Telefax>
-                           <cbc:ElectronicMail>uzp@uzp.gov.pl</cbc:ElectronicMail>
-                        </cac:Contact>
                      </efac:Company>
                   </efac:Organization>
                   <efac:Organization>
@@ -538,9 +521,9 @@
                            <cbc:Name languageID="POL">GISPRO SPÓŁKA AKCYJNA</cbc:Name>
                         </cac:PartyName>
                         <cac:PostalAddress>
-                           <cbc:StreetName>ul. Al. Wyzwolenia 70</cbc:StreetName>
+                           <cbc:StreetName>ul. Przykładowa 1</cbc:StreetName>
                            <cbc:CityName>Szczecin</cbc:CityName>
-                           <cbc:PostalZone>71-506</cbc:PostalZone>
+                           <cbc:PostalZone>00-000</cbc:PostalZone>
                            <cbc:CountrySubentityCode listName="nuts">PL424</cbc:CountrySubentityCode>
                            <cac:Country>
                               <cbc:IdentificationCode listName="country">POL</cbc:IdentificationCode>
@@ -549,9 +532,6 @@
                         <cac:PartyLegalEntity>
                            <cbc:CompanyID>320253489</cbc:CompanyID>
                         </cac:PartyLegalEntity>
-                        <cac:Contact>
-                           <cbc:ElectronicMail>gispro@gispro.pl</cbc:ElectronicMail>
-                        </cac:Contact>
                      </efac:Company>
                   </efac:Organization>
                   <efac:Organization>
@@ -564,9 +544,9 @@
                            <cbc:Name languageID="POL">GEOS Geodezja Marcin Szepielak</cbc:Name>
                         </cac:PartyName>
                         <cac:PostalAddress>
-                           <cbc:StreetName>ul. Wałowa 6, lok. 3, </cbc:StreetName>
+                           <cbc:StreetName>ul. Przykładowa 1</cbc:StreetName>
                            <cbc:CityName>Tarnów</cbc:CityName>
-                           <cbc:PostalZone>33-100</cbc:PostalZone>
+                           <cbc:PostalZone>00-000</cbc:PostalZone>
                            <cbc:CountrySubentityCode listName="nuts">PL217</cbc:CountrySubentityCode>
                            <cac:Country>
                               <cbc:IdentificationCode listName="country">POL</cbc:IdentificationCode>
@@ -575,15 +555,12 @@
                         <cac:PartyLegalEntity>
                            <cbc:CompanyID>121591705</cbc:CompanyID>
                         </cac:PartyLegalEntity>
-                        <cac:Contact>
-                           <cbc:ElectronicMail>m.szepielak@geos-geodezja.com</cbc:ElectronicMail>
-                        </cac:Contact>
                      </efac:Company>
                   </efac:Organization>
                   <efac:Organization>
                      <efbc:NaturalPersonIndicator>false</efbc:NaturalPersonIndicator>
                      <efac:Company>
-                        <cbc:WebsiteURI>https://op.europa.eu</cbc:WebsiteURI>
+                        <cbc:WebsiteURI>https://example.invalid</cbc:WebsiteURI>
                         <cac:PartyIdentification>
                            <cbc:ID schemeName="organization">ORG-0000</cbc:ID>
                         </cac:PartyIdentification>
@@ -592,7 +569,7 @@
                         </cac:PartyName>
                         <cac:PostalAddress>
                            <cbc:CityName>Luxembourg</cbc:CityName>
-                           <cbc:PostalZone>2417</cbc:PostalZone>
+                           <cbc:PostalZone>00-000</cbc:PostalZone>
                            <cbc:CountrySubentityCode listName="nuts">LU000</cbc:CountrySubentityCode>
                            <cac:Country>
                               <cbc:IdentificationCode listName="country">LUX</cbc:IdentificationCode>
@@ -601,10 +578,6 @@
                         <cac:PartyLegalEntity>
                            <cbc:CompanyID>PUBL</cbc:CompanyID>
                         </cac:PartyLegalEntity>
-                        <cac:Contact>
-                           <cbc:Telephone>+352 29291</cbc:Telephone>
-                           <cbc:ElectronicMail>ted@publications.europa.eu</cbc:ElectronicMail>
-                        </cac:Contact>
                      </efac:Company>
                   </efac:Organization>
                </efac:Organizations>
@@ -623,7 +596,7 @@
    <cbc:NoticeTypeCode listName="result">can-standard</cbc:NoticeTypeCode>
    <cbc:NoticeLanguageCode listName="language">POL</cbc:NoticeLanguageCode>
    <cac:ContractingParty>
-      <cbc:BuyerProfileURI>https://platformazakupowa.pl/pn/nowosadecki</cbc:BuyerProfileURI>
+      <cbc:BuyerProfileURI>https://example.invalid</cbc:BuyerProfileURI>
       <cac:ContractingPartyType>
          <cbc:PartyTypeCode listName="buyer-legal-type">la</cbc:PartyTypeCode>
       </cac:ContractingPartyType>
