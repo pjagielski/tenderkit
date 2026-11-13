@@ -7,7 +7,17 @@ from urllib.request import build_opener, HTTPCookieProcessor, HTTPRedirectHandle
 from tenderkit.http import Session
 from tenderkit.platforms.backends import FetchError
 
+BK_HOST = 'bazakonkurencyjnosci.funduszeeuropejskie.gov.pl'
 DOMAINS = ('platformazakupowa.pl', 'ezamawiajacy.pl', 'ezamowienia.gov.pl')
+
+
+def bk_platform_url(url):
+    try:
+        parts = urlsplit(url)
+        return (parts.scheme == 'https' and parts.hostname == BK_HOST
+                and parts.username is None and parts.port in (None, 443))
+    except ValueError:
+        return False
 
 
 def native_platform_url(url):
@@ -20,6 +30,8 @@ def native_platform_url(url):
 
 
 def public_platform_url(url):
+    if bk_platform_url(url):
+        return True
     try:
         parts = urlsplit(url)
         host = (parts.hostname or '').lower()
@@ -32,6 +44,8 @@ def public_platform_url(url):
 
 class PlatformRedirect(HTTPRedirectHandler):
     def redirect_request(self, request, response, code, message, headers, newurl):
+        if bk_platform_url(request.full_url) and not bk_platform_url(newurl):
+            raise FetchError('UNSAFE_URL')
         if urlsplit(request.full_url).hostname == 'ezamowienia.gov.pl' and not native_platform_url(newurl):
             raise FetchError('UNSAFE_URL')
         if not public_platform_url(newurl):

@@ -54,6 +54,7 @@ class Notice:
     lot_count: int | None = None
     description: str | None = None
     lot_titles: tuple[str, ...] = ()              # titles from sources that do not link them to lot IDs
+    source_attribution: dict[str, str] | None = None
 
 
 @dataclass(frozen=True)
