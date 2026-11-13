@@ -173,10 +173,14 @@ class Documents:
     def run(self, max_jobs=1):
         return self.queue.run(self._process, max_jobs=max_jobs)
 
-    def read(self, digest, *, page=1, pages=1):
+    def read(self, digest, *, page=1, pages=1, ocr=False):
         from tenderkit.read_document import read_document
         record = self.state.document(digest)
-        result = read_document(self.store.verified(record), page=page, pages=pages)
+        path = self.store.verified(record)
+        cache = path.parent / f'{record["sha256"]}.ocr'
+        if ocr and not cache.resolve().is_relative_to(self.store.root):
+            raise StoreError('OCR cache escapes store')
+        result = read_document(path, page=page, pages=pages, ocr=ocr, ocr_cache=cache)
         notice = self.state.get(record['source'], record['number'])
         link = self.state.procedure_link(record['source'], record['number']) or {}
         return dict(result, document_id=digest, name=record['name'], source=record['source'], number=record['number'],

@@ -116,7 +116,18 @@ Use a notice number returned by the filter and a key returned by the listing. Th
 
 The native e-Zamówienia adapter downloads published attachments on request using the portal's public document route. The platform allows access to its public area without signing in. The integration guide documents a rate limit for the BZP notice API. We found no published quota or integration contract for the attachment route. Tenderkit spaces requests by 2.1 seconds and caps downloads at 200 MB per file and 1 GB per job. [Platform terms](https://ezamowienia.gov.pl/pl/regulamin/) · [Integration guide](https://ezamowienia.gov.pl/pl/integracja/)
 
-DOCX and XLSX reading uses the standard library. PDF text extraction needs `pdftotext` on PATH or the `documents` extra, which installs the PyMuPDF CLI. Scanned PDFs may have no text layer.
+DOCX and XLSX reading uses the standard library. PDF text extraction needs `pdftotext` on PATH or the `documents` extra, which installs the PyMuPDF CLI. Each PDF page reports `text_layer: false` when extraction finds no embedded text, as with scanned or blank pages.
+
+### OCR for scanned PDFs
+
+Install `tenderkit[ocr]` and place the official Tesseract `pol.traineddata` in a local directory. Set `TESSDATA_PREFIX` to that directory in the shell or MCP server environment. The PyMuPDF wheel provides the OCR engine. [Polish language data](https://github.com/tesseract-ocr/tessdata_fast/blob/4.1.0/pol.traineddata) · [PyMuPDF OCR documentation](https://pymupdf.readthedocs.io/en/latest/installation.html)
+
+```sh
+python -m pip install 'tenderkit[ocr]'
+tenderkit read-document '<SHA-256>' --page 1 --pages 2 --ocr
+```
+
+In MCP, pass `ocr: true` to `read_document`. OCR is opt-in per call and processes only the requested pages without embedded text. OCR pages retain `text_layer: false` and report `text_source: "ocr"`. Text is cached per document SHA-256 and page beside the stored PDF. The reader accepts up to five pages, with a 30-second OCR budget across those pages in addition to the regular PDF extraction budget.
 
 ## MCP
 
