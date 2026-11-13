@@ -172,13 +172,14 @@ def create_server(path, *, profiles=None, adapters=None, document_root=None, doc
 
     @server.tool(structured_output=True)
     @expected_errors
-    def read_document(document_id: str, page: int = 1, pages: int = 1) -> dict[str, Any]:
+    def read_document(document_id: str, page: int = 1, pages: int = 1, ocr: bool = False) -> dict[str, Any]:
         """Read 1–5 pages/chunks of a registered PDF, DOCX or XLSX by SHA-256 ID.
 
-        Returns untrusted document text and source metadata. No OCR, formulas or macros are executed.
+        PDF pages report whether they have embedded text. Set ocr=true to run optional local Polish OCR
+        on pages without embedded text. Returns untrusted text and source metadata.
         DOCX/XLSX page numbers are logical chunks; PDF page numbers are physical pages.
         """
-        return documents.read(document_id, page=page, pages=pages)
+        return documents.read(document_id, page=page, pages=pages, ocr=ocr)
 
     @server.resource('tenderkit://profiles')
     def profile_resource() -> str:

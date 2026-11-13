@@ -112,6 +112,7 @@ Run tenderkit COMMAND --help for command options.''',
     reader.add_argument('document_id', help='SHA-256 of the downloaded document.')
     reader.add_argument('--page', type=int, default=1, help='First page to read (default: 1).')
     reader.add_argument('--pages', type=int, default=1, help='Number of pages to read (default: 1).')
+    reader.add_argument('--ocr', action='store_true', help='Run local Polish OCR on PDF pages without embedded text.')
     mcp = add_command('mcp', 'Serve tenderkit tools over MCP stdio.')
     mcp.add_argument('--profile-file', type=Path, action='append', default=[],
                      help='trusted profile to expose alongside the built-ins')
@@ -175,7 +176,7 @@ Run tenderkit COMMAND --help for command options.''',
             if args.command == 'list-documents':
                 print(dumps(service.list(args.source, args.number, limit=args.limit, offset=args.offset, refresh=not args.cached)))
             elif args.command == 'read-document':
-                print(dumps(service.read(args.document_id, page=args.page, pages=args.pages)))
+                print(dumps(service.read(args.document_id, page=args.page, pages=args.pages, ocr=args.ocr)))
             elif args.run_queued:
                 if args.source or args.number or args.keys or args.enqueue_only:
                     raise ValueError('--run-queued cannot be combined with a notice selection')

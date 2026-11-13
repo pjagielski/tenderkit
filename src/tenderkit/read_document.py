@@ -97,6 +97,27 @@ def _xlsx(archive):
     return pages or [dict(text='', label='workbook')]
 
 
+def _bounded_text(command, target, *, deadline, limit, operation):
+    if time.monotonic() >= deadline:
+        raise TextReadError(f'{operation} exceeded time or output limit')
+    process = subprocess.Popen(command, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+        creationflags=subprocess.CREATE_NO_WINDOW if os.name == 'nt' else 0)
+    try:
+        while process.poll() is None:
+            if time.monotonic() > deadline or target.exists() and target.stat().st_size > limit:
+                raise TextReadError(f'{operation} exceeded time or output limit')
+            time.sleep(0.05)
+        if process.returncode or not target.is_file():
+            raise TextReadError(f'{operation} failed')
+        if target.stat().st_size > limit:
+            raise TextReadError(f'{operation} exceeded time or output limit')
+        return target.read_text(encoding='utf-8', errors='replace')
+    finally:
+        if process.poll() is None:
+            process.kill()
+        process.wait()
+
+
 def _pdf(path):
     with tempfile.TemporaryDirectory() as scratch:
         target = Path(scratch) / 'text.txt'
@@ -110,36 +131,23 @@ def _pdf(path):
                 raise TextReadError('PDF extraction needs pdftotext or the optional documents extra (PyMuPDF CLI)')
             command = [executable, 'gettext', '-mode', 'simple', '-output', str(target), str(path)]
             engine = 'pymupdf-cli'
-        process = subprocess.Popen(command, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
-            creationflags=subprocess.CREATE_NO_WINDOW if os.name == 'nt' else 0)
-        deadline = time.monotonic() + 30
-        try:
-            while process.poll() is None:
-                if time.monotonic() > deadline or target.exists() and target.stat().st_size > MAX_TEXT:
-                    raise TextReadError('PDF text extraction exceeded time or output limit')
-                time.sleep(0.05)
-            if process.returncode or not target.is_file():
-                raise TextReadError('PDF text extraction failed')
-            if target.stat().st_size > MAX_TEXT:
-                raise TextReadError('Extracted text exceeds limit')
-            text = target.read_text(encoding='utf-8', errors='replace')
-        finally:
-            if process.poll() is None:
-                process.kill()
-            process.wait()
+        text = _bounded_text(command, target, deadline=time.monotonic() + 30,
+                             limit=MAX_TEXT, operation='PDF text extraction')
         pages = text.split('\f')
         if text.endswith('\f'):
             pages.pop()
         return [dict(text=p, label='PDF page') for p in pages or ['']], engine
 
 
-def read_document(path, *, page=1, pages=1):
+def read_document(path, *, page=1, pages=1, ocr=False, ocr_cache=None):
     if type(page) is not int or page < 1 or type(pages) is not int or not 1 <= pages <= 5:
         raise ValueError('Page must be positive; request 1 to 5 pages')
     path = Path(path)
     if path.stat().st_size > MAX_INPUT:
         raise TextReadError('Text extraction input exceeds 20 MB limit')
     kind = path.suffix.lower().lstrip('.')
+    if ocr and kind != 'pdf':
+        raise TextReadError('OCR is available only for PDFs')
     engine, pagination = 'stdlib-ooxml', 'logical chunks (12000 characters, separated by explicit page breaks or worksheets)'
     try:
         if kind == 'pdf':
@@ -154,12 +162,19 @@ def read_document(path, *, page=1, pages=1):
                 if sum(len(p['text'].encode('utf-8')) for p in extracted) > MAX_TEXT:
                     raise TextReadError('Extracted text exceeds limit')
         else:
-            raise TextReadError('Supported formats: PDF, DOCX, XLSX (no archive expansion or OCR)')
+            raise TextReadError('Supported formats: PDF, DOCX, XLSX')
     except (BadZipFile, ET.ParseError, KeyError, IndexError) as exc:
         raise TextReadError('Invalid or unsupported document structure') from exc
     if page > len(extracted):
         raise ValueError('Page outside document')
     selected = extracted[page-1:page-1+pages]
+    if kind == 'pdf':
+        for item in selected:
+            item['text_layer'] = bool(item['text'].strip())
+            item['text_source'] = 'embedded' if item['text_layer'] else None
+        if ocr and any(not item['text_layer'] for item in selected):
+            from tenderkit.pdf_ocr import recognize_pages
+            recognize_pages(path, selected, page, ocr_cache)
     if sum(len(p['text']) for p in selected) > MAX_RESPONSE:
         raise TextReadError('Selected pages exceed response text limit')
     return dict(format=kind, engine=engine, pagination=pagination, total_pages=len(extracted),
