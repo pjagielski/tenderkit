@@ -4,7 +4,7 @@ Collect Polish procurement notices from BZP and TED, filter them with TOML profi
 
 ## Install and search
 
-Requires Python 3.11 or newer and IANA timezone data. On Windows the package installs `tzdata`; on Unix install the system timezone database if it is missing.
+Requires Python 3.11 or newer.
 
 ```sh
 python -m pip install tenderkit

@@ -41,7 +41,7 @@ class BzpAwardTests(unittest.TestCase):
         self.assertEqual([award.lot for award in notice.awards], ['1', '2'])
         first, second = notice.awards
         self.assertEqual((first.status, first.contractor, first.contractor_id),
-                         ('AWARDED', '4ITS Jacek Lange', '8491268028'))
+                         ('AWARDED', 'Example Supplier', '0000000000'))
         self.assertEqual((first.price, first.currency, first.offers, first.date),
                          (Decimal('92250.00'), 'PLN', 1, date(2026, 10, 1)))
         self.assertEqual((second.price, second.offers), (Decimal('138137.78'), 2))

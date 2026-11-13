@@ -178,7 +178,7 @@
                <efac:Organizations>
                   <efac:Organization>
                      <efac:Company>
-                        <cbc:WebsiteURI>https://bip.malopolska.pl/umwm/</cbc:WebsiteURI>
+                        <cbc:WebsiteURI>https://example.invalid</cbc:WebsiteURI>
                         <cbc:EndpointID>https://ezamowienia.gov.pl</cbc:EndpointID>
                         <cac:PartyIdentification>
                            <cbc:ID schemeName="organization">ORG-0001</cbc:ID>
@@ -187,9 +187,9 @@
                            <cbc:Name languageID="POL">Województwo Małopolskie</cbc:Name>
                         </cac:PartyName>
                         <cac:PostalAddress>
-                           <cbc:StreetName>ul. Basztowa 22</cbc:StreetName>
+                           <cbc:StreetName>ul. Przykładowa 1</cbc:StreetName>
                            <cbc:CityName>Kraków</cbc:CityName>
-                           <cbc:PostalZone>31-156</cbc:PostalZone>
+                           <cbc:PostalZone>00-000</cbc:PostalZone>
                            <cbc:CountrySubentityCode listName="nuts">PL213</cbc:CountrySubentityCode>
                            <cac:Country>
                               <cbc:IdentificationCode listName="country">POL</cbc:IdentificationCode>
@@ -198,16 +198,11 @@
                         <cac:PartyLegalEntity>
                            <cbc:CompanyID>351554287</cbc:CompanyID>
                         </cac:PartyLegalEntity>
-                        <cac:Contact>
-                           <cbc:Name>Zespół Zamówień Publicznych</cbc:Name>
-                           <cbc:Telephone>+48 126303222</cbc:Telephone>
-                           <cbc:ElectronicMail>przetargi@umwm.malopolska.pl</cbc:ElectronicMail>
-                        </cac:Contact>
                      </efac:Company>
                   </efac:Organization>
                   <efac:Organization>
                      <efac:Company>
-                        <cbc:WebsiteURI>https://www.uzp.gov.pl/kio</cbc:WebsiteURI>
+                        <cbc:WebsiteURI>https://example.invalid</cbc:WebsiteURI>
                         <cbc:EndpointID>https://ezamowienia.gov.pl</cbc:EndpointID>
                         <cac:PartyIdentification>
                            <cbc:ID schemeName="organization">ORG-0002</cbc:ID>
@@ -216,9 +211,9 @@
                            <cbc:Name languageID="POL">Krajowa Izba Odwoławcza</cbc:Name>
                         </cac:PartyName>
                         <cac:PostalAddress>
-                           <cbc:StreetName>ul. Postępu 17a</cbc:StreetName>
+                           <cbc:StreetName>ul. Przykładowa 1</cbc:StreetName>
                            <cbc:CityName>Warszawa</cbc:CityName>
-                           <cbc:PostalZone>02-676</cbc:PostalZone>
+                           <cbc:PostalZone>00-000</cbc:PostalZone>
                            <cbc:CountrySubentityCode listName="nuts">PL911</cbc:CountrySubentityCode>
                            <cac:Country>
                               <cbc:IdentificationCode listName="country">POL</cbc:IdentificationCode>
@@ -227,10 +222,6 @@
                         <cac:PartyLegalEntity>
                            <cbc:CompanyID>010828091</cbc:CompanyID>
                         </cac:PartyLegalEntity>
-                        <cac:Contact>
-                           <cbc:Telephone>(22) 458 78 01</cbc:Telephone>
-                           <cbc:ElectronicMail>odwolania@uzp.gov.pl</cbc:ElectronicMail>
-                        </cac:Contact>
                      </efac:Company>
                   </efac:Organization>
                   <efac:Organization>
@@ -243,9 +234,9 @@
                            <cbc:Name languageID="POL">Enigma Systemy Ochrony Informacji Sp. z o.o.</cbc:Name>
                         </cac:PartyName>
                         <cac:PostalAddress>
-                           <cbc:StreetName>ul. Jutrzenki 116</cbc:StreetName>
+                           <cbc:StreetName>ul. Przykładowa 1</cbc:StreetName>
                            <cbc:CityName>Warszawa</cbc:CityName>
-                           <cbc:PostalZone>02-230</cbc:PostalZone>
+                           <cbc:PostalZone>00-000</cbc:PostalZone>
                            <cbc:CountrySubentityCode listName="nuts">PL911</cbc:CountrySubentityCode>
                            <cac:Country>
                               <cbc:IdentificationCode listName="country">POL</cbc:IdentificationCode>
@@ -254,10 +245,6 @@
                         <cac:PartyLegalEntity>
                            <cbc:CompanyID>5261029614</cbc:CompanyID>
                         </cac:PartyLegalEntity>
-                        <cac:Contact>
-                           <cbc:Telephone>(22) 570 57 10</cbc:Telephone>
-                           <cbc:ElectronicMail>biuro@enigma.com.pl</cbc:ElectronicMail>
-                        </cac:Contact>
                      </efac:Company>
                   </efac:Organization>
                   <efac:Organization>
@@ -270,9 +257,9 @@
                            <cbc:Name languageID="POL">COIG S.A.</cbc:Name>
                         </cac:PartyName>
                         <cac:PostalAddress>
-                           <cbc:StreetName>ul. Mikołowska 100</cbc:StreetName>
+                           <cbc:StreetName>ul. Przykładowa 1</cbc:StreetName>
                            <cbc:CityName>Katowice</cbc:CityName>
-                           <cbc:PostalZone>40-065</cbc:PostalZone>
+                           <cbc:PostalZone>00-000</cbc:PostalZone>
                            <cbc:CountrySubentityCode listName="nuts">PL22A</cbc:CountrySubentityCode>
                            <cac:Country>
                               <cbc:IdentificationCode listName="country">POL</cbc:IdentificationCode>
@@ -281,16 +268,12 @@
                         <cac:PartyLegalEntity>
                            <cbc:CompanyID>6340134205</cbc:CompanyID>
                         </cac:PartyLegalEntity>
-                        <cac:Contact>
-                           <cbc:Telephone>(32) 757 33 50</cbc:Telephone>
-                           <cbc:ElectronicMail>oferty@coig.pl</cbc:ElectronicMail>
-                        </cac:Contact>
                      </efac:Company>
                   </efac:Organization>
                   <efac:Organization>
                      <efbc:NaturalPersonIndicator>false</efbc:NaturalPersonIndicator>
                      <efac:Company>
-                        <cbc:WebsiteURI>https://op.europa.eu</cbc:WebsiteURI>
+                        <cbc:WebsiteURI>https://example.invalid</cbc:WebsiteURI>
                         <cac:PartyIdentification>
                            <cbc:ID schemeName="organization">ORG-0000</cbc:ID>
                         </cac:PartyIdentification>
@@ -299,7 +282,7 @@
                         </cac:PartyName>
                         <cac:PostalAddress>
                            <cbc:CityName>Luxembourg</cbc:CityName>
-                           <cbc:PostalZone>2417</cbc:PostalZone>
+                           <cbc:PostalZone>00-000</cbc:PostalZone>
                            <cbc:CountrySubentityCode listName="nuts">LU000</cbc:CountrySubentityCode>
                            <cac:Country>
                               <cbc:IdentificationCode listName="country">LUX</cbc:IdentificationCode>
@@ -308,10 +291,6 @@
                         <cac:PartyLegalEntity>
                            <cbc:CompanyID>PUBL</cbc:CompanyID>
                         </cac:PartyLegalEntity>
-                        <cac:Contact>
-                           <cbc:Telephone>+352 29291</cbc:Telephone>
-                           <cbc:ElectronicMail>ted@publications.europa.eu</cbc:ElectronicMail>
-                        </cac:Contact>
                      </efac:Company>
                   </efac:Organization>
                </efac:Organizations>
