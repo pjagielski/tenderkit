@@ -1,15 +1,18 @@
 """One bounded document workflow for CLI, queue and MCP."""
+from contextlib import closing
 from dataclasses import asdict, replace
 from datetime import datetime, timezone
+from itertools import islice
 from pathlib import Path
 import tempfile
 
 from tenderkit.errors import PERMANENT, classify_error
-from tenderkit.limits import MAX_DOCUMENTS, MAX_JOB_BYTES, MAX_LISTED
+from tenderkit.limits import MAX_DOCUMENTS, MAX_JOB_BYTES, MAX_JOBS, MAX_LISTED
 from tenderkit.platforms import detect, platforms
 from tenderkit.platforms.backends import FetchError
 from tenderkit.profile import fold
-from tenderkit.queue import Queue, worker_lock
+from tenderkit.queue import Queue, SelectionConflict, worker_lock
+from tenderkit.service import filtered
 from tenderkit.store.documents import DocumentStore, StoreError
 
 BID_OPENING = ('otwarcia ofert', 'otwarcie ofert', 'opening of tenders', 'opening of offers')
@@ -205,6 +208,39 @@ class Documents:
         if not enqueue_only:
             self.queue.run(self._process, job_id=job_id)
         return self.queue.job(job_id)
+
+    def fetch_profile(self, profile, *, start=None, end=None, sources=(), limit=MAX_JOBS,
+                      offset=0, enqueue_only=False):
+        if type(limit) is not int or not 1 <= limit <= MAX_JOBS:
+            raise ValueError(f'Profile download limit must be between 1 and {MAX_JOBS}')
+        if type(offset) is not int or offset < 0:
+            raise ValueError('Profile download offset must be nonnegative')
+        matches = filtered(self.state, profile, start=start, end=end, source_names=sources)
+        # Release the SQLite read cursor before enqueuing jobs on a write connection.
+        with closing(matches):
+            page = list(islice(matches, offset, offset + limit + 1))
+        jobs, skipped = [], []
+        for notice in page[:limit]:
+            identity = dict(source=notice.source, number=notice.number)
+            adapter = detect(notice, self.adapters)
+            if not notice.platform_url:
+                reason = 'NO_REFERENCE'
+            elif adapter is None:
+                reason = 'UNSUPPORTED_PLATFORM'
+            elif not getattr(adapter, 'can_download', True):
+                reason = 'LIST_ONLY'
+            else:
+                reason = None
+            if reason:
+                skipped.append(dict(identity, reason=reason))
+                continue
+            try:
+                jobs.append(self.fetch(**identity, enqueue_only=enqueue_only))
+            except SelectionConflict:
+                skipped.append(dict(identity, reason='ACTIVE_SELECTION_CONFLICT'))
+        return dict(profile=profile.name, offset=offset,
+                    next_offset=offset + limit if len(page) > limit else None,
+                    jobs=jobs, skipped=skipped)
 
     def run(self, max_jobs=1):
         return self.queue.run(self._process, max_jobs=max_jobs)

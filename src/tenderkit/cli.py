@@ -5,6 +5,7 @@ import os
 from pathlib import Path
 import sys
 
+from tenderkit.limits import MAX_JOBS
 from tenderkit.profiles import builtin_profiles, resolve_profile
 from tenderkit.serialization import dumps
 from tenderkit.service import (filtered, matched_notice_record, procedure_results, refresh, search, search_results,
@@ -94,13 +95,19 @@ Run tenderkit COMMAND --help for command options.''',
     ui.add_argument('--port', type=int, default=8765, help='Local HTTP port (default: 8765).')
     ui.add_argument('--profile', action='append', required=True, metavar='NAME_OR_PATH',
                     help='Profile name or TOML path. Repeat to add tabs. The first profile opens by default.')
-    download = add_command('download', 'Download documents for a notice or run queued jobs.')
+    download = add_command('download', 'Download documents for a notice or profile, or run queued jobs.')
     download.add_argument('--source', help='Notice source, such as BZP or TED.')
-    download.add_argument('--number', help='Notice number from filter.')
+    selection = download.add_mutually_exclusive_group()
+    selection.add_argument('--number', help='Notice number from filter.')
+    selection.add_argument('--profile', help='Download documents for saved notices matching a profile.')
+    selection.add_argument('--run-queued', action='store_true', help='Process jobs already in the queue.')
+    download.add_argument('--from', dest='start', metavar='YYYY-MM-DD', help='First publication date for profile downloads.')
+    download.add_argument('--to', dest='end', metavar='YYYY-MM-DD', help='Last publication date for profile downloads.')
+    download.add_argument('--limit', type=int, help=f'Notices per profile download (default and max: {MAX_JOBS}).')
+    download.add_argument('--offset', type=int, help='Skip this many profile matches (default: 0).')
     download.add_argument('--key', action='append', dest='keys',
                           help='Document key from list-documents. Repeat to select multiple documents.')
     download.add_argument('--enqueue-only', action='store_true', help='Queue the download for later.')
-    download.add_argument('--run-queued', action='store_true', help='Process jobs already in the queue.')
     download.add_argument('--max-jobs', type=int, default=1, help='Limit jobs for --run-queued (default: 1).')
     listing = add_command('list-documents', 'List the documents attached to a notice.')
     listing.add_argument('--source', required=True, help='Notice source, such as BZP or TED.')
@@ -161,6 +168,14 @@ Run tenderkit COMMAND --help for command options.''',
                 start, end = window(args.start, args.end)
             else:
                 start = end = None
+        if args.command == 'download':
+            if args.profile:
+                if args.keys:
+                    raise ValueError('--key requires a single notice')
+                profile = resolve_profile(args.profile)
+                start, end = window(args.start, args.end) if args.start or args.end else (None, None)
+            elif any(value is not None for value in (args.start, args.end, args.limit, args.offset)):
+                raise ValueError('--from, --to, --limit and --offset require --profile')
         state = State(args.db)
         if args.command == 'results':
             if args.number:
@@ -177,6 +192,14 @@ Run tenderkit COMMAND --help for command options.''',
                 print(dumps(service.list(args.source, args.number, limit=args.limit, offset=args.offset, refresh=not args.cached)))
             elif args.command == 'read-document':
                 print(dumps(service.read(args.document_id, page=args.page, pages=args.pages, ocr=args.ocr)))
+            elif args.profile:
+                result = service.fetch_profile(
+                    profile, start=start, end=end, sources=(args.source,) if args.source else (),
+                    limit=MAX_JOBS if args.limit is None else args.limit,
+                    offset=0 if args.offset is None else args.offset, enqueue_only=args.enqueue_only)
+                print(dumps(result))
+                conflict = any(row['reason'] == 'ACTIVE_SELECTION_CONFLICT' for row in result['skipped'])
+                return int(conflict or (not args.enqueue_only and any(job['status'] != 'DONE' for job in result['jobs'])))
             elif args.run_queued:
                 if args.source or args.number or args.keys or args.enqueue_only:
                     raise ValueError('--run-queued cannot be combined with a notice selection')
@@ -185,7 +208,7 @@ Run tenderkit COMMAND --help for command options.''',
                 return int(not result['locked'] or any(j['status'] != 'DONE' for j in result['jobs']))
             else:
                 if not args.source or not args.number:
-                    raise ValueError('download requires --source and --number, or --run-queued')
+                    raise ValueError('download requires --source and --number, --profile, or --run-queued')
                 result = service.fetch(args.source, args.number, args.keys, enqueue_only=args.enqueue_only)
                 print(dumps(result))
                 return 0 if args.enqueue_only or result['status'] == 'DONE' else 1

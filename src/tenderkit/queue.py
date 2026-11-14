@@ -36,6 +36,10 @@ def worker_lock(path, *, suffix='.documents.lock'):
                 fcntl.flock(stream.fileno(), fcntl.LOCK_UN)
 
 
+class SelectionConflict(ValueError):
+    pass
+
+
 class Queue:
     def __init__(self, state):
         self.state = state
@@ -53,7 +57,7 @@ class Queue:
             found = conn.execute("select * from fetch_jobs where source=? and number=? and status in ('QUEUED','RUNNING')", (source, number)).fetchone()
             if found:
                 if json.loads(found['selection']) != keys:
-                    raise ValueError('A job with a different document selection is already active')
+                    raise SelectionConflict('A job with a different document selection is already active')
                 return found['id']
             return conn.execute('insert into fetch_jobs(source,number,selection,status) values(?,?,?,?) returning id',
                                  (source, number, dumps(keys), 'QUEUED')).fetchone()[0]
