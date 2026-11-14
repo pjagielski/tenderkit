@@ -6,6 +6,7 @@
 - Fetch notices from Baza Konkurencyjności (BK2021) with `--source BK`. The adapter validates search totals and supports on-demand downloads of public attachments.
 - Report new and revised profile matches with `tenderkit watch`. Watch history is stored in SQLite. Events are available as JSON Lines, through an optional webhook, and through the MCP `watch_updates` tool.
 - Use one per-user default database for CLI, browser UI and MCP on Windows, macOS and Linux. Override it with `--db` or `TENDERKIT_DB`.
+- Exclude CPV codes or prefixes with `exclude_cpv` in a profile or in MCP `search_notices`. The built-in `leki` profile leaves out laboratory reagents (`33696*`) and disinfectants (`336316*`).
 - Match keyword prefixes and phrases in titles, descriptions and available lot titles. Use `*term*` for substring matching. Results can identify the matched keyword and field.
 - Browse saved notices with `tenderkit ui`. Choose profiles at startup, search by title or buyer, filter by source, CPV and dates, and sort the results.
 - Export matching notices as JSON Lines. The CLI help lists commands and examples.

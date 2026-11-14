@@ -39,6 +39,25 @@ class ProfileTests(unittest.TestCase):
         self.assertFalse(profile.matches_cpv(['33100000']))
         self.assertTrue(Profile('all').matches_cpv(['45000000']))
 
+    def test_excluded_cpv_codes_never_count(self):
+        profile = Profile('leki', cpv=('336*',), exclude_cpv=('33696*', '336316*'))
+        self.assertTrue(profile.matches_cpv(['33600000']))
+        self.assertFalse(profile.matches_cpv(['33696500']))                  # reagents only
+        self.assertFalse(profile.matches_cpv(['33631600', '33696300']))      # disinfectants and reagents
+        self.assertTrue(profile.matches_cpv(['33696500', '33690000']))       # a medicines lot beside reagents
+        self.assertFalse(profile.matches(Notice('TED', '1', title='Odczynniki', cpv=('33696500',))))
+        self.assertTrue(Profile('all', exclude_cpv=('45*',)).matches_cpv(['72000000', '45000000']))
+        self.assertFalse(Profile('all', exclude_cpv=('45*',)).matches_cpv(['45000000']))
+        with self.assertRaisesRegex(ValueError, 'CPV must be digits'):
+            Profile('x', exclude_cpv=('33696-5',))
+
+    def test_the_builtin_medicines_profile_leaves_out_reagents_and_disinfectants(self):
+        from tenderkit.profiles import builtin_profiles
+        leki = builtin_profiles()['leki']
+        self.assertEqual(leki.exclude_cpv, ('33696*', '336316*'))
+        self.assertEqual(leki.source_query().cpv_prefixes, ('336',))
+        self.assertFalse(leki.matches_cpv(['33696500']))
+
     def test_keywords_ignore_case_and_polish_diacritics_and_exclusions_win(self):
         self.assertEqual(fold('Dostawa LEKÓW i szczepionek, Łódź'), 'dostawa lekow i szczepionek, lodz')
         profile = Profile('leki', cpv=('336*',), keywords_any=('lekow', 'szczepion'), exclude_keywords=('weterynar',))
