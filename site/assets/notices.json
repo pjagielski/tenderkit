@@ -1,0 +1,162 @@
+[
+  {
+    "profile": "biezace",
+    "source": "BZP",
+    "number": "Przykład 01",
+    "title": "Integracja obiegu dokumentów z systemem ERP",
+    "buyer_name": "Instytucja publiczna",
+    "buyer_city": "Do 500 tys. zł",
+    "reason": "Integracje z istniejącymi systemami, zakres dla małego zespołu i budżet zgodny z bieżącym profilem.",
+    "sector": "it"
+  },
+  {
+    "profile": "biezace",
+    "source": "BK",
+    "number": "Przykład 02",
+    "title": "Asystent AI do wyszukiwania w firmowej bazie wiedzy",
+    "buyer_name": "Firma usługowa",
+    "buyer_city": "Projekt na 3 miesiące",
+    "reason": "Wyszukiwanie w dokumentach i wdrożenie asystenta AI odpowiadają obecnym kompetencjom zespołu.",
+    "sector": "it"
+  },
+  {
+    "profile": "biezace",
+    "source": "OnePlace",
+    "number": "Przykład 03",
+    "title": "Automatyzacja raportowania i wymiany danych",
+    "buyer_name": "Spółka produkcyjna",
+    "buyer_city": "Realizacja zdalna",
+    "reason": "Automatyzacja powtarzalnego procesu i wymiana danych pomiędzy systemami mieszczą się w naszym bieżącym zakresie.",
+    "sector": "it"
+  },
+  {
+    "profile": "biezace",
+    "source": "TED",
+    "number": "Przykład 04",
+    "title": "Rozbudowa API i integracja systemów obsługi klienta",
+    "buyer_name": "Organizacja publiczna",
+    "buyer_city": "Wydzielony zakres prac",
+    "reason": "Samodzielny zakres integracyjny pasuje do dostępności i doświadczenia zespołu.",
+    "sector": "it"
+  },
+  {
+    "profile": "nice-to-have",
+    "source": "TED",
+    "number": "Przykład 05",
+    "title": "Platforma analityczna do planowania inwestycji",
+    "buyer_name": "Instytucja regionalna",
+    "buyer_city": "Projekt wieloetapowy",
+    "reason": "Większa platforma analityczna to kierunek rozwoju, który chcemy obserwować poza bieżącymi projektami.",
+    "sector": "it"
+  },
+  {
+    "profile": "nice-to-have",
+    "source": "BK",
+    "number": "Przykład 06",
+    "title": "Prototyp systemu AI wspierającego analizę dokumentacji",
+    "buyer_name": "Organizacja badawcza",
+    "buyer_city": "Projekt badawczo-rozwojowy",
+    "reason": "Temat eksperymentalny, z potencjałem rozwoju nowych kompetencji i współpracy z partnerem badawczym.",
+    "sector": "it"
+  },
+  {
+    "profile": "nice-to-have",
+    "source": "BZP",
+    "number": "Przykład 07",
+    "title": "Budowa portalu usług cyfrowych dla mieszkańców",
+    "buyer_name": "Jednostka samorządowa",
+    "buyer_city": "Możliwa współpraca partnerska",
+    "reason": "Większy zakres portalu wymaga partnera lub poszerzenia zespołu; warto śledzić szczegóły postępowania.",
+    "sector": "it"
+  },
+  {
+    "profile": "nice-to-have",
+    "source": "OnePlace",
+    "number": "Przykład 08",
+    "title": "System prognozowania zapotrzebowania i planowania dostaw",
+    "buyer_name": "Firma logistyczna",
+    "buyer_city": "Nowy obszar produktowy",
+    "reason": "Przykład nowego obszaru zastosowania analityki i AI, do rozważenia przy kolejnych projektach.",
+    "sector": "it"
+  },
+  {
+    "sector": "pharma",
+    "profile": "biezace",
+    "source": "BZP",
+    "number": "Przykład P01",
+    "title": "Sukcesywne dostawy leków szpitalnych w pakietach",
+    "buyer_name": "Szpital wielospecjalistyczny",
+    "buyer_city": "Dostawy przez 12 miesięcy",
+    "reason": "Leki z bieżącego portfolio oraz sukcesywne dostawy pasują do obecnego zakresu działalności firmy."
+  },
+  {
+    "sector": "pharma",
+    "profile": "biezace",
+    "source": "TED",
+    "number": "Przykład P02",
+    "title": "Dostawa leków onkologicznych do apteki szpitalnej",
+    "buyer_name": "Ośrodek onkologiczny",
+    "buyer_city": "Pakiety zgodne z ofertą",
+    "reason": "Postępowanie dotyczy grup leków, które firma już dostarcza; warto sprawdzić formularz cenowy i wymagania pakietów."
+  },
+  {
+    "sector": "pharma",
+    "profile": "biezace",
+    "source": "OnePlace",
+    "number": "Przykład P03",
+    "title": "Zakup produktów leczniczych dla sieci placówek",
+    "buyer_name": "Operator placówek medycznych",
+    "buyer_city": "Dostawy cykliczne",
+    "reason": "Powtarzalny zakres dostaw i produkty z obecnej oferty odpowiadają profilowi bieżącej sprzedaży."
+  },
+  {
+    "sector": "pharma",
+    "profile": "biezace",
+    "source": "BK",
+    "number": "Przykład P04",
+    "title": "Dostawa odczynników do badań nad produktami leczniczymi",
+    "buyer_name": "Ośrodek badawczy",
+    "buyer_city": "Odczynniki z portfolio",
+    "reason": "Zakup obejmuje odczynniki dostępne w obecnym portfolio firmy i pasuje do jej możliwości dostaw."
+  },
+  {
+    "sector": "pharma",
+    "profile": "nice-to-have",
+    "source": "TED",
+    "number": "Przykład P05",
+    "title": "Dostawa leków biologicznych do programu terapeutycznego",
+    "buyer_name": "Szpital specjalistyczny",
+    "buyer_city": "Nowy obszar terapii",
+    "reason": "Nowa grupa produktów to potencjalny kierunek rozwoju; postępowanie warto obserwować przed rozszerzeniem oferty."
+  },
+  {
+    "sector": "pharma",
+    "profile": "nice-to-have",
+    "source": "BK",
+    "number": "Przykład P06",
+    "title": "Zakup substancji czynnych do projektu badawczego",
+    "buyer_name": "Firma biotechnologiczna",
+    "buyer_city": "Możliwa współpraca B+R",
+    "reason": "Zamówienie otwiera możliwość współpracy badawczej i wejścia w nowy segment dostaw."
+  },
+  {
+    "sector": "pharma",
+    "profile": "nice-to-have",
+    "source": "BZP",
+    "number": "Przykład P07",
+    "title": "Dostawa produktów do żywienia klinicznego",
+    "buyer_name": "Szpital rehabilitacyjny",
+    "buyer_city": "Rozszerzenie portfolio",
+    "reason": "Żywienie kliniczne jest rozważanym rozszerzeniem oferty; zakres i wymagania wymagają osobnej oceny."
+  },
+  {
+    "sector": "pharma",
+    "profile": "nice-to-have",
+    "source": "OnePlace",
+    "number": "Przykład P08",
+    "title": "Zaopatrzenie nowego oddziału w leki specjalistyczne",
+    "buyer_name": "Grupa medyczna",
+    "buyer_city": "Nowa relacja handlowa",
+    "reason": "Nowy odbiorca i specjalistyczny asortyment mogą wspierać rozwój firmy poza bieżącymi umowami."
+  }
+]
