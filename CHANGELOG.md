@@ -11,6 +11,7 @@
 - Export matching notices as JSON Lines. The CLI help lists commands and examples.
 - Fetch formal result notices with `fetch --results` and read them with `results` or the MCP `procedure_results` and `search_results` tools. Results include the contractor, selected price, bid count and status per lot and link to the contract notice through `procedure_id`.
 - List and download public procurement documents on supported platforms, including e-Zamówienia. Document listings mark bid-opening information with `kind: "bid_opening"` based on the filename.
+- On Windows, document file names are shortened to keep store paths under 260 characters. A store directory that is too deep fails with `PATH_TOO_LONG` instead of an unexplained `FileNotFoundError`.
 - Read PDF, DOCX and XLSX text with document provenance. Detect PDF pages without embedded text and opt in to local Polish OCR with `--ocr` or MCP `ocr: true`. OCR text is cached per document and page.
 - Expose search, notice details and document tools through an optional MCP server over stdio.
 - Register notice sources and document platforms through Python entry points.

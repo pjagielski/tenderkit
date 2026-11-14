@@ -123,7 +123,9 @@ tenderkit download --source BZP --number '2026/BZP …/01' --key '<document key>
 tenderkit read-document '<SHA-256>'
 ```
 
-Use a notice number returned by the filter and a key returned by the listing. The store verifies content by SHA-256 and retains document provenance. Native e-Zamówienia, platformazakupowa.pl and Marketplanet implement document downloads. For platformazakupowa.pl, consult the [platform terms](https://platformazakupowa.pl/strona/regulamin) and [official CSV export](https://platformazakupowa.pl/strona/api).
+Use a notice number returned by the filter and a key returned by the listing. The store verifies content by SHA-256 and retains document provenance.
+
+On Windows, store paths must stay under 260 characters. Tenderkit shortens the readable part of linked file names to fit. When the document directory itself is too deep, the job fails with `PATH_TOO_LONG`. In that case choose a shorter `--documents-dir` or `TENDERKIT_DOCUMENT_DIR`. Native e-Zamówienia, platformazakupowa.pl and Marketplanet implement document downloads. For platformazakupowa.pl, consult the [platform terms](https://platformazakupowa.pl/strona/regulamin) and [official CSV export](https://platformazakupowa.pl/strona/api).
 
 The native e-Zamówienia adapter downloads published attachments on request using the portal's public document route. The platform allows access to its public area without signing in. The integration guide documents a rate limit for the BZP notice API. We found no published quota or integration contract for the attachment route. Tenderkit spaces requests by 2.1 seconds and caps downloads at 200 MB per file and 1 GB per job. [Platform terms](https://ezamowienia.gov.pl/pl/regulamin/) · [Integration guide](https://ezamowienia.gov.pl/pl/integracja/)
 
