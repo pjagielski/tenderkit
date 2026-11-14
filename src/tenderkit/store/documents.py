@@ -14,6 +14,25 @@ STORAGE_NAME = re.compile(r'([a-f0-9]{64})\.[a-z0-9]+')
 class StoreError(ValueError):
     pass
 
+
+class PathTooLong(StoreError):
+    """A store path that Windows would refuse (MAX_PATH); code PATH_TOO_LONG is what a download job reports."""
+    code = 'PATH_TOO_LONG'
+
+
+# Windows refuses paths of 260 characters or more unless long paths are enabled for the machine and Python; a store in a
+# deep directory then failed with a bare FileNotFoundError (issue #23). Other systems allow far longer paths.
+MAX_PATH = 259 if os.name == 'nt' else 4095
+
+
+def check_length(path, limit=None):
+    """The path, or PathTooLong naming its length and the remedy."""
+    limit = MAX_PATH if limit is None else limit
+    if len(str(path)) > limit:
+        raise PathTooLong(f'PATH_TOO_LONG: {len(str(path))} characters (limit {limit}): {path}. '
+                          'Choose a shorter --documents-dir or TENDERKIT_DOCUMENT_DIR.')
+    return path
+
 def sha256_file(path):
     digest = hashlib.sha256()
     with Path(path).open('rb') as stream:
@@ -75,7 +94,7 @@ class DocumentStore:
         path = self.root / 'objects' / storage_name[:2] / storage_name
         if not path.resolve().is_relative_to(self.root):
             raise StoreError('Document escapes store')
-        return path
+        return check_length(path)
 
     def put(self, source):
         source = Path(source)
@@ -99,6 +118,8 @@ class DocumentStore:
         directory = self.root / 'procedures' / key / 'raw'
         if not directory.resolve().is_relative_to(self.root):
             raise StoreError('Manifest escapes store')
+        # manifest.json and its temporary file must fit as well as the linked documents.
+        check_length(directory / ('x' * 24 + '.tmp'))
         directory.mkdir(parents=True, exist_ok=True)
         for item in value['documents']:
             if not item.get('localPath'):
@@ -109,10 +130,14 @@ class DocumentStore:
                 raise StoreError('Manifest source does not match its SHA-256')
             # Existing pharma readers resolve raw/Path(localPath).name. Keep
             # that layout as hard links to the canonical sharded objects.
-            safe = re.sub(r'[<>:"/\\|?*\x00-\x1f]', '_', item['name']).strip(' .')[:80] or 'document'
-            if Path(safe).suffix.lower() != source.suffix.lower():
-                safe += source.suffix
-            target = directory / (digest[:16] + '_' + safe)
+            # The readable part of the name shrinks to fit the path limit; the digest prefix keeps names unique.
+            suffix = source.suffix
+            room = MAX_PATH - len(str(directory)) - len(os.sep) - 17 - len(suffix)
+            safe = re.sub(r'[<>:"/\\|?*\x00-\x1f]', '_', item['name']).strip(' .')
+            if Path(safe).suffix.lower() == suffix.lower():
+                safe = safe[:len(safe) - len(suffix)]
+            safe = safe[:max(0, min(80, room))].strip(' .') or 'document'
+            target = check_length(directory / (digest[:16] + '_' + safe + suffix))
             if target.exists():
                 if sha256_file(target) != digest:
                     raise StoreError('Manifest file holds other content')
