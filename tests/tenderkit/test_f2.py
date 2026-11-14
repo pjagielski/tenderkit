@@ -58,7 +58,7 @@ class FakePlatform:
 
     def __init__(self):
         self.files = {'swz.docx': b'one', 'appendix.xlsx': b'two'}
-        self.calls, self.fail = [], None
+        self.calls, self.fail, self.refuse = [], None, {}
 
     def matches(self, url):
         return 'platformazakupowa.pl' in url
@@ -73,6 +73,8 @@ class FakePlatform:
         if self.fail:
             raise FetchError(self.fail)
         self.calls.append(ref.key)
+        if ref.key in self.refuse:
+            raise FetchError(self.refuse[ref.key])
         path = to / ref.name
         path.write_bytes(self.files[ref.key])
         return path
@@ -107,6 +109,40 @@ class QueueIntegrationTests(unittest.TestCase):
         self.assertEqual((again['summary']['downloaded'], again['summary']['known'], len(self.adapter.calls)), (0, 2, 2))
         self.assertEqual(len(service.list('BZP', '1', refresh=False)['documents']), 2)
 
+    def test_a_document_the_platform_refuses_for_good_does_not_fail_the_job(self):
+        # e-Zamówienia answered 400 for a replaced SWZ.pdf while 11 other files downloaded (2026/BZP 00534336/01).
+        self.adapter.refuse = {'appendix.xlsx': 'HTTP_400'}
+        result = self.service.fetch('BZP', '1')
+        self.assertEqual((result['status'], result['error']), ('DONE', None))
+        self.assertEqual((result['summary']['downloaded'], result['summary']['unavailable']), (1, 1))
+        self.assertEqual(self.coverage(), 'FETCHED')
+        listed = {d['key']: d for d in self.service.list('BZP', '1', refresh=False)['documents']}
+        self.assertEqual(listed['appendix.xlsx']['unavailable']['error'], 'HTTP_400')
+        self.assertNotIn('unavailable', listed['swz.docx'])
+        manifest = json.loads(next((self.root / 'store').rglob('manifest.json')).read_text(encoding='utf-8'))
+        self.assertEqual([d.get('skipped') for d in manifest['documents']], [None, 'unavailable: HTTP_400'])
+        # A later whole-procedure run does not ask for it again; asking for its key does, and success clears it.
+        again = self.service.fetch('BZP', '1')
+        self.assertEqual((again['status'], again['summary']['unavailable'], self.adapter.calls.count('appendix.xlsx')), ('DONE', 1, 1))
+        self.adapter.refuse = {}
+        explicit = self.service.fetch('BZP', '1', ['appendix.xlsx'])
+        self.assertEqual((explicit['status'], explicit['summary']['downloaded']), ('DONE', 1))
+        self.assertNotIn('unavailable', {d['key']: d for d in self.service.list('BZP', '1', refresh=False)['documents']}['appendix.xlsx'])
+
+    def test_a_job_that_stores_nothing_or_hits_a_transient_error_still_fails(self):
+        self.adapter.refuse = {'swz.docx': 'HTTP_404', 'appendix.xlsx': 'HTTP_410'}
+        failed = self.service.fetch('BZP', '1')
+        self.assertEqual((failed['status'], failed['error'], failed['error_kind']), ('FAILED', 'HTTP_404', 'PERMANENT'))
+        self.assertEqual(self.coverage(), 'FETCH_FAILED')
+        # Throttling, server errors and blocks are no verdict on the document: the job fails or retries, nothing is marked.
+        for i, code in enumerate(('HTTP_503', 'HTTP_403', 'HTTP_429'), 2):
+            with self.subTest(code=code):
+                notice = Notice('BZP', str(i), published=date(2026, 11, 1), platform_url='https://platformazakupowa.pl/transakcja/1')
+                self.state.record_refresh('BZP', notice.published, notice.published, {}, [notice])
+                self.adapter.refuse = {'appendix.xlsx': code}
+                job = self.service.fetch('BZP', str(i))
+                self.assertEqual((job['status'] != 'DONE', job['error']), (True, code))
+                self.assertEqual(self.state.unavailable('BZP', str(i)), {})
     def test_manifest_names_shrink_to_fit_the_path_limit(self):
         # Issue #23: a deep store made <store>/procedures/<64>/raw/<16>_<80-char name> exceed Windows' 260 characters.
         self.adapter.files = {'Załącznik nr 2 do SWZ Formularz asortymentowo-cenowy dla wszystkich pakietów.xlsx': b'form'}

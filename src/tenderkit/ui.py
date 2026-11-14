@@ -168,7 +168,8 @@ def render(template, state, profiles, params):
         published_from=escape(params['from']), published_to=escape(params['to']), cpv=escape(cpv),
         deadline_options=options(DEADLINE_LABELS, deadline_filter), sort_options=options(SORT_LABELS, order),
         reset_link=page_link({'profile': active}),
-        criteria=''.join(f'<span>CPV {escape(code)}</span>' for code in profile.cpv),
+        criteria=''.join(f'<span>CPV {escape(code)}</span>' for code in profile.cpv)
+        + ''.join(f'<span>bez CPV {escape(code)}</span>' for code in profile.exclude_cpv),
         rows=f'<ul class="notices">{rows}</ul>' if rows else
              '<p class="empty">Brak wyników na tej stronie. Zmień filtry lub wybierz inny profil.</p>',
         pagination=''.join(pagination),

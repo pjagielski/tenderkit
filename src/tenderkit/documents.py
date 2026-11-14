@@ -4,6 +4,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 import tempfile
 
+from tenderkit.errors import PERMANENT, classify_error
 from tenderkit.limits import MAX_DOCUMENTS, MAX_JOB_BYTES, MAX_LISTED
 from tenderkit.platforms import detect, platforms
 from tenderkit.platforms.backends import FetchError
@@ -18,6 +19,13 @@ def document_kind(name):
     """A filename-only marker for well-known public documents; content is never parsed here."""
     folded = fold(name)
     return 'bid_opening' if any(phrase in folded for phrase in BID_OPENING) else None
+
+
+def unavailable_error(error):
+    """The HTTP code of a refusal that concerns one document for good (a withdrawn attachment answers 400, 404 or 410),
+    None for anything the job should fail or retry on: throttling, server errors, a block (401/403) or a local fault."""
+    code = getattr(error, 'code', '')
+    return code if code.startswith('HTTP_4') and classify_error('FAILED', code) == PERMANENT else None
 
 
 def with_kind(ref):
@@ -81,9 +89,11 @@ class Documents:
             adapter = detect(notice, self.adapters)
         refs = self.state.listing(source, number)
         downloaded = self.state.documents(source, number)
+        unavailable = self.state.unavailable(source, number)
         link = self.state.procedure_link(source, number)
         return dict(documents=[dict(ref, kind=(ref.get('metadata') or {}).get('kind'),
-                                   downloaded=downloaded.get(ref['key']))
+                                   downloaded=downloaded.get(ref['key']),
+                                   **({'unavailable': unavailable[ref['key']]} if ref['key'] in unavailable and ref['key'] not in downloaded else {}))
                                for ref in refs[offset:offset+limit]],
                     total=len(refs), next_offset=offset+limit if offset+limit < len(refs) else None,
                     can_download=bool(adapter and getattr(adapter, 'can_download', True)),
@@ -91,6 +101,7 @@ class Documents:
 
     def _manifest(self, notice, refs, known, error=None):
         documents = []
+        unavailable = self.state.unavailable(notice.source, notice.number)
         for ref in refs:
             record = known.get(ref.key)
             item = dict(name=ref.name, folder=ref.origin, publishedDate=ref.published, downloadUrl=ref.url, key=ref.key)
@@ -98,6 +109,8 @@ class Documents:
             if record:
                 item.update(sha256=record['sha256'], sizeBytes=record['byte_size'],
                             localPath=str(self.store.path(record['storage_name'])))
+            elif ref.key in unavailable:
+                item['skipped'] = 'unavailable: ' + unavailable[ref.key]['error']
             else:
                 item['skipped'] = 'not downloaded'
             documents.append(item)
@@ -120,7 +133,10 @@ class Documents:
             known = self.state.documents(source, number)
             if len(selected | set(known)) > MAX_DOCUMENTS:
                 raise FetchError('TOO_MANY_DOCUMENTS')
-            summary = dict(listed=len(refs), selected=len(selected), downloaded=0, known=0, bytes=0)
+            summary = dict(listed=len(refs), selected=len(selected), downloaded=0, known=0, bytes=0, unavailable=0)
+            refused = self.state.unavailable(source, number)
+            whole = job['selection'] is None
+            failure = None
             self.queue.beat(job['id'], summary)
             with tempfile.TemporaryDirectory() as scratch:
                 for ref in refs:
@@ -138,13 +154,29 @@ class Documents:
                         except StoreError:
                             # Refuse corrupt existing content rather than silently overwriting evidence.
                             raise
-                    path = adapter.download(ref, Path(scratch))
+                    if whole and ref.key in refused:
+                        # Refused for good on an earlier run; only an explicit request for its key tries it again.
+                        summary['unavailable'] += 1
+                        continue
+                    try:
+                        path = adapter.download(ref, Path(scratch))
+                    except FetchError as exc:
+                        code = unavailable_error(exc)
+                        if code is None:
+                            raise
+                        self.state.mark_unavailable(source, number, ref.key, code)
+                        refused[ref.key] = dict(error=code)
+                        summary['unavailable'] += 1
+                        failure = failure or exc
+                        self.queue.beat(job['id'], summary)
+                        continue
                     if not path.resolve().is_relative_to(Path(scratch).resolve()):
                         raise FetchError('UNSAFE_PATH')
                     if summary['bytes'] + path.stat().st_size > MAX_JOB_BYTES:
                         raise FetchError('JOB_TOO_LARGE')
                     record = dict(asdict(ref), **self.store.put(path), fetched_at=datetime.now(timezone.utc).isoformat())
                     self.state.record_document(source, number, record)
+                    self.state.clear_unavailable(source, number, ref.key)
                     known[ref.key] = record
                     summary['downloaded'] += 1
                     summary['bytes'] += record['byte_size']
@@ -152,8 +184,12 @@ class Documents:
                     self.queue.beat(job['id'], summary)
             self.queue.beat(job['id'], summary)
             self._manifest(notice, refs, known)
-            coverage = 'NO_DOCUMENTS' if not refs else 'FETCHED' if all(ref.key in known for ref in refs) else 'PENDING'
+            # Every document is stored or refused for good: nothing more can be fetched.
+            coverage = 'NO_DOCUMENTS' if not refs else 'FETCHED' if all(ref.key in known or ref.key in refused for ref in refs) else 'PENDING'
             self.state.set_coverage(source, number, coverage)
+            # A job that could store none of what it was asked for still fails, with the platform's answer.
+            if failure is not None and not any(key in known for key in selected):
+                raise failure
         except Exception as exc:
             self.state.set_coverage(source, number, self._error_coverage(exc))
             if notice is not None and refs is not None:

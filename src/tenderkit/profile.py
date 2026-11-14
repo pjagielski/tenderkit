@@ -2,6 +2,7 @@
 
     name = "leki"
     cpv = ["336*"]                         # a code, or a prefix ending in *
+    exclude_cpv = ["33696*", "336316*"]    # codes that never count, even inside cpv
     keywords_any = ["lek", "farmaceut"]    # empty: no keyword condition
     exclude_keywords = ["weterynar"]
 
@@ -88,6 +89,7 @@ def _keyword_fields(notice):
 class Profile:
     name: str
     cpv: tuple[str, ...] = ()
+    exclude_cpv: tuple[str, ...] = ()
     keywords_any: tuple[str, ...] = ()
     exclude_keywords: tuple[str, ...] = ()
     notice_types: tuple[str, ...] = ()
@@ -100,13 +102,13 @@ class Profile:
     def __post_init__(self):
         if not isinstance(self.name, str) or not self.name.strip():
             raise ValueError('Profile name must be nonempty')
-        for name in ('cpv', 'keywords_any', 'exclude_keywords', 'notice_types', 'regions', 'exclude_buyers', 'documents'):
+        for name in ('cpv', 'exclude_cpv', 'keywords_any', 'exclude_keywords', 'notice_types', 'regions', 'exclude_buyers', 'documents'):
             values = getattr(self, name)
             if (not isinstance(values, (list, tuple)) or len(values) > 64
                     or any(not isinstance(v, str) or not v.strip() or len(v) > 200 for v in values)):
                 raise ValueError(f'{name} must be an array of nonempty strings')
             object.__setattr__(self, name, tuple(values))
-        bad = [c for c in self.cpv if not _CPV.match(c)]
+        bad = [c for c in self.cpv + self.exclude_cpv if not _CPV.match(c)]
         if bad:
             raise ValueError(f'profile {self.name}: CPV must be digits, optionally ending in *: {bad}')
         if self.value is not None and not isinstance(self.value, ValueRange):
@@ -123,10 +125,20 @@ class Profile:
     def source_query(self):
         return SourceQuery(cpv_prefixes=self.cpv_prefixes(), notice_types=self.notice_types)
 
+    @staticmethod
+    def _cpv_hit(code, patterns):
+        return any(code.startswith(p[:-1]) if p.endswith('*') else code == p for p in patterns)
+
     def matches_cpv(self, codes):
-        return not self.cpv or any(
-            str(code).startswith(pattern[:-1]) if pattern.endswith('*') else str(code) == pattern
-            for pattern in self.cpv for code in codes)
+        """Whether one of the notice's codes (main or lot) is wanted: inside cpv (or cpv is empty) and not in exclude_cpv.
+        A notice whose every code is excluded does not match; one with medicines beside reagents still does."""
+        codes = [str(code) for code in codes]
+        if self.exclude_cpv:
+            kept = [code for code in codes if not self._cpv_hit(code, self.exclude_cpv)]
+            if codes and not kept:
+                return False
+            codes = kept
+        return not self.cpv or any(self._cpv_hit(code, self.cpv) for code in codes)
 
     def matches_text(self, text):
         return self._matches_keywords((text,))

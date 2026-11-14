@@ -32,6 +32,12 @@ create table if not exists notice_documents (
     payload text not null, fetched_at text not null,
     primary key(source,number,document_key,sha256)
 );
+-- A document the platform refused with a permanent HTTP error (a withdrawn or replaced attachment). A whole-procedure
+-- download skips it; asking for its key again retries it, and a later successful download clears it.
+create table if not exists document_unavailable (
+    source text not null, number text not null, document_key text not null, error text not null, checked_at text not null,
+    primary key(source,number,document_key)
+);
 create table if not exists fetch_jobs (
     id integer primary key, source text not null, number text not null, selection text,
     status text not null, attempts integer not null default 0, error text, error_kind text,
@@ -160,6 +166,22 @@ class State:
             conn.execute('''insert into notice_documents values(?,?,?,?,?,?)
                 on conflict(source,number,document_key,sha256) do update set payload=excluded.payload,fetched_at=excluded.fetched_at''',
                 (source, number, record['key'], record['sha256'], dumps(record), record['fetched_at']))
+
+    def mark_unavailable(self, source, number, key, error):
+        with self.connection() as conn:
+            conn.execute('''insert into document_unavailable values(?,?,?,?,?)
+                on conflict(source,number,document_key) do update set error=excluded.error,checked_at=excluded.checked_at''',
+                (source, number, key, error, datetime.now(timezone.utc).isoformat()))
+
+    def clear_unavailable(self, source, number, key):
+        with self.connection() as conn:
+            conn.execute('delete from document_unavailable where source=? and number=? and document_key=?', (source, number, key))
+
+    def unavailable(self, source, number):
+        """{document key: {error, checked_at}} of the documents the platform refused for good."""
+        with self.connection() as conn:
+            return {row['document_key']: dict(error=row['error'], checked_at=row['checked_at']) for row in conn.execute(
+                'select document_key,error,checked_at from document_unavailable where source=? and number=?', (source, number))}
 
     def documents(self, source, number):
         with self.connection() as conn:

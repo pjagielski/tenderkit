@@ -44,7 +44,7 @@ regions = ["14"]
 deadline_days = { min = 1, max = 60 }
 ```
 
-Region codes refer to the buyer's location. A CPV ending in `*` matches a prefix. Required keywords and CPV restrictions are applied together, and exclusions take precedence.
+Region codes refer to the buyer's location. A CPV ending in `*` matches a prefix. `exclude_cpv` lists codes or prefixes that never count: a notice matches only if one of its main or lot codes is in `cpv` and not excluded. The built-in `leki` profile excludes laboratory reagents (`33696*`) and disinfectants (`336316*`), which share the `336` branch. Required keywords and CPV restrictions are applied together, and exclusions take precedence.
 
 `keywords_any` and `exclude_keywords` search the notice title, description and available lot titles. Matching ignores case and diacritics. A term starts at a word boundary, so `lek` matches `Leki` and `leków`. Phrases such as `system informatyczn` match consecutive text and allow an inflected ending. Wrap a term in stars, such as `*lek*`, to match it anywhere within a word as in earlier versions.
 
@@ -124,6 +124,8 @@ tenderkit read-document '<SHA-256>'
 ```
 
 Use a notice number returned by the filter and a key returned by the listing. The store verifies content by SHA-256 and retains document provenance.
+
+A document that the platform refuses with a permanent HTTP error (400, 404, 410 and other 4xx except 401, 403, 408 and 429) does not fail the procedure. Typically it is a withdrawn or replaced attachment. The job finishes with the other files, counts the document under `summary.unavailable`, and `list-documents` shows it with `unavailable: {error, checked_at}`. Later downloads of the whole procedure skip it. Pass its `--key` to try it again. A job still fails if it stores none of the requested documents, or on throttling, server errors and access blocks. Native e-Zamówienia, platformazakupowa.pl and Marketplanet implement document downloads. For platformazakupowa.pl, consult the [platform terms](https://platformazakupowa.pl/strona/regulamin) and [official CSV export](https://platformazakupowa.pl/strona/api).
 
 On Windows, store paths must stay under 260 characters. Tenderkit shortens the readable part of linked file names to fit. When the document directory itself is too deep, the job fails with `PATH_TOO_LONG`. In that case choose a shorter `--documents-dir` or `TENDERKIT_DOCUMENT_DIR`. Native e-Zamówienia, platformazakupowa.pl and Marketplanet implement document downloads. For platformazakupowa.pl, consult the [platform terms](https://platformazakupowa.pl/strona/regulamin) and [official CSV export](https://platformazakupowa.pl/strona/api).
 
