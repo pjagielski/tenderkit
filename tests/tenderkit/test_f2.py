@@ -134,6 +134,46 @@ class QueueIntegrationTests(unittest.TestCase):
             with redirect_stderr(io.StringIO()):
                 self.assertEqual(main(args + ['read-document', '../outside']), 2)
 
+    def test_cli_profile_download_pages_and_keeps_single_notice_selection(self):
+        published = date(2026, 11, 2)
+        known_url = 'https://platformazakupowa.pl/transakcja/2'
+        self.state.record_refresh('BZP', published, published, {}, [
+            Notice('BZP', '2', published=published, cpv=('72000000',),
+                   notice_type='ContractNotice', platform_url=known_url),
+            Notice('BZP', '3', published=published, cpv=('72000000',),
+                   notice_type='ContractNotice', platform_url='https://example.org/procedure'),
+            Notice('BZP', '4', published=published, cpv=('33000000',), platform_url=known_url),
+        ])
+        args = ['--db', str(self.state.path), '--documents-dir', str(self.service.store.root),
+                'download', '--profile', 'oprogramowanie', '--source', 'BZP',
+                '--from', published.isoformat(), '--to', published.isoformat(), '--limit', '1']
+        with mock.patch('tenderkit.documents.platforms', return_value={self.adapter.name: self.adapter}):
+            pending = self.service.fetch('BZP', '2', ['swz.docx'], enqueue_only=True)
+            with redirect_stdout(io.StringIO()) as output:
+                self.assertEqual(main(args), 1)
+            first = json.loads(output.getvalue())
+            self.assertEqual(first['next_offset'], 1)
+            self.assertEqual(first['skipped'][0]['reason'], 'ACTIVE_SELECTION_CONFLICT')
+            self.assertEqual(self.service.queue.job(pending['id'])['status'], 'QUEUED')
+            self.assertEqual(self.adapter.calls, [])
+
+            with redirect_stdout(io.StringIO()) as output:
+                self.assertEqual(main(args + ['--offset', str(first['next_offset'])]), 0)
+            second = json.loads(output.getvalue())
+            self.assertIsNone(second['next_offset'])
+            self.assertEqual(second['skipped'], [
+                {'source': 'BZP', 'number': '3', 'reason': 'UNSUPPORTED_PLATFORM'},
+            ])
+
+            self.service.run()
+            with redirect_stdout(io.StringIO()) as output:
+                self.assertEqual(main(args + ['--enqueue-only']), 0)
+            job, = json.loads(output.getvalue())['jobs']
+            self.assertEqual((job['number'], job['status']), ('2', 'QUEUED'))
+            result, = self.service.run()['jobs']
+            self.assertEqual((result['status'], result['summary']['downloaded'], result['summary']['known']),
+                             ('DONE', 1, 1))
+
     def test_transient_retry_and_worker_recovery_are_durable(self):
         self.adapter.fail = 'RATE_LIMITED'
         first = self.service.fetch('BZP', '1')

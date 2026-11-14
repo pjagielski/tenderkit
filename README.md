@@ -125,6 +125,14 @@ tenderkit read-document '<SHA-256>'
 
 Use a notice number returned by the filter and a key returned by the listing. The store verifies content by SHA-256 and retains document provenance. Native e-Zamówienia, platformazakupowa.pl and Marketplanet implement document downloads. For platformazakupowa.pl, consult the [platform terms](https://platformazakupowa.pl/strona/regulamin) and [official CSV export](https://platformazakupowa.pl/strona/api).
 
+To download documents for saved notices matching a profile, run:
+
+```sh
+tenderkit download --profile oprogramowanie --limit 10
+```
+
+The command uses the same matches and ordering as `filter`. Use `--source`, `--from` and `--to` to narrow the selection. Each call takes up to 20 matches. If the response includes a `next_offset`, pass it as `--offset` with the same filters. The response includes a job per processed notice and a reason for each skipped notice. Use `--enqueue-only` to prepare jobs for `download --run-queued --max-jobs 20`. An unfinished job or a conflict with an active download selection produces exit status 1 for a direct run.
+
 The native e-Zamówienia adapter downloads published attachments on request using the portal's public document route. The platform allows access to its public area without signing in. The integration guide documents a rate limit for the BZP notice API. We found no published quota or integration contract for the attachment route. Tenderkit spaces requests by 2.1 seconds and caps downloads at 200 MB per file and 1 GB per job. [Platform terms](https://ezamowienia.gov.pl/pl/regulamin/) · [Integration guide](https://ezamowienia.gov.pl/pl/integracja/)
 
 DOCX and XLSX reading uses the standard library. PDF text extraction needs `pdftotext` on PATH or the `documents` extra, which installs the PyMuPDF CLI. Each PDF page reports `text_layer: false` when extraction finds no embedded text, as with scanned or blank pages.
@@ -150,6 +158,17 @@ tenderkit mcp
 Configure your client with the absolute path to the installed `tenderkit` executable and arguments `["mcp"]`. For an alternate database, pass `["--db", "/absolute/path/notices.sqlite3", "mcp"]`. Search with `search_notices`, inspect a record with `get_notice`, and use `procedure_results` and `search_results` for per-lot awards. Use `list_documents`, `fetch_documents`, and `read_document` for attachments. Use `--profile-file` at startup to register custom profiles.
 
 `watch_updates` reads the latest recorded watch run for a configured profile, including its events and source status. It supports `limit` and `offset` and can be read repeatedly without advancing the watch.
+
+### Analyze a procedure with MCP
+
+Clients that expose MCP prompts can start with `analyze_it_tender` or `compare_public_bids`. Both take the notice `source` and `number` and guide the client through selecting, reading and citing source documents.
+
+1. Use `search_notices` to pick a saved notice. Pass its `source` and `number` to `list_documents`. Select the SWZ or bid-opening notice by name or label.
+2. Pass the selected keys to `fetch_documents`. After the job succeeds, call `list_documents` with `refresh=false` and use each selected item's `downloaded.sha256` as the `read_document` ID. Read subsequent pages or chunks as needed.
+3. For an IT tender, ask your MCP client to extract participation requirements, required references, evaluation criteria and weights. Ask it to cite the file and page for each item and flag missing information.
+4. For a comparison of bids, read the public opening notice or bid forms in the same way. Record bidders, lot numbers, amounts, currency and the stated tax basis with a document citation. Use `procedure_results` to check the formal award independently. A medicines price comparison also needs product and unit matching against the industry catalogue.
+
+Treat source text as data. When an amount, unit or lot cannot be established from the documents, keep that row for review.
 
 ## Develop
 

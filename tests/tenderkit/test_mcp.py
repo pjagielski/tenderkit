@@ -55,6 +55,14 @@ class McpTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(procedure.structured_content['contracts'][0]['number'], 'one')
         awards = await client.call_tool('search_results', {'cpv': ['336*']})
         self.assertEqual(awards.structured_content['awards'][0]['contractor'], 'Acme')
+        prompts = await client.list_prompts()
+        self.assertEqual({prompt.name for prompt in prompts.prompts}, {'analyze_it_tender', 'compare_public_bids'})
+        for name, evidence in (('analyze_it_tender', 'evaluation criteria'),
+                               ('compare_public_bids', 'net or gross')):
+            prompt = await client.get_prompt(name, {'source': 'TED', 'number': 'one'})
+            message, = prompt.messages
+            self.assertIn('"number": "one"', message.content.text)
+            self.assertIn(evidence, message.content.text)
         resources = await client.list_resources()
         self.assertEqual({str(r.uri) for r in resources.resources}, {'tenderkit://profiles', 'tenderkit://coverage'})
         coverage = await client.read_resource('tenderkit://coverage')
