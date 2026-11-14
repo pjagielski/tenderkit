@@ -46,7 +46,7 @@ def create_server(path, *, profiles=None, adapters=None, document_root=None, doc
 
     @server.tool(structured_output=True)
     @expected_errors
-    def search_notices(profile: str | None = None, cpv: list[str] | None = None,
+    def search_notices(profile: str | None = None, cpv: list[str] | None = None, exclude_cpv: list[str] | None = None,
                        keywords_any: list[str] | None = None, exclude_keywords: list[str] | None = None,
                        exclude_buyers: list[str] | None = None, notice_types: list[str] | None = None,
                        regions: list[str] | None = None, deadline_min_days: int | None = None,
@@ -58,13 +58,14 @@ def create_server(path, *, profiles=None, adapters=None, document_root=None, doc
 
         Regions are buyer TERYT voivodeship codes; unknown fields do not match a constrained filter.
         Amounts must use the stated currency; no exchange-rate conversion is applied.
+        CPV codes or prefixes ending in * in exclude_cpv never count; a notice whose every code is excluded is left out.
         Keywords match word starts in titles, descriptions and lot titles. Use *term* for substrings.
         keyword_matches identifies the configured inclusion terms and fields that matched.
         """
         if profile is not None and profile not in profiles:
             raise ValueError('Unknown profile; read tenderkit://profiles')
         data = asdict(profiles[profile]) if profile else {'name': 'query'}
-        for name, value in (('cpv', cpv), ('keywords_any', keywords_any), ('exclude_keywords', exclude_keywords),
+        for name, value in (('cpv', cpv), ('exclude_cpv', exclude_cpv), ('keywords_any', keywords_any), ('exclude_keywords', exclude_keywords),
                             ('exclude_buyers', exclude_buyers), ('notice_types', notice_types), ('regions', regions)):
             if value is not None:
                 data[name] = value

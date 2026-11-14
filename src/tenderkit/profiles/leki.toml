@@ -1,4 +1,5 @@
 name = "leki"
 cpv = ["336*"]
-# Keep the same notice set as pharma.public_notice; classification stays in pharma.
+# 336* also covers laboratory reagents (33696*) and disinfectants (336316*), which are not medicines.
+exclude_cpv = ["33696*", "336316*"]
 notice_types = ["ContractNotice", "SmallContractNotice", "CompetitionNotice", "cn-standard"]

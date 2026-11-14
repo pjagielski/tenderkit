@@ -5,6 +5,7 @@ from tenderkit.interfaces import Platform
 from tenderkit.platforms.backends import Marketplanet, PlatformaZakupowa
 from tenderkit.platforms.base import WorkerPlatform
 from tenderkit.platforms.ezamowienia import Ezamowienia
+from tenderkit.platforms.public_documents import Eb2b, EProPublico, LogIntrade
 from tenderkit.platforms.session import PlatformSession
 
 
@@ -18,6 +19,8 @@ def platforms(session=None):
     registered[native.name] = native
     bk = BkDocuments(session)
     registered[bk.name] = bk
+    for adapter in (EProPublico(session), Eb2b(session), LogIntrade(session)):
+        registered[adapter.name] = adapter
     for entry in entry_points(group='tenderkit.platforms'):
         adapter = entry.load()()
         if not isinstance(adapter, Platform) or adapter.name in registered:

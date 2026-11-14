@@ -14,6 +14,15 @@ tenderkit filter --profile oprogramowanie --limit 20
 tenderkit export --profile oprogramowanie --format jsonl
 ```
 
+On Debian and Ubuntu, the system Python ships without `venv` and `pip` and refuses system-wide `pip install` (PEP 668). Install both packages, then install tenderkit in a virtual environment, or use `pipx install tenderkit`. `poppler-utils` provides `pdftotext` for PDF reading, as an alternative to the `documents` extra.
+
+```sh
+sudo apt install python3-venv python3-pip poppler-utils
+python3 -m venv ~/.venvs/tenderkit
+~/.venvs/tenderkit/bin/python -m pip install tenderkit
+~/.venvs/tenderkit/bin/tenderkit profiles
+```
+
 The default fetch window covers 30 calendar days including today in Warsaw. Use `--from` and `--to` for an inclusive window or repeat `--source` to select adapters. Publication date and bid deadline are separate filters.
 
 All commands, including the UI and MCP server, use the same default database for your account, independent of the working directory.
@@ -44,7 +53,7 @@ regions = ["14"]
 deadline_days = { min = 1, max = 60 }
 ```
 
-Region codes refer to the buyer's location. A CPV ending in `*` matches a prefix. Required keywords and CPV restrictions are applied together, and exclusions take precedence.
+Region codes refer to the buyer's location. A CPV ending in `*` matches a prefix. `exclude_cpv` lists codes or prefixes that never count: a notice matches only if one of its main or lot codes is in `cpv` and not excluded. The built-in `leki` profile excludes laboratory reagents (`33696*`) and disinfectants (`336316*`), which share the `336` branch. Required keywords and CPV restrictions are applied together, and exclusions take precedence.
 
 `keywords_any` and `exclude_keywords` search the notice title, description and available lot titles. Matching ignores case and diacritics. A term starts at a word boundary, so `lek` matches `Leki` and `leków`. Phrases such as `system informatyczn` match consecutive text and allow an inflected ending. Wrap a term in stars, such as `*lek*`, to match it anywhere within a word as in earlier versions.
 
@@ -123,7 +132,13 @@ tenderkit download --source BZP --number '2026/BZP …/01' --key '<document key>
 tenderkit read-document '<SHA-256>'
 ```
 
-Use a notice number returned by the filter and a key returned by the listing. The store verifies content by SHA-256 and retains document provenance. Native e-Zamówienia, platformazakupowa.pl and Marketplanet implement document downloads. For platformazakupowa.pl, consult the [platform terms](https://platformazakupowa.pl/strona/regulamin) and [official CSV export](https://platformazakupowa.pl/strona/api).
+Use a notice number returned by the filter and a key returned by the listing. The store verifies content by SHA-256 and retains document provenance. Tenderkit downloads public documents from native e-Zamówienia, platformazakupowa.pl, Marketplanet, Baza Konkurencyjności, e-ProPublico, eB2B and LogIntrade. For platformazakupowa.pl, consult the [platform terms](https://platformazakupowa.pl/strona/regulamin) and [official CSV export](https://platformazakupowa.pl/strona/api).
+
+e-ProPublico and LogIntrade use the direct procedure link. On `eb2b.com.pl` hosts, Tenderkit can also resolve an exact reference number and lists public, active and current organizer attachments. These adapters use the portals' anonymous document routes and the existing paced HTTP session. The linked regulations describe portal use. We found no published attachment API contract or request quota for these routes. [e-ProPublico terms](https://e-propublico.pl/documents/Regulamin%20e-ProPublico.pdf) · [eB2B terms](https://mail.api.eb2b.com.pl/cms/page/id/terms-and-conditions) · [LogIntrade terms](https://platforma.logintrade.net/rejestracja/regulamin.html)
+
+A document that the platform refuses with a permanent HTTP error (400, 404, 410 and other 4xx except 401, 403, 408 and 429) does not fail the procedure. Typically it is a withdrawn or replaced attachment. The job finishes with the other files, counts the document under `summary.unavailable`, and `list-documents` shows it with `unavailable: {error, checked_at}`. Later downloads of the whole procedure skip it. Pass its `--key` to try it again. A job still fails if it stores none of the requested documents, or on throttling, server errors and access blocks. Native e-Zamówienia, platformazakupowa.pl and Marketplanet implement document downloads. For platformazakupowa.pl, consult the [platform terms](https://platformazakupowa.pl/strona/regulamin) and [official CSV export](https://platformazakupowa.pl/strona/api).
+
+On Windows, store paths must stay under 260 characters. Tenderkit shortens the readable part of linked file names to fit. When the document directory itself is too deep, the job fails with `PATH_TOO_LONG`. In that case choose a shorter `--documents-dir` or `TENDERKIT_DOCUMENT_DIR`. Native e-Zamówienia, platformazakupowa.pl and Marketplanet implement document downloads. For platformazakupowa.pl, consult the [platform terms](https://platformazakupowa.pl/strona/regulamin) and [official CSV export](https://platformazakupowa.pl/strona/api).
 
 To download documents for saved notices matching a profile, run:
 
