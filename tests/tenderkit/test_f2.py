@@ -143,6 +143,26 @@ class QueueIntegrationTests(unittest.TestCase):
                 job = self.service.fetch('BZP', str(i))
                 self.assertEqual((job['status'] != 'DONE', job['error']), (True, code))
                 self.assertEqual(self.state.unavailable('BZP', str(i)), {})
+    def test_manifest_names_shrink_to_fit_the_path_limit(self):
+        # Issue #23: a deep store made <store>/procedures/<64>/raw/<16>_<80-char name> exceed Windows' 260 characters.
+        self.adapter.files = {'Załącznik nr 2 do SWZ Formularz asortymentowo-cenowy dla wszystkich pakietów.xlsx': b'form'}
+        directory_length = len(str((self.root / 'store').resolve() / 'procedures' / ('0' * 64) / 'raw'))
+        with mock.patch('tenderkit.store.documents.MAX_PATH', directory_length + 40):
+            result = self.service.fetch('BZP', '1')
+        self.assertEqual(result['status'], 'DONE')
+        manifest = json.loads(next((self.root / 'store').rglob('manifest.json')).read_text(encoding='utf-8'))
+        local = Path(manifest['documents'][0]['localPath'])
+        self.assertTrue(local.is_file())
+        self.assertLessEqual(len(str(local)), directory_length + 40)
+        self.assertTrue(local.name.endswith('.xlsx') and local.name[17:].startswith('Za'))
+
+    def test_a_store_too_deep_for_the_path_limit_fails_with_a_clear_code(self):
+        with mock.patch('tenderkit.store.documents.MAX_PATH', len(str((self.root / 'store').resolve())) + 30):
+            result = self.service.fetch('BZP', '1')
+        self.assertEqual((result['status'], result['error'], result['error_kind']), ('FAILED', 'PATH_TOO_LONG', 'PERMANENT'))
+        from tenderkit.store.documents import PathTooLong, check_length
+        with self.assertRaisesRegex(PathTooLong, 'shorter --documents-dir'):
+            check_length('x' * 30, limit=20)
 
     def test_selection_keeps_overall_coverage_pending(self):
         first = self.service.fetch('BZP', '1', ['swz.docx'])
