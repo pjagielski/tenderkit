@@ -14,6 +14,15 @@ tenderkit filter --profile oprogramowanie --limit 20
 tenderkit export --profile oprogramowanie --format jsonl
 ```
 
+On Debian and Ubuntu, the system Python ships without `venv` and `pip` and refuses system-wide `pip install` (PEP 668). Install both packages, then install tenderkit in a virtual environment, or use `pipx install tenderkit`. `poppler-utils` provides `pdftotext` for PDF reading, as an alternative to the `documents` extra.
+
+```sh
+sudo apt install python3-venv python3-pip poppler-utils
+python3 -m venv ~/.venvs/tenderkit
+~/.venvs/tenderkit/bin/python -m pip install tenderkit
+~/.venvs/tenderkit/bin/tenderkit profiles
+```
+
 The default fetch window covers 30 calendar days including today in Warsaw. Use `--from` and `--to` for an inclusive window or repeat `--source` to select adapters. Publication date and bid deadline are separate filters.
 
 All commands, including the UI and MCP server, use the same default database for your account, independent of the working directory.
