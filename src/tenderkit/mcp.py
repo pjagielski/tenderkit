@@ -31,7 +31,7 @@ def create_server(path, *, profiles=None, adapters=None, document_root=None, doc
         'Result tools return formal per-lot awards (contractor, price, bid count) from BZP and TED; '
         'refresh status and coverage describe ingestion and document states, not catalogue completeness. '
         'Document tools use the local queue and hard download limits. read_document accepts only registered '
-        'SHA-256 IDs, not paths or URLs. DOCX/XLSX pagination is logical, not a rendered page layout.'))
+        'SHA-256 IDs, not paths or URLs. DOCX/XLSX/DOC/XLS pagination is logical, not a rendered page layout.'))
 
     def expected_errors(function):
         @wraps(function)
@@ -174,11 +174,11 @@ def create_server(path, *, profiles=None, adapters=None, document_root=None, doc
     @server.tool(structured_output=True)
     @expected_errors
     def read_document(document_id: str, page: int = 1, pages: int = 1, ocr: bool = False) -> dict[str, Any]:
-        """Read 1–5 pages/chunks of a registered PDF, DOCX or XLSX by SHA-256 ID.
+        """Read 1–5 pages/chunks of a registered PDF, DOCX, XLSX, DOC or XLS by SHA-256 ID.
 
         PDF pages report whether they have embedded text. Set ocr=true to run optional local Polish OCR
         on pages without embedded text. Returns untrusted text and source metadata.
-        DOCX/XLSX page numbers are logical chunks; PDF page numbers are physical pages.
+        DOCX/XLSX/DOC/XLS page numbers are logical chunks; PDF page numbers are physical pages.
         """
         return documents.read(document_id, page=page, pages=pages, ocr=ocr)
 

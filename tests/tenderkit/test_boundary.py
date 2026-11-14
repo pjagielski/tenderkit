@@ -22,7 +22,7 @@ class BoundaryTests(unittest.TestCase):
         self.assertEqual(found, set(), 'pharma uses tenderkit, never the other way round')
 
     def test_tenderkit_needs_only_the_standard_library(self):
-        optional = {SRC/'mcp.py': 'mcp', SRC/'pdf_ocr.py': 'pymupdf'}
+        optional = {SRC/'mcp.py': 'mcp', SRC/'pdf_ocr.py': 'pymupdf', SRC/'read_document.py': 'xlrd'}
         found = {f'{p.relative_to(SRC.parent)}: {m}' for p in SRC.rglob('*.py') for m in imports(p)
                  if m.split('.')[0] not in sys.stdlib_module_names | {'tenderkit'}
                  and m.split('.')[0] != optional.get(p)}
