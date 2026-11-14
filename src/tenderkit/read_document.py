@@ -1,4 +1,5 @@
-"""Bounded text extraction. OOXML uses stdlib; PDF runs an installed CLI in a child process."""
+"""Bounded text extraction. OOXML uses stdlib, legacy XLS the optional xlrd; PDF and legacy DOC run an installed
+CLI in a child process."""
 from pathlib import Path, PurePosixPath
 import os
 import shutil
@@ -97,11 +98,18 @@ def _xlsx(archive):
     return pages or [dict(text='', label='workbook')]
 
 
-def _bounded_text(command, target, *, deadline, limit, operation):
+def _bounded_text(command, target, *, deadline, limit, operation, capture=False):
+    """Run a converter that writes text to target (or, with capture, to stdout redirected to target) within limits."""
     if time.monotonic() >= deadline:
         raise TextReadError(f'{operation} exceeded time or output limit')
-    process = subprocess.Popen(command, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
-        creationflags=subprocess.CREATE_NO_WINDOW if os.name == 'nt' else 0)
+    output = open(target, 'wb') if capture else None
+    try:
+        process = subprocess.Popen(command, stdout=output or subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+            stdin=subprocess.DEVNULL, creationflags=subprocess.CREATE_NO_WINDOW if os.name == 'nt' else 0)
+    except OSError as exc:
+        if output:
+            output.close()
+        raise TextReadError(f'{operation} failed: {exc}') from exc
     try:
         while process.poll() is None:
             if time.monotonic() > deadline or target.exists() and target.stat().st_size > limit:
@@ -116,6 +124,8 @@ def _bounded_text(command, target, *, deadline, limit, operation):
         if process.poll() is None:
             process.kill()
         process.wait()
+        if output:
+            output.close()
 
 
 def _pdf(path):
@@ -139,13 +149,123 @@ def _pdf(path):
         return [dict(text=p, label='PDF page') for p in pages or ['']], engine
 
 
+def _xls_value(xlrd, cell, datemode):
+    if cell.ctype == xlrd.XL_CELL_NUMBER:
+        return str(int(cell.value)) if float(cell.value).is_integer() else repr(cell.value)
+    if cell.ctype == xlrd.XL_CELL_DATE:
+        try:
+            value = xlrd.xldate.xldate_as_datetime(cell.value, datemode)
+        except (ValueError, OverflowError, xlrd.xldate.XLDateError):
+            return repr(cell.value)
+        return value.date().isoformat() if value.time() == value.min.time() else value.isoformat(sep=' ')
+    if cell.ctype == xlrd.XL_CELL_BOOLEAN:
+        return 'TRUE' if cell.value else 'FALSE'
+    if cell.ctype == xlrd.XL_CELL_ERROR:
+        return xlrd.error_text_from_code.get(cell.value, '#ERROR')
+    return str(cell.value)
+
+
+def _xls(path):
+    """Legacy Excel 97-2003 sheets in the same cell-reference layout as XLSX. xlrd exposes no formula text, so
+    formula cells give their cached value."""
+    try:
+        import xlrd
+    except ImportError as exc:
+        raise TextReadError('XLS extraction needs the optional documents extra (xlrd): '
+                            'pip install "tenderkit[documents]"') from exc
+    try:
+        book = xlrd.open_workbook(str(path), on_demand=True)
+    except Exception as exc:  # malformed input raises XLRDError, struct.error, AssertionError and others
+        raise TextReadError('Invalid or unsupported XLS workbook') from exc
+    pages, size = [], 0
+    try:
+        for index in range(book.nsheets):
+            sheet = book.sheet_by_index(index)
+            lines = []
+            for row in range(sheet.nrows):
+                cells = []
+                for column in range(sheet.ncols):
+                    cell = sheet.cell(row, column)
+                    if cell.ctype in (xlrd.XL_CELL_EMPTY, xlrd.XL_CELL_BLANK):
+                        continue
+                    raw, ref = _xls_value(xlrd, cell, book.datemode), xlrd.cellname(row, column)
+                    size += len(raw) + len(ref) + 3
+                    if size > MAX_TEXT:
+                        raise TextReadError('Extracted text exceeds limit')
+                    cells.append(ref + ': ' + raw)
+                lines.append('\t'.join(cells))
+            pages.extend(_chunks('\n'.join(lines), sheet.name or 'sheet'))
+            book.unload_sheet(index)
+    finally:
+        book.release_resources()
+    return pages or [dict(text='', label='workbook')]
+
+
+def _soffice():
+    found = os.environ.get('TENDERKIT_SOFFICE') or shutil.which('soffice') or shutil.which('libreoffice')
+    if found:
+        return found
+    for candidate in (Path(os.environ.get('ProgramFiles', r'C:\Program Files')) / 'LibreOffice' / 'program' / 'soffice.exe',
+                      Path('/Applications/LibreOffice.app/Contents/MacOS/soffice')):
+        if candidate.is_file():
+            return str(candidate)
+    return None
+
+
+def _doc_pages(text):
+    text = text.lstrip('\ufeff')
+    pages = [chunk for part in text.split('\f') for chunk in _chunks(part, 'document')]
+    if len(pages) > 1 and not pages[-1]['text'].strip():
+        pages.pop()
+    return pages
+
+
+def _doc(path):
+    """Legacy Word 97-2003 text through antiword or, failing that, LibreOffice; both run as bounded child processes."""
+    antiword = os.environ.get('TENDERKIT_ANTIWORD') or shutil.which('antiword')
+    soffice = _soffice()
+    if not antiword and not soffice:
+        raise TextReadError('DOC extraction needs antiword or LibreOffice (soffice) on PATH, '
+                            'or TENDERKIT_ANTIWORD / TENDERKIT_SOFFICE naming one')
+    with tempfile.TemporaryDirectory() as scratch:
+        scratch = Path(scratch)
+        if antiword:
+            try:
+                text = _bounded_text([antiword, '-m', 'UTF-8.txt', '-w', '0', str(path)], scratch / 'antiword.txt',
+                                     deadline=time.monotonic() + 30, limit=MAX_TEXT, operation='DOC text extraction',
+                                     capture=True)
+                return _doc_pages(text), 'antiword'
+            except TextReadError:
+                # antiword reads only Word 97-2003 binaries; RTF or older Word saved as .doc may still convert below.
+                if not soffice:
+                    raise
+        # A private copy with a short name, since LibreOffice names its output after the input, and a private profile,
+        # so the conversion never attaches to or waits for a LibreOffice the user has open.
+        source = scratch / 'document.doc'
+        shutil.copyfile(path, source)
+        text = _bounded_text([soffice, '--headless', '--norestore', '-env:UserInstallation=' + (scratch / 'profile').as_uri(),
+                              '--convert-to', 'txt:Text (encoded):UTF8', '--outdir', str(scratch / 'out'), str(source)],
+                             scratch / 'out' / 'document.txt', deadline=time.monotonic() + 90, limit=MAX_TEXT,
+                             operation='DOC conversion with LibreOffice')
+        return _doc_pages(text), 'libreoffice'
+
+
+def _sniff(path, kind):
+    """The real format of a legacy-named file: portals often serve DOCX/XLSX under .doc/.xls."""
+    if kind in ('doc', 'xls'):
+        with open(path, 'rb') as stream:
+            if stream.read(4) == b'PK\x03\x04':
+                return kind + 'x'
+    return kind
+
+
 def read_document(path, *, page=1, pages=1, ocr=False, ocr_cache=None):
     if type(page) is not int or page < 1 or type(pages) is not int or not 1 <= pages <= 5:
         raise ValueError('Page must be positive; request 1 to 5 pages')
     path = Path(path)
     if path.stat().st_size > MAX_INPUT:
         raise TextReadError('Text extraction input exceeds 20 MB limit')
-    kind = path.suffix.lower().lstrip('.')
+    kind = _sniff(path, path.suffix.lower().lstrip('.'))
     if ocr and kind != 'pdf':
         raise TextReadError('OCR is available only for PDFs')
     engine, pagination = 'stdlib-ooxml', 'logical chunks (12000 characters, separated by explicit page breaks or worksheets)'
@@ -161,8 +281,14 @@ def read_document(path, *, page=1, pages=1, ocr=False, ocr_cache=None):
                 extracted = _docx(archive) if kind == 'docx' else _xlsx(archive)
                 if sum(len(p['text'].encode('utf-8')) for p in extracted) > MAX_TEXT:
                     raise TextReadError('Extracted text exceeds limit')
+        elif kind == 'xls':
+            extracted, engine = _xls(path), 'xlrd'
+            pagination = 'logical chunks (12000 characters, separated by worksheets)'
+        elif kind == 'doc':
+            extracted, engine = _doc(path)
+            pagination = 'logical chunks (12000 characters, separated by page breaks the converter reports)'
         else:
-            raise TextReadError('Supported formats: PDF, DOCX, XLSX')
+            raise TextReadError('Supported formats: PDF, DOCX, XLSX, DOC, XLS')
     except (BadZipFile, ET.ParseError, KeyError, IndexError) as exc:
         raise TextReadError('Invalid or unsupported document structure') from exc
     if page > len(extracted):

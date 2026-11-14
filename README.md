@@ -14,10 +14,10 @@ tenderkit filter --profile oprogramowanie --limit 20
 tenderkit export --profile oprogramowanie --format jsonl
 ```
 
-On Debian and Ubuntu, the system Python ships without `venv` and `pip` and refuses system-wide `pip install` (PEP 668). Install both packages, then install tenderkit in a virtual environment, or use `pipx install tenderkit`. `poppler-utils` provides `pdftotext` for PDF reading, as an alternative to the `documents` extra.
+On Debian and Ubuntu, the system Python ships without `venv` and `pip` and refuses system-wide `pip install` (PEP 668). Install both packages, then install tenderkit in a virtual environment, or use `pipx install tenderkit`. `poppler-utils` provides `pdftotext` for PDF reading, as an alternative to the `documents` extra, and `antiword` reads legacy `.doc` files.
 
 ```sh
-sudo apt install python3-venv python3-pip poppler-utils
+sudo apt install python3-venv python3-pip poppler-utils antiword
 python3 -m venv ~/.venvs/tenderkit
 ~/.venvs/tenderkit/bin/python -m pip install tenderkit
 ~/.venvs/tenderkit/bin/tenderkit profiles
@@ -150,7 +150,7 @@ The command uses the same matches and ordering as `filter`. Use `--source`, `--f
 
 The native e-Zamówienia adapter downloads published attachments on request using the portal's public document route. The platform allows access to its public area without signing in. The integration guide documents a rate limit for the BZP notice API. We found no published quota or integration contract for the attachment route. Tenderkit spaces requests by 2.1 seconds and caps downloads at 200 MB per file and 1 GB per job. [Platform terms](https://ezamowienia.gov.pl/pl/regulamin/) · [Integration guide](https://ezamowienia.gov.pl/pl/integracja/)
 
-DOCX and XLSX reading uses the standard library. PDF text extraction needs `pdftotext` on PATH or the `documents` extra, which installs the PyMuPDF CLI. Each PDF page reports `text_layer: false` when extraction finds no embedded text, as with scanned or blank pages.
+DOCX and XLSX reading uses the standard library. Legacy XLS reading needs the `documents` extra (xlrd); formula cells give their cached values. Legacy DOC reading needs `antiword` or LibreOffice (`soffice`) on PATH, or `TENDERKIT_ANTIWORD` / `TENDERKIT_SOFFICE` naming one; tenderkit tries antiword first and falls back to LibreOffice for files antiword cannot read, such as RTF saved as `.doc`. A `.doc` or `.xls` that is really DOCX or XLSX is read as such. PDF text extraction needs `pdftotext` on PATH or the `documents` extra, which installs the PyMuPDF CLI. Each PDF page reports `text_layer: false` when extraction finds no embedded text, as with scanned or blank pages.
 
 ### OCR for scanned PDFs
 
