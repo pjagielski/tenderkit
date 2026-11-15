@@ -40,13 +40,13 @@
 .source-inputs .source-floating>span:nth-child(2){min-width:0}
 .source-inputs .source-floating small{font-size:8px;line-height:1.5}
 .source-inputs .source-check{margin-left:auto;flex-shrink:0}
-.source-bk-icon,.source-oneplace-icon{display:grid;place-items:center;width:29px;height:31px;flex-shrink:0;font-size:13px;font-weight:800;color:#6278a0}
-.source-oneplace-icon{color:#597485;font-size:24px;font-weight:500}
+.source-bk-icon,.source-platforms-icon{display:grid;place-items:center;width:29px;height:31px;flex-shrink:0;font-size:13px;font-weight:800;color:#6278a0}
+.source-platforms-icon{color:#597485;font-size:24px;font-weight:500}
 .connection-lines{inset:0;height:100%;overflow:visible}
 .notice-copy{display:block;background:none;border:0;padding:0;text-align:left;color:inherit;font:inherit;width:100%;cursor:pointer}
 .notice-copy:hover h3{color:var(--blue)}
 .source-badge.bk{color:#6c579d;background:#f4f0fb;border-color:#e6def5}
-.source-badge.oneplace{color:#426e68;background:#eff7f4;border-color:#d9ebe5}
+
 .source-filters{flex-wrap:wrap;justify-content:flex-end}
 #example-dialog{max-width:520px;width:calc(100% - 36px);padding:34px;border:1px solid #d9e2f2;border-radius:14px;color:var(--ink);box-shadow:0 25px 75px #172d5033}
 #example-dialog::backdrop{background:#172d5055}
@@ -59,7 +59,7 @@
 #example-dialog .example-disclaimer{font-size:10px;margin-top:24px;padding-top:18px;border-top:1px solid var(--line)}
 .example-close{position:absolute;right:12px;top:9px;width:34px;height:34px;background:none;border:0;font-size:24px;color:#718198}
 @media(max-width:960px){.demo-scene{padding-top:0}.source-inputs .source-floating{font-size:12px}}
-@media(max-width:660px){.demo-scene{padding-top:0}.source-inputs{padding:0;gap:10px;margin-bottom:34px}.source-inputs .source-floating{font-size:9px;padding:10px 8px;gap:6px}.source-inputs .source-floating small{font-size:7px}.source-inputs .source-check{display:none}.source-bk-icon,.source-oneplace-icon{width:23px;font-size:11px}.source-oneplace-icon{font-size:23px}.source-filters{gap:0}.source-filters button{padding:5px;font-size:7px}.results-heading{align-items:flex-start}.results-heading>span{padding-top:9px}.criteria-row{font-size:7px}.criteria-chip{padding:4px}#example-dialog{padding:28px 22px}#example-dialog h2{font-size:21px}}
+@media(max-width:660px){.demo-scene{padding-top:0}.source-inputs{padding:0;gap:10px;margin-bottom:34px}.source-inputs .source-floating{font-size:9px;padding:10px 8px;gap:6px}.source-inputs .source-floating small{font-size:7px}.source-inputs .source-check{display:none}.source-bk-icon,.source-platforms-icon{width:23px;font-size:11px}.source-platforms-icon{font-size:23px}.source-filters{gap:0}.source-filters button{padding:5px;font-size:7px}.results-heading{align-items:flex-start}.results-heading>span{padding-top:9px}.criteria-row{font-size:7px}.criteria-chip{padding:4px}#example-dialog{padding:28px 22px}#example-dialog h2{font-size:21px}}
 @media(max-width:960px){.demo-scene{min-height:0}.document-flow{gap:25px}.document-processing{padding:22px 17px}.document-output>strong,.document-processing>strong{font-size:14px}.usecases-grid{gap:35px}.usecases-grid article+article{padding-left:30px}}
 @media(max-width:660px){.demo-scene{height:auto;min-height:0;padding-top:113px}.demo-caption{margin:15px 8px 0;font-size:8px}.document-flow{grid-template-columns:1fr;gap:22px}.document-stack{grid-template-columns:repeat(2,1fr)}.document-label{padding:17px 10px}.document-processing{padding:24px}.document-output>strong,.document-processing>strong{font-size:16px}.document-output>p{font-size:12px}.platform-list{font-size:10px;gap:12px 17px}.usecases-grid{grid-template-columns:1fr;gap:30px}.usecases-grid article+article{border-left:0;border-top:1px solid #e0e7f3;padding-left:0;padding-top:30px}.usecases-grid h3{font-size:25px}}
 
@@ -71,8 +71,8 @@
 .source-inputs .source-floating>span:nth-child(2){width:100%;line-height:1.4}
 .source-inputs .source-floating small{font-size:7px;line-height:1.5;margin-top:4px}
 .source-inputs .source-check{position:absolute;top:8px;right:7px;width:12px;height:12px;font-size:8px;margin:0}
-.source-inputs .source-symbol,.source-inputs .eu-symbol,.source-inputs .source-bk-icon,.source-inputs .source-oneplace-icon{height:31px;line-height:31px}
-@media(max-width:660px){.source-inputs{gap:6px;margin-bottom:52px}.source-inputs .source-floating{padding:11px 4px;gap:6px;font-size:8px;min-height:111px}.source-inputs .source-floating small{font-size:6px}.source-inputs .source-check{display:none}.source-inputs .source-symbol,.source-inputs .eu-symbol,.source-inputs .source-bk-icon,.source-inputs .source-oneplace-icon{height:27px;line-height:27px}}
+.source-inputs .source-symbol,.source-inputs .eu-symbol,.source-inputs .source-bk-icon,.source-inputs .source-platforms-icon{height:31px;line-height:31px}
+@media(max-width:660px){.source-inputs{gap:6px;margin-bottom:52px}.source-inputs .source-floating{padding:11px 4px;gap:6px;font-size:8px;min-height:111px}.source-inputs .source-floating small{font-size:6px}.source-inputs .source-check{display:none}.source-inputs .source-symbol,.source-inputs .eu-symbol,.source-inputs .source-bk-icon,.source-inputs .source-platforms-icon{height:27px;line-height:27px}}
 
 /* Two full hero stories, with a shared interactive preview. */
 .hero-showcase{--hero-base:#122d5a;--hero-glow:#365fac;--hero-accent:#9bbcff;background:var(--hero-base);color:#fff;transition:background .65s ease;isolation:isolate}
@@ -95,7 +95,7 @@
 .hero-showcase .source-inputs{gap:8px;margin-bottom:43px}
 .hero-showcase .source-inputs .source-floating{min-height:81px;padding:10px 5px;gap:3px;border-color:#ffffff36;background:#ffffff0d;color:white;box-shadow:none}
 .hero-showcase .source-inputs .source-floating small{color:#bacbe3;font-size:6px}
-.hero-showcase .source-inputs .source-symbol,.hero-showcase .source-inputs .eu-symbol,.hero-showcase .source-bk-icon,.hero-showcase .source-oneplace-icon{color:var(--hero-accent);height:23px;line-height:23px}
+.hero-showcase .source-inputs .source-symbol,.hero-showcase .source-inputs .eu-symbol,.hero-showcase .source-bk-icon,.hero-showcase .source-platforms-icon{color:var(--hero-accent);height:23px;line-height:23px}
 .hero-showcase .source-inputs .source-check{display:none}
 .hero-showcase .demo-window{box-shadow:0 24px 65px #00102a50;border-color:#ffffff6b}
 .hero-insight{margin:14px 12px 0;padding:13px 17px;border-left:2px solid var(--hero-accent);background:#ffffff08;color:white}

@@ -21,7 +21,7 @@
   },
   {
     "profile": "biezace",
-    "source": "OnePlace",
+    "source": "BZP",
     "number": "Przykład 03",
     "title": "Automatyzacja raportowania i wymiany danych",
     "buyer_name": "Spółka produkcyjna",
@@ -71,7 +71,7 @@
   },
   {
     "profile": "nice-to-have",
-    "source": "OnePlace",
+    "source": "BZP",
     "number": "Przykład 08",
     "title": "System prognozowania zapotrzebowania i planowania dostaw",
     "buyer_name": "Firma logistyczna",
@@ -102,7 +102,7 @@
   {
     "sector": "pharma",
     "profile": "biezace",
-    "source": "OnePlace",
+    "source": "BZP",
     "number": "Przykład P03",
     "title": "Zakup produktów leczniczych dla sieci placówek",
     "buyer_name": "Operator placówek medycznych",
@@ -152,7 +152,7 @@
   {
     "sector": "pharma",
     "profile": "nice-to-have",
-    "source": "OnePlace",
+    "source": "BZP",
     "number": "Przykład P08",
     "title": "Zaopatrzenie nowego oddziału w leki specjalistyczne",
     "buyer_name": "Grupa medyczna",
