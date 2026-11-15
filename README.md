@@ -43,6 +43,8 @@ tenderkit status
 
 Add `--results` to fetch formal result notices next to contract notices. Built-in profiles stay contract-only so the default notice set does not change.
 
+Each notice also keeps the source's own record (`raw`), which is most of the database: about 85% for BZP and TED. Add `--no-raw` to `fetch`, `watch` or `mcp` to save only the few source fields tenderkit itself reads (watch versions and TED lot deadlines). Filtering, results, documents and the browser view work the same; `export` then omits the rest of the source record. A week of all BZP and TED notices with results takes about 30 MB instead of 185 MB. The option applies to notices saved from then on.
+
 Built-in profiles include `leki` (medicines), `oprogramowanie` (software), and `wyroby-medyczne` (medical devices). Pass a TOML file to `--profile` for a custom profile:
 
 ```toml

@@ -1,11 +1,13 @@
 """SQLite state: one transaction per successfully completed source window."""
 from contextlib import contextmanager
+from dataclasses import replace
 from datetime import datetime, timezone
 import json
 from pathlib import Path
 import sqlite3
 
-from tenderkit.serialization import dumps, notice_from_record, notice_record
+
+from tenderkit.serialization import compact_raw, dumps, notice_from_record, notice_record
 
 SCHEMA = '''
 create table if not exists notices (
@@ -70,9 +72,11 @@ create index if not exists watch_events_pending on watch_events(profile) where d
 
 
 class State:
-    def __init__(self, path, *, read_only=False):
+    def __init__(self, path, *, read_only=False, keep_raw=True):
+        """With keep_raw=False, saved notices keep only the source fields tenderkit reads (`RAW_FIELDS_USED`)."""
         self.path = Path(path).expanduser()
         self.read_only = read_only
+        self.keep_raw = keep_raw
         if read_only:
             return
         self.path.parent.mkdir(parents=True, exist_ok=True)
@@ -93,6 +97,8 @@ class State:
     def record_refresh(self, source, start, end, query, notices=None, error=None):
         with self.connection() as conn:
             for notice in notices or []:
+                if not self.keep_raw:
+                    notice = replace(notice, raw=compact_raw(notice.raw))
                 conn.execute('''insert into notices(source,number,published,payload) values(?,?,?,?)
                     on conflict(source,number) do update set published=excluded.published,payload=excluded.payload''',
                     (notice.source, notice.number, str(notice.published) if notice.published else None,

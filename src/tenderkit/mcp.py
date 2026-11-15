@@ -15,14 +15,14 @@ from tenderkit.platforms.backends import FetchError
 from tenderkit.watch import latest_updates
 
 
-def create_server(path, *, profiles=None, adapters=None, document_root=None, document_adapters=None):
+def create_server(path, *, profiles=None, adapters=None, document_root=None, document_adapters=None, keep_raw=True):
     try:
         from mcp.server import MCPServer
         from mcp.server.mcpserver.exceptions import ToolError
     except ImportError as exc:
         raise RuntimeError('Install the MCP extra: pip install -e ".[mcp]" (tenderkit[mcp] after F4)') from exc
     profiles = builtin_profiles() if profiles is None else dict(profiles)
-    state = State(path)
+    state = State(path, keep_raw=keep_raw)
     documents = Documents(state, document_root or state.path.parent / 'documents', document_adapters)
     refresh_lock = Lock()
     server = MCPServer('tenderkit', version='0.1.0', instructions=(

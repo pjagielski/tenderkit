@@ -36,6 +36,8 @@ class Source:
 
 
 class WatchTests(unittest.TestCase):
+    keep_raw = True
+
     def setUp(self):
         directory = tempfile.TemporaryDirectory()
         self.addCleanup(directory.cleanup)
@@ -47,7 +49,7 @@ class WatchTests(unittest.TestCase):
 
     def watch(self, adapters=None, *, profile=None, end=DAY, webhook=None):
         output = StringIO()
-        summaries = run_watch(State(self.path), profile or self.profile, *window(end=end),
+        summaries = run_watch(State(self.path, keep_raw=self.keep_raw), profile or self.profile, *window(end=end),
                               adapters or {'BZP': self.bzp}, output, webhook=webhook)
         return [json.loads(line) for line in output.getvalue().splitlines()], summaries
 
@@ -153,3 +155,31 @@ class WatchTests(unittest.TestCase):
             self.assertEqual(json.loads(sent.data), {'events': staged['events']})
         self.assertEqual(events, staged['events'])
         self.assertEqual(self.watch()[0], [])
+
+
+class CompactRawWatchTests(WatchTests):
+    """Watch identities and versions survive a database saved with --no-raw."""
+    keep_raw = False
+
+    def test_no_raw_keeps_only_the_fields_tenderkit_reads(self):
+        raw = {'notice-identifier': '00000000-0000-4000-8000-000000000000', 'notice-version': '01',
+               'deadline-receipt-tender-date-lot': ['2026-11-20'], 'description-lot': ['Opis'], 'buyer-name': 'X'}
+        notice = Notice('TED', '100-2026', published=DAY, description='Opis', raw=raw)
+        State(self.path, keep_raw=False).record_refresh('TED', DAY, DAY, {}, [notice])
+        saved = State(self.path).get('TED', '100-2026')
+        self.assertEqual(saved.raw, {key: raw[key] for key in
+                                     ('notice-identifier', 'notice-version', 'deadline-receipt-tender-date-lot')})
+        self.assertEqual(saved.description, 'Opis')
+
+    def test_cli_no_raw_saves_compact_records(self):
+        bulky = replace(self.notice, raw={'htmlBody': '<p>' + 'x' * 1000 + '</p>'})
+        with patch('tenderkit.cli.sources', return_value={'BZP': Source(bulky)}):
+            with redirect_stdout(StringIO()):
+                self.assertEqual(main(['--db', str(self.path), 'fetch', '--profile', self.profile_path(),
+                                       '--to', DAY.isoformat(), '--no-raw']), 0)
+        self.assertEqual(State(self.path).get('BZP', self.notice.number).raw, {})
+
+    def profile_path(self):
+        path = self.path.parent / 'all.toml'
+        path.write_text('name = "all"\n', encoding='utf-8')
+        return str(path)

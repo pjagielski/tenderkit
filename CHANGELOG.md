@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- Save notices without the full source record with `--no-raw` on `fetch`, `watch` and `mcp`, or `State(path, keep_raw=False)`. Only the source fields tenderkit reads are kept, which makes the database about six times smaller.
+
 ## 0.1.0
 
 - Fetch Polish procurement notices from BZP and TED, store them in SQLite and filter them with TOML profiles.
