@@ -36,25 +36,31 @@ chown tenderkit:tenderkit "$APP/all.toml"
 
 cat > "$APP/bin/fetch.sh" <<EOF
 #!/usr/bin/env bash
-# fetch.sh [FROM [TO]]: all BZP and TED notices with results, compact records. Default: the last 3 days.
+# fetch.sh [FROM [TO] [--source NAME]...]: notices with results, compact records. Default: the last 3 days, all sources.
 set -euo pipefail
 FROM=\${1:-\$(date -u -d '3 days ago' +%F)}
 TO=\${2:-\$(date -u +%F)}
-exec $APP/venv/bin/tenderkit --db $DB fetch --profile $APP/all.toml --results --no-raw --from "\$FROM" --to "\$TO"
+exec $APP/venv/bin/tenderkit --db $DB fetch --profile $APP/all.toml --results --no-raw --from "\$FROM" --to "\$TO" "\${@:3}"
 EOF
 cat > "$APP/bin/backfill.sh" <<EOF
 #!/usr/bin/env bash
-# Newest window first, so the server is useful after the first one. 14-day windows stay under source limits.
+# Newest window first, so the server is useful after the first one. Window sizes stay under source limits:
+# BZP takes 14 days; TED reads award XML for at most 1000 result notices per window (about 760 a week).
 set -uo pipefail
-end=\$(date -u +%F)
-stop=\$(date -u -d "$BACKFILL_DAYS days ago" +%F)
-while [[ "\$end" > "\$stop" ]]; do
-  start=\$(date -u -d "\$end -13 days" +%F)
-  [[ "\$start" < "\$stop" ]] && start=\$stop
-  echo "backfill \$start..\$end"
-  $APP/bin/fetch.sh "\$start" "\$end" || echo "backfill \$start..\$end had a failed source; the next fetch retries recent days"
-  end=\$(date -u -d "\$start -1 day" +%F)
-done
+backfill() {
+  local source=\$1 days=\$2 end start stop
+  end=\$(date -u +%F)
+  stop=\$(date -u -d "$BACKFILL_DAYS days ago" +%F)
+  while [[ "\$end" > "\$stop" ]]; do
+    start=\$(date -u -d "\$end -\$((days - 1)) days" +%F)
+    [[ "\$start" < "\$stop" ]] && start=\$stop
+    echo "backfill \$source \$start..\$end"
+    $APP/bin/fetch.sh "\$start" "\$end" --source "\$source" || echo "backfill \$source \$start..\$end failed"
+    end=\$(date -u -d "\$start -1 day" +%F)
+  done
+}
+backfill BZP 14
+backfill TED 5
 EOF
 chown tenderkit:tenderkit "$APP/bin/fetch.sh" "$APP/bin/backfill.sh"
 chmod 750 "$APP/bin/fetch.sh" "$APP/bin/backfill.sh"
