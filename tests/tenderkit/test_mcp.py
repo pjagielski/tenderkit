@@ -164,3 +164,87 @@ class McpTests(unittest.IsolatedAsyncioTestCase):
 
 if __name__ == '__main__':
     unittest.main()
+
+
+@unittest.skipUnless(importlib.util.find_spec('mcp'), 'Install the optional MCP extra')
+class ReadOnlyMcpTests(unittest.IsolatedAsyncioTestCase):
+    """A shared database served read-only: no refresh, watch, documents or prompts, and no writes."""
+    setUp = McpTests.setUp
+
+    async def check_read_only(self, client):
+        tools = {tool.name: tool for tool in (await client.list_tools()).tools}
+        self.assertEqual(set(tools), {'search_notices', 'get_notice', 'procedure_results', 'search_results'})
+        self.assertNotIn('refresh', tools['search_notices'].input_schema['properties'])
+        self.assertNotIn('refresh', tools['search_results'].input_schema['properties'])
+        self.assertNotIn('profile', tools['search_results'].input_schema['properties'])
+        self.assertNotIn('refresh', tools['search_notices'].description)
+        self.assertEqual((await client.list_prompts()).prompts, [])
+        result = await client.call_tool('search_notices', {'profile': 'leki'})
+        self.assertEqual(result.structured_content['notices'], search(self.state, self.profile)['notices'])
+        self.assertEqual(result.structured_content['refreshes'], [])
+        awards = await client.call_tool('search_results', {'cpv': ['336*']})
+        self.assertEqual(awards.structured_content['awards'][0]['contractor'], 'Acme')
+        # The schema has no refresh; the SDK drops the stray argument before the tool runs.
+        stray = await client.call_tool('search_notices', {'profile': 'leki', 'refresh': True})
+        self.assertEqual(stray.structured_content['refreshes'], [])
+        self.assertTrue((await client.call_tool('read_document', {'document_id': '0' * 64})).is_error)
+        coverage = await client.read_resource('tenderkit://coverage')
+        self.assertEqual(json.loads(coverage.contents[0].text)['counts'][0]['count'], 2)
+
+    async def test_read_only_server_publishes_only_search_and_result_tools(self):
+        from mcp.client import Client
+        from tenderkit.mcp import create_server
+        adapter = mock.Mock()
+        before = self.path.read_bytes()
+        async with Client(create_server(self.path, adapters={'TED': adapter}, read_only=True)) as client:
+            await self.check_read_only(client)
+        adapter.fetch.assert_not_called()
+        self.assertEqual(self.path.read_bytes(), before)
+        self.assertFalse((self.path.parent / 'documents').exists())
+
+    def test_read_only_server_needs_an_existing_database(self):
+        from tenderkit.mcp import create_server
+        missing = self.path.parent / 'missing.sqlite3'
+        with self.assertRaisesRegex(ValueError, 'Database not found'):
+            create_server(missing, read_only=True)
+        self.assertFalse(missing.exists())
+
+    def test_cli_http_requires_read_only_and_http_options_require_http(self):
+        from contextlib import redirect_stderr
+        from io import StringIO
+        from tenderkit.cli import main
+        for args in (['mcp', '--http'], ['mcp', '--port', '9000'], ['mcp', '--read-only', '--no-raw']):
+            with redirect_stderr(StringIO()) as error:
+                self.assertEqual(main(['--db', str(self.path), *args]), 2, args)
+            self.assertIn('tenderkit:', error.getvalue())
+
+    def test_http_options_allow_only_local_and_configured_hosts(self):
+        from tenderkit.mcp import http_options
+        security = http_options(host='0.0.0.0', allowed_hosts=['mcp.example.org'])['transport_security']
+        self.assertTrue(security.enable_dns_rebinding_protection)
+        self.assertIn('mcp.example.org', security.allowed_hosts)
+        self.assertIn('mcp.example.org:*', security.allowed_hosts)
+        self.assertIn('https://mcp.example.org', security.allowed_origins)
+
+    async def test_http_server_from_the_cli(self):
+        import socket
+        import subprocess
+        import asyncio
+        from mcp.client import Client
+        with socket.socket() as probe:
+            probe.bind(('127.0.0.1', 0))
+            port = probe.getsockname()[1]
+        root = Path(__file__).resolve().parents[2]
+        process = subprocess.Popen(
+            [sys.executable, '-B', '-m', 'tenderkit', '--db', str(self.path), 'mcp', '--read-only', '--http',
+             '--port', str(port)], cwd=root, env={**os.environ, 'PYTHONUTF8': '1'},
+            stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        self.addCleanup(process.wait, 10)
+        self.addCleanup(process.terminate)
+        for _ in range(100):
+            with socket.socket() as probe:
+                if probe.connect_ex(('127.0.0.1', port)) == 0:
+                    break
+            await asyncio.sleep(0.1)
+        async with Client(f'http://127.0.0.1:{port}/mcp', read_timeout_seconds=20) as client:
+            await self.check_read_only(client)

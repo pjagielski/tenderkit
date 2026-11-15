@@ -176,6 +176,16 @@ Configure your client with the absolute path to the installed `tenderkit` execut
 
 `watch_updates` reads the latest recorded watch run for a configured profile, including its events and source status. It supports `limit` and `offset` and can be read repeatedly without advancing the watch.
 
+### Shared read-only server over HTTP
+
+To share one database with many clients, fill it on a schedule with `fetch` (for example `fetch --profile all.toml --results --no-raw`, where `all.toml` holds only `name = "all"`) and serve it read-only:
+
+```sh
+tenderkit --db /srv/tenderkit/notices.sqlite3 mcp --read-only --http --port 8000 --allowed-host mcp.example.org
+```
+
+`--read-only` opens the database without write access and publishes only `search_notices`, `get_notice`, `procedure_results` and `search_results`, without their `refresh` parameters, plus the `tenderkit://profiles` and `tenderkit://coverage` resources. Watch, document tools and the prompts that rely on them are left out, so the server never contacts a source, downloads a file or reads local paths. `--http` serves stateless Streamable HTTP at `/mcp` and requires `--read-only`. It binds to `127.0.0.1` by default and accepts only localhost host names and those passed with `--allowed-host`, so put it behind a reverse proxy that terminates TLS and limits request rates.
+
 ### Analyze a procedure with MCP
 
 Clients that expose MCP prompts can start with `analyze_it_tender` or `compare_public_bids`. Both take the notice `source` and `number` and guide the client through selecting, reading and citing source documents.

@@ -124,12 +124,21 @@ Run tenderkit COMMAND --help for command options.''',
     reader.add_argument('--page', type=int, default=1, help='First page to read (default: 1).')
     reader.add_argument('--pages', type=int, default=1, help='Number of pages to read (default: 1).')
     reader.add_argument('--ocr', action='store_true', help='Run local Polish OCR on PDF pages without embedded text.')
-    mcp = add_command('mcp', 'Serve tenderkit tools over MCP stdio.')
+    mcp = add_command('mcp', 'Serve tenderkit tools over MCP stdio, or a read-only database over HTTP.')
+    mcp.epilog = ('--http serves only --read-only tools: search, notice and results, without refresh, watch or '
+                  'documents. Put it behind a reverse proxy with TLS and rate limits before exposing it.')
     mcp.add_argument('--profile-file', type=Path, action='append', default=[],
                      help='trusted profile to expose alongside the built-ins')
     mcp.add_argument('--no-raw', action='store_true',
                      help='Save notices without the full source record. Keeps only the few source fields '
                           'tenderkit reads (watch versions, TED lot deadlines); export then omits the rest.')
+    mcp.add_argument('--read-only', action='store_true',
+                     help='Open the database read-only; serve search, notice and result tools without refresh.')
+    mcp.add_argument('--http', action='store_true', help='Serve Streamable HTTP at /mcp instead of stdio. Requires --read-only.')
+    mcp.add_argument('--host', default='127.0.0.1', help='HTTP bind address (default: 127.0.0.1).')
+    mcp.add_argument('--port', type=int, default=8000, help='HTTP port (default: 8000).')
+    mcp.add_argument('--allowed-host', action='append', dest='allowed_hosts', default=[], metavar='HOST',
+                     help='Public host name the server answers to behind a proxy, such as mcp.example.org. Repeatable.')
     args = parser.parse_args(argv)
     if args.command is None:
         parser.print_help()
@@ -152,13 +161,23 @@ Run tenderkit COMMAND --help for command options.''',
             serve(args.db, profiles, next(iter(profiles)), args.port)
             return 0
         if args.command == 'mcp':
-            from tenderkit.mcp import create_server
+            from tenderkit.mcp import create_server, serve_http
+            if args.http and not args.read_only:
+                raise ValueError('--http requires --read-only')
+            if args.read_only and args.no_raw:
+                raise ValueError('--no-raw has no effect with --read-only')
+            if not args.http and (args.allowed_hosts or args.host != '127.0.0.1' or args.port != 8000):
+                raise ValueError('--host, --port and --allowed-host require --http')
             profiles = builtin_profiles()
             for path in args.profile_file:
                 profile = resolve_profile(str(path))
                 profiles[profile.name] = profile
-            create_server(args.db, profiles=profiles, document_root=args.documents_dir,
-                          keep_raw=not args.no_raw).run(transport='stdio')
+            server = create_server(args.db, profiles=profiles, document_root=args.documents_dir,
+                                   keep_raw=not args.no_raw, read_only=args.read_only)
+            if args.http:
+                serve_http(server, host=args.host, port=args.port, allowed_hosts=args.allowed_hosts)
+            else:
+                server.run(transport='stdio')
             return 0
         # Validate inputs before creating or opening the state file.
         if args.command == 'results':
