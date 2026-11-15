@@ -7,6 +7,7 @@ from pathlib import Path
 import sqlite3
 
 
+from tenderkit.profile import fold
 from tenderkit.serialization import compact_raw, dumps, notice_from_record, notice_record
 
 SCHEMA = '''
@@ -16,6 +17,10 @@ create table if not exists notices (
     primary key(source, number)
 );
 create index if not exists notices_published on notices(published, source, number);
+-- Result lookups: notices of one procedure, and only notices that carry awards. Expression indexes need no new
+-- columns, so a read-only server uses them whenever a writer has created them and scans otherwise.
+create index if not exists notices_procedure on notices(source, json_extract(payload, '$.procedure_id'));
+create index if not exists notices_awarded on notices(published) where json_array_length(payload, '$.awards') > 0;
 create table if not exists refreshes (
     id integer primary key, source text not null, start text not null, end text not null,
     query text not null, status text not null, count integer not null,
@@ -88,6 +93,7 @@ class State:
         database = self.path.resolve().as_uri() + '?mode=ro' if self.read_only else self.path
         conn = sqlite3.connect(database, timeout=30, uri=self.read_only)
         conn.row_factory = sqlite3.Row
+        conn.create_function('fold', 1, fold, deterministic=True)
         try:
             with conn:
                 yield conn
@@ -108,8 +114,29 @@ class State:
                     'FAILED' if error else 'COMPLETED', len(notices or []), error,
                     datetime.now(timezone.utc).isoformat()))
 
-    def notices(self, start=None, end=None, sources=()):
+    def notices(self, start=None, end=None, sources=(), *, awarded=False, procedure_id=None, cpv=(), buyer=None):
+        """Saved notices, newest first. The keyword filters narrow rows in SQLite before any record is decoded:
+        awarded keeps notices with awards, cpv takes main codes or prefixes ending in *, buyer is a folded
+        substring of the buyer name."""
         conditions, params = [], []
+        if awarded:
+            conditions.append("json_array_length(payload, '$.awards') > 0")
+        if procedure_id is not None:
+            conditions.append("json_extract(payload, '$.procedure_id') = ?")
+            params.append(procedure_id)
+        if cpv:
+            terms = []
+            for pattern in cpv:
+                if pattern.endswith('*'):
+                    terms.append("substr(value, 1, ?) = ?")
+                    params.extend((len(pattern) - 1, pattern[:-1]))
+                else:
+                    terms.append('value = ?')
+                    params.append(pattern)
+            conditions.append("exists (select 1 from json_each(payload, '$.cpv') where " + ' or '.join(terms) + ')')
+        if buyer:
+            conditions.append("instr(fold(json_extract(payload, '$.buyer_name')), ?) > 0")
+            params.append(fold(buyer))
         if start:
             conditions.append('published >= ?')
             params.append(str(start))

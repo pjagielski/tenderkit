@@ -175,6 +175,37 @@ class ResultServiceTests(unittest.TestCase):
         self.assertEqual(search_results(self.state, buyer='Warszawa')['awards'], [])
         self.assertEqual(search_results(self.state, cpv=('48*',))['awards'], [])
 
+    def test_sqlite_filters_match_the_python_rules(self):
+        other = Notice('BZP', 'result-3', procedure_id='proc-3', buyer_name='Szpital w Łodzi', cpv=('72212000', '48000000'),
+                       published=date(2026, 10, 21), notice_type='TenderResultNotice',
+                       awards=(Award('1', 'AWARDED', contractor='Beta', date=date(2026, 10, 21)),))
+        self.state.record_refresh('BZP', date(2026, 10, 21), date(2026, 10, 21), asdict(SourceQuery()), [other])
+        numbers = lambda **kw: sorted(n.number for n in self.state.notices(**kw))
+        self.assertEqual(numbers(awarded=True), ['result-1', 'result-3'])
+        self.assertEqual(numbers(cpv=('72200000',)), ['contract-1', 'result-1'])
+        self.assertEqual(numbers(cpv=('7221*',)), ['result-3'])
+        self.assertEqual(numbers(cpv=('48*', '722000*')), ['contract-1', 'result-1', 'result-3'])
+        self.assertEqual(numbers(cpv=('722',)), [])
+        self.assertEqual(numbers(buyer='KRAKÓW'), ['contract-1', 'result-1'])
+        self.assertEqual(numbers(buyer='lodz'), ['result-3'])
+        self.assertEqual(numbers(procedure_id='proc-1'), ['contract-1', 'result-1'])
+
+    def test_a_read_only_database_without_result_indexes_still_answers(self):
+        from contextlib import closing
+        import sqlite3
+        with closing(sqlite3.connect(self.path)) as conn:
+            conn.execute('drop index notices_procedure')
+            conn.execute('drop index notices_awarded')
+        reader = State(self.path, read_only=True)
+        self.assertEqual(search_results(reader, buyer='krakow')['total'], 2)
+        self.assertEqual(len(procedure_results(reader, 'BZP', 'contract-1')['results']), 1)
+        State(self.path)
+        with closing(sqlite3.connect(self.path)) as conn:
+            plan = ' '.join(row[-1] for row in conn.execute(
+                "explain query plan select payload from notices where source=? and json_extract(payload, '$.procedure_id') = ?",
+                ('BZP', 'proc-1')))
+        self.assertIn('notices_procedure', plan)
+
     def test_search_results_rejects_invalid_cpv(self):
         with self.assertRaises(ValueError):
             search_results(self.state, cpv=('abc',))
