@@ -125,7 +125,7 @@ def procedure_results(state, source, number):
         raise ValueError('Notice not found in local state')
     related = [notice]
     if notice.procedure_id:
-        related = [n for n in state.notices(sources=(source,)) if n.procedure_id == notice.procedure_id]
+        related = list(state.notices(sources=(source,), procedure_id=notice.procedure_id))
         if not any(n.number == notice.number for n in related):
             related.append(notice)
     related.sort(key=lambda n: (n.published or date.min, n.number))
@@ -148,7 +148,8 @@ def search_results(state, *, buyer=None, cpv=(), start=None, end=None, limit=100
         raise ValueError('Result CPV must be digits, optionally ending in *')
     folded_buyer = fold(buyer) if buyer else None
     candidates = []
-    for notice in state.notices(start, end, source_names):
+    # SQLite narrows by awards, buyer and CPV; the checks below keep the exact matching rules.
+    for notice in state.notices(start, end, source_names, awarded=True, cpv=patterns, buyer=buyer):
         if not notice.awards:
             continue
         if folded_buyer and folded_buyer not in fold(notice.buyer_name):
