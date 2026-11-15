@@ -13,12 +13,12 @@ const examples = {
   },
   cli: {
     filename: 'Wiersz poleceń',
-    text: '# Wyszukaj i odsień postępowania\ntenderkit fetch --profile oprogramowanie\n\n# Pobierz materiały z platform zakupowych\ntenderkit download --profile oprogramowanie --limit 10\n\n# Przekaż dane do własnego procesu\ntenderkit export --profile oprogramowanie --format jsonl',
+    text: '# Wyszukaj i odsień postępowania\ntenderkit fetch --profile oprogramowanie\n\n# Pobierz materiały z platform zakupowych\ntenderkit download --profile oprogramowanie --limit 10\n\n# Przekaż dane do własnego procesu\ntenderkit export --profile oprogramowanie --format jsonl\n\n# Formalne wyniki: wykonawca, cena i liczba ofert\ntenderkit results --buyer Kraków --cpv "72*"',
     explanation: 'Pobieranie korzysta z zapisanych ogłoszeń. Aby przejść do kolejnej partii, podaj next_offset jako --offset.'
   },
   mcp: {
     filename: 'Narzędzia dla Twojego AI',
-    text: '# Uruchom lokalny serwer MCP\ntenderkit mcp\n\n# Ogłoszenia i dokumenty dla Twojego AI\nsearch_notices(profile="oprogramowanie")\nlist_documents(source="BZP", number="…")\nfetch_documents(source="BZP", number="…", keys=["…"])\nlist_documents(source="BZP", number="…", refresh=false)\nread_document(document_id="<downloaded.sha256>")',
+    text: '# Uruchom lokalny serwer MCP\ntenderkit mcp\n\n# Ogłoszenia i dokumenty dla Twojego AI\nsearch_notices(profile="oprogramowanie")\nlist_documents(source="BZP", number="…")\nfetch_documents(source="BZP", number="…", keys=["…"])\nprocedure_results(source="BZP", number="…")\nread_document(document_id="<downloaded.sha256>")',
     explanation: 'Przekaż source i number z wyniku wyszukiwania oraz klucze załączników z listy dokumentów. Do analizy użyj promptu MCP analyze_it_tender lub compare_public_bids.'
   }
 };
@@ -123,7 +123,7 @@ function renderNotices() {
     const meta = document.createElement('div');
     meta.className = 'notice-meta';
     const badge = document.createElement('span');
-    badge.className = 'source-badge' + (notice.source === 'TED' ? ' ted' : notice.source === 'BK' ? ' bk' : notice.source === 'OnePlace' ? ' oneplace' : '');
+    badge.className = 'source-badge' + (notice.source === 'TED' ? ' ted' : notice.source === 'BK' ? ' bk' : '');
     badge.textContent = notice.source;
     const number = document.createElement('span');
     number.textContent = notice.number;
