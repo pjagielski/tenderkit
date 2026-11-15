@@ -66,6 +66,10 @@ Run tenderkit COMMAND --help for command options.''',
         command.add_argument('--to', dest='end', metavar='YYYY-MM-DD', help='Last publication date, inclusive.')
         command.add_argument('--source', action='append', dest='source_names', metavar='NAME',
                              help='Limit to a source such as BZP or TED. Repeat to include more sources.')
+        if name in ('fetch', 'watch'):
+            command.add_argument('--no-raw', action='store_true',
+                             help='Save notices without the full source record. Keeps only the few source fields '
+                                  'tenderkit reads (watch versions, TED lot deadlines); export then omits the rest.')
         if name == 'fetch':
             command.epilog = 'With no date options, fetch covers the last 30 calendar days including today.'
             command.add_argument('--results', action='store_true',
@@ -123,6 +127,9 @@ Run tenderkit COMMAND --help for command options.''',
     mcp = add_command('mcp', 'Serve tenderkit tools over MCP stdio.')
     mcp.add_argument('--profile-file', type=Path, action='append', default=[],
                      help='trusted profile to expose alongside the built-ins')
+    mcp.add_argument('--no-raw', action='store_true',
+                     help='Save notices without the full source record. Keeps only the few source fields '
+                          'tenderkit reads (watch versions, TED lot deadlines); export then omits the rest.')
     args = parser.parse_args(argv)
     if args.command is None:
         parser.print_help()
@@ -150,7 +157,8 @@ Run tenderkit COMMAND --help for command options.''',
             for path in args.profile_file:
                 profile = resolve_profile(str(path))
                 profiles[profile.name] = profile
-            create_server(args.db, profiles=profiles, document_root=args.documents_dir).run(transport='stdio')
+            create_server(args.db, profiles=profiles, document_root=args.documents_dir,
+                          keep_raw=not args.no_raw).run(transport='stdio')
             return 0
         # Validate inputs before creating or opening the state file.
         if args.command == 'results':
@@ -176,7 +184,7 @@ Run tenderkit COMMAND --help for command options.''',
                 start, end = window(args.start, args.end) if args.start or args.end else (None, None)
             elif any(value is not None for value in (args.start, args.end, args.limit, args.offset)):
                 raise ValueError('--from, --to, --limit and --offset require --profile')
-        state = State(args.db)
+        state = State(args.db, keep_raw=not getattr(args, 'no_raw', False))
         if args.command == 'results':
             if args.number:
                 print(dumps(procedure_results(state, args.source, args.number)))

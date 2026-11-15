@@ -20,6 +20,17 @@ def dumps(value):
     return json.dumps(value, ensure_ascii=False, default=json_default, allow_nan=False)
 
 
+# The source fields tenderkit reads after mapping: watch identities and versions (TED, BZP corrections, BK) and
+# TED lot deadlines in the browser UI. Everything else in `raw` is the source's record kept for the user.
+RAW_FIELDS_USED = ('notice-identifier', 'change-notice-version-identifier', 'notice-version',
+                   'deadline-receipt-tender-date-lot', 'amends', 'version')
+
+
+def compact_raw(raw):
+    """Keep only the source fields tenderkit itself reads."""
+    return {key: raw[key] for key in RAW_FIELDS_USED if key in raw}
+
+
 def notice_record(notice, *, raw=True):
     record = asdict(notice)
     if not raw:
