@@ -30,6 +30,8 @@ fi
 sudo -u tenderkit python3 -m venv "$APP/venv"
 sudo -u tenderkit "$APP/venv/bin/pip" install -q --upgrade pip
 sudo -u tenderkit "$APP/venv/bin/pip" install -q --upgrade "tenderkit[mcp] @ git+https://github.com/pjagielski/tenderkit@$REF"
+# Unreleased commits keep the version number, so --upgrade alone leaves the previous code in place.
+sudo -u tenderkit "$APP/venv/bin/pip" install -q --force-reinstall --no-deps "tenderkit @ git+https://github.com/pjagielski/tenderkit@$REF"
 
 echo 'name = "all"' > "$APP/all.toml"
 chown tenderkit:tenderkit "$APP/all.toml"
