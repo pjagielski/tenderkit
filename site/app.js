@@ -263,7 +263,7 @@ const heroSlides = {
 };
 const hero = document.querySelector('.hero-showcase');
 const motionPreference = window.matchMedia('(prefers-reduced-motion: reduce)');
-let carouselPlaying = !motionPreference.matches;
+let carouselPlaying = false;
 let carouselVisible = false;
 let carouselHovered = false;
 let carouselFocused = false;
