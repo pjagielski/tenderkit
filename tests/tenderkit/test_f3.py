@@ -1,5 +1,6 @@
 """A third industry travels through the existing source/filter/document interfaces."""
 from contextlib import redirect_stdout
+from dataclasses import replace
 from datetime import date
 import importlib.util
 import io
@@ -46,7 +47,7 @@ class MedicalDevicesFlowTests(unittest.IsolatedAsyncioTestCase):
             profile = resolve_profile('wyroby-medyczne')
             result = refresh(state, profile, on, on, {'BZP': source})
             self.assertEqual(result[0]['status'], 'COMPLETED')
-            self.assertEqual(source.fetch.call_args.args[2], profile.source_query())
+            self.assertEqual(source.fetch.call_args.args[2], replace(profile.source_query(), include_amendments=True))
             expected = search(state, profile)['notices']
             self.assertEqual([n['number'] for n in expected], ['medical-fixture'])
             with redirect_stdout(io.StringIO()) as output:

@@ -7,6 +7,7 @@ import re
 from zoneinfo import ZoneInfo
 
 from tenderkit.model import Award, Lot, Notice
+from tenderkit.sources.bzp import timestamp
 
 REFERENCE = re.compile(r'4\.1\.2\.\)\s*Numer referencyjny:\s*(.+?)\s+\d\.\d\.\d+\.\)')
 PLATFORM_URL = re.compile(r'Adres strony internetowej prowadzonego post.powania.{0,300}?(https?://\s*\S+|www\.\S+)')
@@ -124,7 +125,8 @@ def bzp_amendment(raw):
     return Notice('BZP', raw['noticeNumber'], procedure_id=raw.get('tenderId'),
                   published=bzp_publication_day(raw.get('publicationDate')), deadline=deadline, title=raw.get('orderObject'),
                   url=f"https://ezamowienia.gov.pl/mo-client-board/bzp/notice-details/id/{raw['objectId']}",
-                  notice_type=raw.get('noticeType'), raw={'amends': target_number})
+                  notice_type=raw.get('noticeType'), raw={'amends': target_number,
+                      'amendment_published_at': timestamp(raw['publicationDate']).isoformat()})
 
 
 def bzp_blocks(body, labels=None):

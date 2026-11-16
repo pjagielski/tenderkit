@@ -8,7 +8,7 @@ from zoneinfo import ZoneInfo
 from tenderkit.interfaces import Source
 from tenderkit.profile import fold
 from tenderkit.serialization import dumps, notice_record
-from tenderkit.sources.bzp import Bzp
+from tenderkit.sources.bzp import AMENDMENT_TYPE, Bzp
 from tenderkit.sources.bk import Bk
 from tenderkit.sources.ted import Ted
 
@@ -45,10 +45,10 @@ def refresh(state, profile, start, end, adapters=None, include_results=False, in
     start, end = window(start, end)
     adapters = sources() if adapters is None else adapters
     summaries = []
-    query = profile.source_query()
-    if include_results or include_amendments:
-        query = replace(query, include_results=include_results, include_amendments=include_amendments)
+    base_query = profile.source_query()
     for source, adapter in adapters.items():
+        query = replace(base_query, include_results=include_results,
+                        include_amendments=include_amendments or source == 'BZP')
         try:
             notices = []
             for notice in adapter.fetch(start, end, query):
@@ -71,6 +71,8 @@ def filtered(state, profile, *, start=None, end=None, source_names=(), on=None):
     on = on or today()
     # The search index narrows candidates in SQLite; Profile.matches still decides every notice.
     for notice in state.notices(start, end, source_names, profile=profile, today=on):
+        if notice.source == 'BZP' and notice.notice_type == AMENDMENT_TYPE and AMENDMENT_TYPE not in profile.notice_types:
+            continue
         if profile.matches(notice, today=on):
             yield notice
 
@@ -133,7 +135,7 @@ def procedure_results(state, source, number):
     return dict(
         notice=notice_record(notice, raw=False),
         procedure_id=notice.procedure_id,
-        contracts=[notice_record(n, raw=False) for n in related if not n.awards],
+        contracts=[notice_record(n, raw=False) for n in related if not n.awards and n.notice_type != AMENDMENT_TYPE],
         results=[notice_record(n, raw=False) for n in related if n.awards],
         awards=[_award_record(award, owner) for award, owner in latest_awards(related)])
 
