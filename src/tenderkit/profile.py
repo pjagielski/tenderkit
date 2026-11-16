@@ -6,7 +6,8 @@
     keywords_any = ["lek", "farmaceut"]    # empty: no keyword condition
     exclude_keywords = ["weterynar"]
 
-Keywords match from the start of a word in the title, description or lot titles. Use *term* for a substring.
+Keywords match from the start of a word in the title, description or lot titles; a trailing * changes nothing.
+Use *term* (or *term) for a substring anywhere in a word.
 Matching is case- and diacritics-insensitive. Profile.matches applies the filters the source cannot handle.
 """
 from dataclasses import dataclass
@@ -86,12 +87,18 @@ def region_code(value):
                      'or its two-digit TERYT code')
 
 
+def keyword_term(keyword):
+    """A keyword's folded text and whether it matches anywhere in a word.
+
+    'lek' and 'lek*' match from a word start (the default, so a trailing * is optional); '*lek*' and '*lek'
+    match anywhere. Profile validation rejects a * anywhere else."""
+    term = fold(keyword.strip())
+    return term.strip('*').strip(), term.startswith('*')
+
+
 @lru_cache(maxsize=1024)
 def _keyword_pattern(keyword):
-    term = fold(keyword.strip())
-    substring = len(term) > 2 and term.startswith('*') and term.endswith('*')
-    if substring:
-        term = term[1:-1]
+    term, substring = keyword_term(keyword)
     phrase = r'\s+'.join(re.escape(word) for word in term.split())
     return re.compile(('' if substring else r'(?<!\w)') + phrase) if phrase else re.compile(r'(?!)')
 
@@ -135,6 +142,11 @@ class Profile:
                     or any(not isinstance(v, str) or not v.strip() or len(v) > 200 for v in values)):
                 raise ValueError(f'{name} must be an array of nonempty strings')
             object.__setattr__(self, name, tuple(values))
+        for name in ('keywords_any', 'exclude_keywords'):
+            for keyword in getattr(self, name):
+                inner = keyword.strip().strip('*')
+                if '*' in inner or not inner.strip():
+                    raise ValueError(f'{name}: * may only start or end a keyword, as in lek* or *lek*: {keyword!r}')
         bad = [c for c in self.cpv + self.exclude_cpv if not _CPV.match(c)]
         if bad:
             raise ValueError(f'profile {self.name}: CPV must be digits, optionally ending in *: {bad}')

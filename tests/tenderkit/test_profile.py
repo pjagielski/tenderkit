@@ -76,6 +76,24 @@ class ProfileTests(unittest.TestCase):
             self.assertTrue(prefix.matches_text(title), title)
         self.assertTrue(Profile('exclude', exclude_keywords=('lek',)).matches_text('Sprzęt elektryczny'))
 
+    def test_a_trailing_star_is_a_prefix_and_never_silently_matches_nothing(self):
+        # Regression: 'onkolog*' found nothing and exclude_keywords=['szczepion*'] excluded nothing.
+        onco = Profile('onco', cpv=('336*',), keywords_any=('onkolog*', 'cytostat*'), exclude_keywords=('szczepion*', 'dezynfek*'))
+        self.assertTrue(onco.matches(Notice('TED', '1', title='Dostawa leków onkologicznych', cpv=('33652000',))))
+        self.assertTrue(onco.matches(Notice('TED', '2', title='Leki cytostatyczne', cpv=('33652000',))))
+        self.assertFalse(onco.matches(Notice('TED', '3', title='Leki onkologiczne i szczepionki', cpv=('33652000',))))
+        self.assertFalse(onco.matches(Notice('TED', '4', title='Leki onkologiczne', description='Pakiet 7: środki dezynfekcyjne',
+                                             cpv=('33652000',))))
+        self.assertEqual(Profile('a', keywords_any=('lek*',)).keyword_matches(Notice('BZP', '5', title='Leki')),
+                         [{'keyword': 'lek*', 'field': 'title'}])
+        self.assertTrue(Profile('b', keywords_any=('*ektry',)).matches_text('Sprzęt elektryczny'))
+
+    def test_a_star_inside_a_keyword_is_rejected(self):
+        for keyword in ('on*log', '*', '**', ' * '):
+            for field in ('keywords_any', 'exclude_keywords'):
+                with self.subTest(keyword=keyword, field=field), self.assertRaisesRegex(ValueError, 'may only start or end'):
+                    Profile('bad', **{field: (keyword,)})
+
     def test_phrases_and_exclusions_use_each_searchable_field(self):
         notice = Notice('BZP', '1', title='Dostawa', description='Utrzymanie SYSTEMU\nINFORMATYCZNEGO',
                         lots=(Lot('2', 'Systemu informatycznego i oprogramowania'),))

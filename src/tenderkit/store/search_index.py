@@ -7,7 +7,7 @@ from datetime import timedelta
 import re
 from zoneinfo import ZoneInfo
 
-from tenderkit.profile import fold, keyword_texts
+from tenderkit.profile import fold, keyword_term, keyword_texts
 
 SCHEMA = '''
 create table if not exists notice_index (
@@ -55,8 +55,8 @@ def complete(conn):
 def _fts_term(keyword):
     """One keyword as an FTS5 query: its words as a phrase whose last word is a prefix, or None if FTS cannot
     express it (a *substring* or no word characters)."""
-    term = fold(keyword.strip())
-    if len(term) > 2 and term.startswith('*') and term.endswith('*'):
+    term, substring = keyword_term(keyword)
+    if substring:
         return None
     tokens = _TOKEN.findall(term)
     if not tokens:
@@ -107,7 +107,7 @@ def prefilter(profile, today):
                     part_params.append(query)
                 else:
                     # The rule allows any whitespace between words, so look for the first word alone.
-                    words = _searchable(keyword.strip()).strip('*').split()
+                    words = _PRIVATE_USE.sub(' ', keyword_term(keyword)[0]).split()
                     needle = words[0] if words else ''
                     if not needle:
                         parts = []
