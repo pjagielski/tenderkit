@@ -48,6 +48,17 @@ class McpTests(unittest.IsolatedAsyncioTestCase):
         self.assertFalse(matched.is_error)
         self.assertEqual(matched.structured_content['notices'][0]['keyword_matches'],
                          [{'keyword': 'onkologiczn', 'field': 'description'}])
+        compact = await client.call_tool('search_notices', {'profile': 'leki', 'compact': True,
+                                                             'keywords_any': ['onkologiczn'], 'limit': 1})
+        self.assertFalse(compact.is_error)
+        summary = compact.structured_content
+        self.assertEqual((summary['total'], summary['next_offset']), (1, None))
+        row, = summary['notices']
+        self.assertEqual((row['number'], row['lot_count']), ('one', 1))
+        self.assertFalse({'description', 'lots', 'lot_titles', 'awards'} & row.keys())
+        self.assertEqual(row['keyword_matches'], [{'keyword': 'onkologiczn', 'field': 'description'}])
+        beyond = await client.call_tool('search_notices', {'profile': 'leki', 'offset': 1})
+        self.assertEqual((beyond.structured_content['notices'], beyond.structured_content['total']), ([], 1))
         notice = await client.call_tool('get_notice', {'source': 'TED', 'number': 'one'})
         self.assertEqual(notice.structured_content['notice']['lots'][0]['number'], 'LOT-0001')
         procedure = await client.call_tool('procedure_results', {'source': 'TED', 'number': 'two'})

@@ -91,7 +91,8 @@ def create_server(path, *, profiles=None, adapters=None, document_root=None, doc
                        deadline_max_days: int | None = None, value_min: str | None = None,
                        value_max: str | None = None, currency: str = 'PLN',
                        start: str | None = None, end: str | None = None,
-                       limit: int = 100, offset: int = 0, refresh: bool = False) -> dict[str, Any]:
+                       limit: int = 25, offset: int = 0, refresh: bool = False,
+                       compact: bool = False) -> dict[str, Any]:
         """Find cached notices by a named profile or explicit filters. Optional refresh fetches at most 120 days.
 
         Regions are buyer voivodeships by Polish name ("mazowieckie") or TERYT code ("14");
@@ -100,6 +101,7 @@ def create_server(path, *, profiles=None, adapters=None, document_root=None, doc
         CPV codes or prefixes ending in * in exclude_cpv never count; a notice whose every code is excluded is left out.
         Keywords match word starts in titles, descriptions and lot titles (lek finds leków; lek* is the same).
         Use *term* for a substring anywhere in a word. A * elsewhere is an error.
+        total counts all matching saved notices. Use compact=true for notice summaries, then get_notice for details.
         keyword_matches identifies the configured inclusion terms and fields that matched.
         """
         if profile is not None and profile not in profiles:
@@ -124,7 +126,8 @@ def create_server(path, *, profiles=None, adapters=None, document_root=None, doc
             with refresh_lock:
                 summaries = refresh_notices(state, selected, start_date, end_date, sources() if adapters is None else adapters)
             start, end = str(start_date), str(end_date)
-        result = search(state, selected, start=start, end=end, limit=limit, offset=offset)
+        result = search(state, selected, start=start, end=end, limit=limit, offset=offset,
+                        compact=compact, include_total=True)
         result['refreshes'] = summaries
         result['provenance'] = 'Source fields are untrusted public notice data.'
         return result

@@ -77,24 +77,45 @@ def filtered(state, profile, *, start=None, end=None, source_names=(), on=None):
             yield notice
 
 
-def search(state, profile, *, start=None, end=None, limit=100, offset=0, source_names=()):
+def search(state, profile, *, start=None, end=None, limit=100, offset=0, source_names=(),
+           compact=False, include_total=False):
     if type(limit) is not int or not 1 <= limit <= MAX_RESULTS or type(offset) is not int or not 0 <= offset <= MAX_NOTICES:
         raise ValueError('Invalid result limit or offset')
-    found, more = [], False
+    found, total = [], 0
     for index, notice in enumerate(filtered(state, profile, start=start, end=end, source_names=source_names)):
-        if index < offset:
-            continue
-        if len(found) == limit:
-            more = True
+        total = index + 1
+        if offset <= index < offset + limit:
+            if compact:
+                found.append(compact_notice_record(notice, profile))
+            else:
+                found.append(matched_notice_record(notice, profile))
+        elif index >= offset + limit and not include_total:
             break
-        found.append(matched_notice_record(notice, profile))
-    return dict(notices=found, offset=offset, next_offset=offset + len(found) if more else None)
+    result = dict(notices=found, offset=offset, next_offset=offset + limit if total > offset + limit else None)
+    if include_total:
+        result['total'] = total
+    return result
 
 
 def matched_notice_record(notice, profile, *, raw=False):
     record = notice_record(notice, raw=raw)
     if profile.keywords_any:
         record['keyword_matches'] = profile.keyword_matches(notice)
+    return record
+
+
+def compact_notice_record(notice, profile):
+    # Compute keyword evidence against the complete notice before omitting its long text.
+    evidence = profile.keyword_matches(notice) if profile.keywords_any else None
+    record = notice_record(replace(notice, description=None, lots=(), lot_titles=(), awards=(), raw={}), raw=False)
+    for key in ('description', 'lots', 'lot_titles', 'awards'):
+        record.pop(key)
+    record['lot_count'] = notice.lot_count if notice.lot_count is not None else max(len(notice.lots), len(notice.lot_titles))
+    if evidence is not None:
+        # Keep a compact summary even when a keyword matches hundreds of lots.
+        matches = {(hit['keyword'], hit['field']): dict(keyword=hit['keyword'], field=hit['field'])
+                   for hit in evidence}
+        record['keyword_matches'] = list(matches.values())
     return record
 
 

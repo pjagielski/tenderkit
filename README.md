@@ -198,6 +198,11 @@ The library records nothing about its use. The public server at mcp.tenderkit.pl
 
 IP addresses are not stored. Detailed records are deleted after 90 days, and only daily totals are kept.
 
+MCP `search_notices` returns 25 notices per page by default, with the exact
+`total` and `next_offset`. Supply `compact=true` to omit descriptions, lot
+details and awards while keeping the notice identifiers, dates, buyer, CPV,
+lot count and matching keyword fields. Read the full record with `get_notice`.
+
 ### Analyze a procedure with MCP
 
 Clients that expose MCP prompts can start with `analyze_it_tender` or `compare_public_bids`. Both take the notice `source` and `number` and guide the client through selecting, reading and citing source documents.
