@@ -186,7 +186,15 @@ tenderkit --db /srv/tenderkit/notices.sqlite3 mcp --read-only --http --port 8000
 
 `--read-only` opens the database without write access and publishes only `search_notices`, `get_notice`, `procedure_results` and `search_results`, without their `refresh` parameters, plus the `tenderkit://profiles` and `tenderkit://coverage` resources. Watch, document tools and the prompts that rely on them are left out, so the server never contacts a source, downloads a file or reads local paths. `--http` serves stateless Streamable HTTP at `/mcp` and requires `--read-only`. It binds to `127.0.0.1` by default and accepts only localhost host names and those passed with `--allowed-host`, so put it behind a reverse proxy that terminates TLS and limits request rates.
 
-[`deploy/public-mcp`](deploy/public-mcp/README.md) has an example setup script for Ubuntu with nginx: an unprivileged user, systemd units for the server, scheduled fetches and a 90-day backfill, TLS and per-IP limits. It is how [mcp.tenderkit.pl](https://mcp.tenderkit.pl/mcp) runs.
+[mcp.tenderkit.pl](https://mcp.tenderkit.pl/mcp) runs this way. A systemd timer refreshes the database every 8 hours with `fetch --results --no-raw`. The first backfill uses windows of at most 14 days for BZP and 5 days for TED, because TED award details are read for at most 1000 result notices per window. nginx in front adds TLS and per-IP limits.
+
+The library records nothing about its use. The public server at mcp.tenderkit.pl records usage statistics:
+- each request's tool and arguments, keywords included;
+- the result count, duration and errors;
+- the client name and User-Agent;
+- a client ID that cannot be linked across days.
+
+IP addresses are not stored. Detailed records are deleted after 90 days, and only daily totals are kept.
 
 ### Analyze a procedure with MCP
 
