@@ -85,6 +85,11 @@ def _keyword_fields(notice):
         yield 'lot_title', None, title
 
 
+def keyword_texts(notice):
+    """The texts keywords are matched in: title, description paragraphs and lot titles."""
+    return [text for _, _, text in _keyword_fields(notice) if text]
+
+
 @dataclass(frozen=True)
 class Profile:
     name: str
