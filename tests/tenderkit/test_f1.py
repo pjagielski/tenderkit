@@ -44,7 +44,7 @@ class SourceTests(unittest.TestCase):
             '<h3>4.2.2.) Krótki opis przedmiotu zamówienia</h3><p>Integracja i wdrożenie.</p>'
             '<h3>4.2.6.) Główny kod CPV:</h3>72000000'))
         self.assertEqual(bzp.description, 'Integracja i wdrożenie.')
-        self.assertEqual(bzp.lots, (Lot('2', 'System obiegu dokumentów'),))
+        self.assertEqual(bzp.lots, (Lot('2', 'System obiegu dokumentów', description='Integracja i wdrożenie.'),))
         ted = ted_notice(ted_raw(**{'description-proc': {'pol': 'Zakup sprzętu'},
             'description-lot': {'pol': ['Dostawa strzykawek', 'Dostawa rękawic']},
             'title-lot': {'pol': ['Rękawice', 'Strzykawki'], 'eng': ['Gloves', 'Syringes']},

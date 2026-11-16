@@ -13,6 +13,7 @@ class Lot:
     cpv: tuple[str, ...] = ()
     value: Decimal | None = None
     currency: str | None = None
+    description: str | None = None
 
 
 @dataclass(frozen=True)
