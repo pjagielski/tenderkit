@@ -90,9 +90,11 @@ def bzp_notice(raw):
     reference, platform = REFERENCE.search(text), PLATFORM_URL.search(text)
     value = re.search(r'Wartość zamówienia:\s*(\d[\d\s]*(?:,\d+)?)\s*([A-Z]{3})\b', text)
     description, lots = bzp_scope(body)
+    deadline = raw.get('submittingOffersDate')
     return Notice(
         source='BZP', number=raw['noticeNumber'], procedure_id=raw.get('tenderId'),
-        published=bzp_publication_day(raw.get('publicationDate')), deadline=instant(raw.get('submittingOffersDate')),
+        published=bzp_publication_day(raw.get('publicationDate')), deadline=instant(deadline),
+        deadline_precision=deadline_precision(deadline),
         title=raw.get('orderObject'), buyer_name=raw.get('organizationName'),
         buyer_id=raw.get('organizationNationalId'), buyer_city=raw.get('organizationCity'),
         buyer_region=region(raw.get('organizationProvince')),
@@ -237,6 +239,10 @@ def ted_scope(raw):
     return '\n\n'.join(dict.fromkeys(descriptions)) or None, tuple(dict.fromkeys(_ted_texts(raw.get('title-lot'))))
 
 
+def deadline_precision(value):
+    return ('date' if len(value) <= 16 and 'T' not in value else 'datetime') if value else None
+
+
 def ted_notice(raw):
     ids = raw.get('identifier-lot') or []
     values, currencies = raw.get('estimated-value-lot') or [], raw.get('estimated-value-cur-lot') or []
@@ -244,11 +250,26 @@ def ted_notice(raw):
     if value is None and values and all(amount(v) is not None for v in values) and len(set(currencies)) == 1:
         value, currency = sum(amount(v) for v in values), currencies[0]
     deadlines = sorted(d for d in raw.get('deadline-receipt-tender-date-lot') or [] if d)
+    deadline = deadlines[0] if deadlines else None
+    times = raw.get('deadline-receipt-tender-time-lot') or []
+    # Search arrays are flattened. Join the two fields only for a single lot.
+    if deadline_precision(deadline) == 'date' and len(ids) == len(deadlines) == len(times) == 1 and times[0]:
+        hour = times[0]
+        if not re.search(r'(?:Z|[+-]\d{2}:\d{2})$', hour):
+            hour += deadline[10:]
+        candidate = deadline[:10] + 'T' + hour
+        try:
+            instant(candidate)
+        except ValueError:
+            pass
+        else:
+            deadline = candidate
     urls = [u for u in raw.get('document-url-lot') or [] if u]
     description, lot_titles = ted_scope(raw)
     return Notice(
         source='TED', number=raw['publication-number'], procedure_id=first(raw.get('procedure-identifier')),
-        published=day(raw.get('publication-date')), deadline=instant(deadlines[0]) if deadlines else None,
+        published=day(raw.get('publication-date')), deadline=instant(deadline),
+        deadline_precision=deadline_precision(deadline),
         title=polish(raw.get('title-proc')) or polish(raw.get('notice-title')),
         buyer_name=polish(raw.get('buyer-name')), buyer_city=first(raw.get('organisation-city-buyer')),
         buyer_id=first(raw.get('organisation-identifier-buyer')),

@@ -89,7 +89,7 @@ def create_server(path, *, profiles=None, adapters=None, document_root=None, doc
                        exclude_buyers: list[str] | None = None, notice_types: list[str] | None = None,
                        regions: list[str] | None = None, deadline_min_days: int | None = None,
                        deadline_max_days: int | None = None, value_min: str | None = None,
-                       value_max: str | None = None, currency: str = 'PLN',
+                       value_max: str | None = None, currency: str = 'PLN', open_now: bool | None = None,
                        start: str | None = None, end: str | None = None,
                        limit: int = 100, offset: int = 0, refresh: bool = False) -> dict[str, Any]:
         """Find cached notices by a named profile or explicit filters. Optional refresh fetches at most 120 days.
@@ -100,13 +100,14 @@ def create_server(path, *, profiles=None, adapters=None, document_root=None, doc
         CPV codes or prefixes ending in * in exclude_cpv never count; a notice whose every code is excluded is left out.
         Keywords match word starts in titles, descriptions and lot titles (lek finds leków; lek* is the same).
         Use *term* for a substring anywhere in a word. A * elsewhere is an error.
+        open_now excludes same-day date-only deadlines and notices with no known deadline.
         keyword_matches identifies the configured inclusion terms and fields that matched.
         """
         if profile is not None and profile not in profiles:
             raise ValueError('Unknown profile; read tenderkit://profiles')
         data = asdict(profiles[profile]) if profile else {'name': 'query'}
         for name, value in (('cpv', cpv), ('exclude_cpv', exclude_cpv), ('keywords_any', keywords_any), ('exclude_keywords', exclude_keywords),
-                            ('exclude_buyers', exclude_buyers), ('notice_types', notice_types), ('regions', regions)):
+                            ('exclude_buyers', exclude_buyers), ('notice_types', notice_types), ('regions', regions), ('open_now', open_now)):
             if value is not None:
                 data[name] = value
         if deadline_min_days is not None or deadline_max_days is not None:

@@ -68,12 +68,13 @@ def refresh(state, profile, start, end, adapters=None, include_results=False, in
 def filtered(state, profile, *, start=None, end=None, source_names=(), on=None):
     if start is not None or end is not None:
         start, end = window(start, end)
-    on = on or today()
+    now = datetime.now(ZoneInfo("Europe/Warsaw")) if profile.open_now else None
+    on = on or (now.date() if now is not None else today())
     # The search index narrows candidates in SQLite; Profile.matches still decides every notice.
     for notice in state.notices(start, end, source_names, profile=profile, today=on):
         if notice.source == 'BZP' and notice.notice_type == AMENDMENT_TYPE and AMENDMENT_TYPE not in profile.notice_types:
             continue
-        if profile.matches(notice, today=on):
+        if profile.matches(notice, today=on, now=now):
             yield notice
 
 

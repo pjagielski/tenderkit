@@ -11,7 +11,7 @@ TED_XML = 'https://ted.europa.eu/en/notice/{number}/xml'
 # Search API fields only; the award XML below carries the per-lot join.
 TED_FIELDS = ['publication-number', 'publication-date', 'procedure-identifier', 'title-proc', 'notice-title',
               'buyer-name', 'organisation-city-buyer', 'internal-identifier-proc', 'document-url-lot',
-              'deadline-receipt-tender-date-lot', 'classification-cpv', 'identifier-lot', 'estimated-value-proc',
+              'deadline-receipt-tender-date-lot', 'deadline-receipt-tender-time-lot', 'classification-cpv', 'identifier-lot', 'estimated-value-proc',
               'estimated-value-cur-proc', 'estimated-value-lot', 'estimated-value-cur-lot',
               'organisation-country-sub-buyer', 'organisation-identifier-buyer', 'notice-type',
               'notice-identifier', 'notice-version', 'change-notice-version-identifier',

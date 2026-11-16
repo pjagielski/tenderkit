@@ -132,6 +132,7 @@ class Profile:
     deadline_days: DeadlineRange | None = None
     exclude_buyers: tuple[str, ...] = ()
     documents: tuple[str, ...] = ()
+    open_now: bool = False
 
     def __post_init__(self):
         if not isinstance(self.name, str) or not self.name.strip():
@@ -154,6 +155,8 @@ class Profile:
             raise ValueError('value must be a ValueRange')
         if self.deadline_days is not None and not isinstance(self.deadline_days, DeadlineRange):
             raise ValueError('deadline_days must be a DeadlineRange')
+        if type(self.open_now) is not bool:
+            raise ValueError('open_now must be a boolean')
         object.__setattr__(self, 'regions', tuple(dict.fromkeys(region_code(r) for r in self.regions)))
 
     def cpv_prefixes(self):
@@ -203,7 +206,7 @@ class Profile:
         return [dict(keyword=term, field=field, lot=lot) if lot is not None else dict(keyword=term, field=field)
                 for term, field, lot in hits]
 
-    def matches(self, notice: Notice, *, today=None):
+    def matches(self, notice: Notice, *, today=None, now=None):
         if not self.matches_cpv(notice.cpv):
             return False
         if self.notice_types and notice.notice_type not in self.notice_types:
@@ -219,10 +222,12 @@ class Profile:
                 return False
             if self.value.max is not None and notice.value > self.value.max:
                 return False
+        if self.open_now and notice.deadline_status(now or datetime.now(ZoneInfo('Europe/Warsaw'))) != 'upcoming':
+            return False
         if self.deadline_days:
-            if notice.deadline is None:
+            deadline = notice.local_deadline()
+            if deadline is None:
                 return False
-            deadline = notice.deadline.astimezone(ZoneInfo('Europe/Warsaw')) if notice.deadline.tzinfo else notice.deadline
             days = (deadline.date() - (today or datetime.now(ZoneInfo('Europe/Warsaw')).date())).days
             if not self.deadline_days.min <= days <= self.deadline_days.max:
                 return False

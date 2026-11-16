@@ -1,6 +1,6 @@
 """tenderkit CLI. Diagnostics go to stderr; stdout is JSON, JSONL or MCP stdio."""
 import argparse
-from dataclasses import asdict
+from dataclasses import asdict, replace
 import os
 from pathlib import Path
 import sys
@@ -66,6 +66,9 @@ Run tenderkit COMMAND --help for command options.''',
         command.add_argument('--to', dest='end', metavar='YYYY-MM-DD', help='Last publication date, inclusive.')
         command.add_argument('--source', action='append', dest='source_names', metavar='NAME',
                              help='Limit to a source such as BZP or TED. Repeat to include more sources.')
+        if name in ('filter', 'export'):
+            command.add_argument('--open-now', action='store_true',
+                                 help='Only show notices whose submission deadline is still ahead.')
         if name in ('fetch', 'watch'):
             command.add_argument('--no-raw', action='store_true',
                              help='Save notices without the full source record. Keeps only the few source fields '
@@ -191,6 +194,8 @@ Run tenderkit COMMAND --help for command options.''',
                 window(args.start, args.end)
         if args.command in ('fetch', 'filter', 'export', 'watch'):
             profile = resolve_profile(args.profile)
+            if getattr(args, 'open_now', False):
+                profile = replace(profile, open_now=True)
             if args.start or args.end or args.command in ('fetch', 'watch'):
                 start, end = window(args.start, args.end)
             else:
