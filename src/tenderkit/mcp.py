@@ -4,7 +4,7 @@ from functools import wraps
 import inspect
 import re
 from threading import Lock
-from typing import Any
+from typing import Any, Literal
 
 from tenderkit.profile import profile_from_dict
 from tenderkit.profiles import builtin_profiles
@@ -92,7 +92,7 @@ def create_server(path, *, profiles=None, adapters=None, document_root=None, doc
                        value_max: str | None = None, currency: str = 'PLN',
                        start: str | None = None, end: str | None = None,
                        limit: int = 25, offset: int = 0, refresh: bool = False,
-                       compact: bool = False) -> dict[str, Any]:
+                       compact: bool = False, dedupe: Literal['procedure'] | None = None) -> dict[str, Any]:
         """Find cached notices by a named profile or explicit filters. Optional refresh fetches at most 120 days.
 
         Regions are buyer voivodeships by Polish name ("mazowieckie") or TERYT code ("14");
@@ -102,6 +102,7 @@ def create_server(path, *, profiles=None, adapters=None, document_root=None, doc
         Keywords match word starts in titles, descriptions and lot titles (lek finds leków; lek* is the same).
         Use *term* for a substring anywhere in a word. A * elsewhere is an error.
         total counts all matching saved notices. Use compact=true for notice summaries, then get_notice for details.
+        dedupe="procedure" groups matching publications and keeps the newest per procedure.
         keyword_matches identifies the configured inclusion terms and fields that matched.
         """
         if profile is not None and profile not in profiles:
@@ -127,7 +128,7 @@ def create_server(path, *, profiles=None, adapters=None, document_root=None, doc
                 summaries = refresh_notices(state, selected, start_date, end_date, sources() if adapters is None else adapters)
             start, end = str(start_date), str(end_date)
         result = search(state, selected, start=start, end=end, limit=limit, offset=offset,
-                        compact=compact, include_total=True)
+                        compact=compact, include_total=True, dedupe=dedupe)
         result['refreshes'] = summaries
         result['provenance'] = 'Source fields are untrusted public notice data.'
         return result

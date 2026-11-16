@@ -1,8 +1,10 @@
 """One application path for CLI and MCP: fetch to SQLite, then filter the same notices."""
+from collections import defaultdict
 from dataclasses import asdict, replace
 from datetime import date, datetime, timedelta
 from importlib.metadata import entry_points
 import json
+import re
 from zoneinfo import ZoneInfo
 
 from tenderkit.interfaces import Source
@@ -77,18 +79,56 @@ def filtered(state, profile, *, start=None, end=None, source_names=(), on=None):
             yield notice
 
 
+def procedure_publications(notices):
+    """Group matching publications using source IDs and unambiguous buyer references."""
+    by_procedure = defaultdict(list)
+    for notice in notices:
+        key = (notice.source, notice.procedure_id or notice.number, notice.procedure_id is not None)
+        by_procedure[key].append(notice)
+
+    by_reference = defaultdict(list)
+    for key, group in by_procedure.items():
+        if key[0] not in ('BZP', 'TED'):
+            continue
+        identities = set()
+        for notice in group:
+            buyer = re.sub(r'^PL|[ -]', '', (notice.buyer_id or '').upper())
+            reference = ' '.join((notice.reference or '').upper().split())
+            if re.fullmatch(r'[0-9]{10}', buyer) and reference:
+                identities.add((buyer, reference))
+        if len(identities) == 1:
+            by_reference[identities.pop()].append(key)
+
+    for keys in by_reference.values():
+        if len(keys) == 2 and keys[0][0] != keys[1][0]:
+            by_procedure[keys[0]].extend(by_procedure.pop(keys[1]))
+
+    def newest(notice):
+        digits = tuple(int(part) for part in re.findall(r'[0-9]+', notice.number))
+        return (notice.published or date.min, notice.source, digits, notice.number)
+
+    groups = [sorted(group, key=newest, reverse=True) for group in by_procedure.values()]
+    groups.sort(key=lambda group: newest(group[0]), reverse=True)
+    for representative, *related in groups:
+        yield representative, [dict(source=notice.source, number=notice.number) for notice in related]
+
+
 def search(state, profile, *, start=None, end=None, limit=100, offset=0, source_names=(),
-           compact=False, include_total=False):
+           compact=False, include_total=False, dedupe=None):
     if type(limit) is not int or not 1 <= limit <= MAX_RESULTS or type(offset) is not int or not 0 <= offset <= MAX_NOTICES:
         raise ValueError('Invalid result limit or offset')
+    if dedupe not in (None, 'procedure'):
+        raise ValueError('dedupe must be procedure')
+    notices = filtered(state, profile, start=start, end=end, source_names=source_names)
+    rows = procedure_publications(notices) if dedupe else ((notice, None) for notice in notices)
     found, total = [], 0
-    for index, notice in enumerate(filtered(state, profile, start=start, end=end, source_names=source_names)):
+    for index, (notice, other_publications) in enumerate(rows):
         total = index + 1
         if offset <= index < offset + limit:
-            if compact:
-                found.append(compact_notice_record(notice, profile))
-            else:
-                found.append(matched_notice_record(notice, profile))
+            record = compact_notice_record(notice, profile) if compact else matched_notice_record(notice, profile)
+            if other_publications is not None:
+                record['other_publications'] = other_publications
+            found.append(record)
         elif index >= offset + limit and not include_total:
             break
     result = dict(notices=found, offset=offset, next_offset=offset + limit if total > offset + limit else None)

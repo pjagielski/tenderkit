@@ -202,6 +202,10 @@ MCP `search_notices` returns 25 notices per page by default, with the exact
 `total` and `next_offset`. Supply `compact=true` to omit descriptions, lot
 details and awards while keeping the notice identifiers, dates, buyer, CPV,
 lot count and matching keyword fields. Read the full record with `get_notice`.
+With `dedupe="procedure"`, the total and pagination count procedures. Each
+group returns the newest matching publication and its `other_publications`.
+Grouping uses the procedure ID within a source. A BZP and TED group can also
+match when the buyer's NIP and exact reference identify one group per source.
 
 ### Analyze a procedure with MCP
 
