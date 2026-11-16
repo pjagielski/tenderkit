@@ -9,6 +9,7 @@ import sqlite3
 
 from tenderkit.profile import fold
 from tenderkit.serialization import compact_raw, dumps, notice_from_record, notice_record
+from tenderkit.store import search_index
 
 SCHEMA = '''
 create table if not exists notices (
@@ -87,6 +88,11 @@ class State:
         self.path.parent.mkdir(parents=True, exist_ok=True)
         with self.connection() as conn:
             conn.executescript(SCHEMA)
+            conn.executescript(search_index.SCHEMA)
+            # Index notices saved before the search index existed, once; later writes keep it in step.
+            missing = conn.execute('select rowid, payload from notices where rowid not in (select id from notice_index)')
+            for row in missing.fetchall():
+                search_index.write(conn, row['rowid'], notice_from_record(json.loads(row['payload'])))
 
     @contextmanager
     def connection(self):
@@ -109,15 +115,20 @@ class State:
                     on conflict(source,number) do update set published=excluded.published,payload=excluded.payload''',
                     (notice.source, notice.number, str(notice.published) if notice.published else None,
                      dumps(notice_record(notice))))
+                rowid = conn.execute('select rowid from notices where source=? and number=?',
+                                     (notice.source, notice.number)).fetchone()[0]
+                search_index.write(conn, rowid, notice)
             conn.execute('''insert into refreshes(source,start,end,query,status,count,error,finished_at)
                 values(?,?,?,?,?,?,?,?)''', (source, str(start), str(end), dumps(query),
                     'FAILED' if error else 'COMPLETED', len(notices or []), error,
                     datetime.now(timezone.utc).isoformat()))
 
-    def notices(self, start=None, end=None, sources=(), *, awarded=False, procedure_id=None, cpv=(), buyer=None):
+    def notices(self, start=None, end=None, sources=(), *, awarded=False, procedure_id=None, cpv=(), buyer=None,
+                profile=None, today=None):
         """Saved notices, newest first. The keyword filters narrow rows in SQLite before any record is decoded:
         awarded keeps notices with awards, cpv takes main codes or prefixes ending in *, buyer is a folded
-        substring of the buyer name."""
+        substring of the buyer name. profile with today narrows by the search index when it is complete; the caller
+        still applies Profile.matches."""
         conditions, params = [], []
         if awarded:
             conditions.append("json_array_length(payload, '$.awards') > 0")
@@ -146,8 +157,11 @@ class State:
         if sources:
             conditions.append('source in (' + ','.join('?' for _ in sources) + ')')
             params.extend(sources)
-        where = ' where ' + ' and '.join(conditions) if conditions else ''
         with self.connection() as conn:
+            if profile is not None and today is not None and search_index.complete(conn):
+                narrowed, narrowed_params = search_index.prefilter(profile, today)
+                conditions, params = conditions + narrowed, params + narrowed_params
+            where = ' where ' + ' and '.join(conditions) if conditions else ''
             for row in conn.execute('select payload from notices' + where + ' order by published desc,source,number', params):
                 yield notice_from_record(json.loads(row['payload']))
 

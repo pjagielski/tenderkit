@@ -69,7 +69,8 @@ def filtered(state, profile, *, start=None, end=None, source_names=(), on=None):
     if start is not None or end is not None:
         start, end = window(start, end)
     on = on or today()
-    for notice in state.notices(start, end, source_names):
+    # The search index narrows candidates in SQLite; Profile.matches still decides every notice.
+    for notice in state.notices(start, end, source_names, profile=profile, today=on):
         if profile.matches(notice, today=on):
             yield notice
 

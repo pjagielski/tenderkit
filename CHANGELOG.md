@@ -5,6 +5,7 @@
 - Save notices without the full source record with `--no-raw` on `fetch`, `watch` and `mcp`, or `State(path, keep_raw=False)`. Only the source fields tenderkit reads are kept, which makes the database about six times smaller.
 - Serve a shared database with `mcp --read-only --http`: stateless Streamable HTTP with search, notice and result tools only, no refresh, watch or document tools, and host checks via `--allowed-host`.
 - `search_results` and `procedure_results` filter by awards, CPV, buyer and procedure in SQLite before decoding notices, with expression indexes created by the next writer. On 55,000 notices a result search takes under a second instead of about five, and a procedure lookup is instant.
+- Profile and MCP notice searches narrow candidates with a search index in SQLite: filter columns and SQLite FTS5 over folded titles, descriptions and lot titles. The next writer builds it for an existing database. Results are unchanged because every notice still passes `Profile.matches`. A page of 20 results for a rare keyword takes about 0.01 s instead of 12 s on 55,000 notices. The index adds about 80% to the database size.
 
 ## 0.1.0
 
