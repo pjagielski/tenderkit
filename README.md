@@ -136,6 +136,10 @@ is in use.
 
 ## Documents
 
+Notice records include `platform_url_specific`. It is true for a recognized
+direct procedure route. A buyer homepage or an unrecognized route can still
+be useful for reference-based lookup on supported platforms.
+
 ```sh
 tenderkit list-documents --source BZP --number '2026/BZP …/01'
 tenderkit download --source BZP --number '2026/BZP …/01' --key '<document key>'

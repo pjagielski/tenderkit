@@ -60,6 +60,24 @@ class SourceTests(unittest.TestCase):
                 record['lots'] = []
             self.assertEqual(notice_from_record(record), notice)
 
+    def test_platform_url_normalization_and_specificity_on_cached_records(self):
+        examples = (
+            ('www.ezamowienia.gov.pl', 'https://www.ezamowienia.gov.pl', False),
+            ('https://nfz.ezamawiajacy.pl.', 'https://nfz.ezamawiajacy.pl', False),
+            ('www.ncbj.gov.pl;', 'https://www.ncbj.gov.pl', False),
+            ('https://brodnowski.eb2b.com.pl/open-preview-auction.html/',
+             'https://brodnowski.eb2b.com.pl/open-preview-auction.html/', False),
+            ('https://platformazakupowa.pl/transakcja/42);',
+             'https://platformazakupowa.pl/transakcja/42', True),
+            ('https://platformazakupowa.pl@invalid.example/transakcja/42', None, False),
+        )
+        for original, normalized, specific in examples:
+            with self.subTest(url=original):
+                notice = notice_from_record(dict(source='BZP', number='example', platform_url=original))
+                record = notice_record(notice)
+                self.assertEqual(record['platform_url'], normalized)
+                self.assertIs(record['platform_url_specific'], specific)
+
     def test_stdlib_transport_sets_identity_and_bounds_response_size(self):
         response = mock.MagicMock(code=200)
         response.__enter__.return_value = response

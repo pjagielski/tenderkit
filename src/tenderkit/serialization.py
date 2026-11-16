@@ -6,6 +6,7 @@ import json
 
 from tenderkit.model import Award, Lot, Notice
 from tenderkit.notice_kinds import notice_kind
+from tenderkit.platform_urls import normalize_platform_url, platform_url_specific
 from tenderkit.sources.mapping import bzp_scope, ted_scope
 
 
@@ -35,6 +36,8 @@ def compact_raw(raw):
 def notice_record(notice, *, raw=True):
     record = asdict(notice)
     record['notice_kind'] = notice_kind(notice)
+    record['platform_url'] = normalize_platform_url(notice.platform_url)
+    record['platform_url_specific'] = platform_url_specific(record['platform_url'])
     if record['deadline_amendment'] is None:
         record.pop('deadline_amendment')
     if not raw:
@@ -45,6 +48,8 @@ def notice_record(notice, *, raw=True):
 def notice_from_record(record):
     data = dict(record)
     data.pop('notice_kind', None)
+    data.pop('platform_url_specific', None)
+    data['platform_url'] = normalize_platform_url(data.get('platform_url'))
     data['published'] = date.fromisoformat(data['published']) if data.get('published') else None
     data['deadline'] = datetime.fromisoformat(data['deadline']) if data.get('deadline') else None
     data['value'] = Decimal(data['value']) if data.get('value') is not None else None
