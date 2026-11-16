@@ -150,7 +150,7 @@ _SCOPE_LABELS = re.compile(r'Krótki opis przedmiotu zamówienia|Część\s+\d|N
 
 
 def bzp_scope(body):
-    descriptions, titles = [], {}
+    descriptions, titles, lot_descriptions = [], {}, defaultdict(list)
     lot_number = None
     for label, value in bzp_blocks(body, _SCOPE_LABELS):
         lot = re.fullmatch(r'Część\s+(\d+)(?:\s*[-–—:]\s*(.+))?', label, re.I)
@@ -160,10 +160,13 @@ def bzp_scope(body):
                 titles[lot_number] = lot[2]
         elif 'krótki opis przedmiotu zamówienia' in label.casefold() and value:
             descriptions.append(value)
+            if lot_number is not None and label.startswith('4.2.2'):
+                lot_descriptions[lot_number].append(value)
         elif lot_number is not None and 'nazwa części' in label.casefold() and value:
             titles[lot_number] = value
     return '\n\n'.join(dict.fromkeys(descriptions)) or None, tuple(
-        Lot(number, title=title) for number, title in titles.items())
+        Lot(number, title=titles.get(number), description='\n\n'.join(lot_descriptions[number]) or None)
+        for number in dict.fromkeys((*titles, *lot_descriptions)))
 
 
 def bzp_fields(body):

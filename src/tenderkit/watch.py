@@ -95,8 +95,10 @@ def _record_events(conn, run_id, profile, source, latest, on):
             where profile=? and source=? and identity=?''', key).fetchone()
         if previous and revision < previous['revision']:
             continue
-        if previous is None and not profile.matches(notice, today=on):
+        selected = profile.select(notice, today=on)
+        if previous is None and selected is None:
             continue
+        notice = selected or notice
         deadline = notice.deadline
         if deadline and deadline.tzinfo:
             deadline = deadline.astimezone(timezone.utc)

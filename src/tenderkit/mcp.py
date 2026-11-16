@@ -92,7 +92,7 @@ def create_server(path, *, profiles=None, adapters=None, document_root=None, doc
                        value_max: str | None = None, currency: str = 'PLN',
                        start: str | None = None, end: str | None = None,
                        limit: int = 25, offset: int = 0, refresh: bool = False,
-                       notice_kinds: list[str] | None = None,
+                       notice_kinds: list[str] | None = None, exclude_scope: Literal['notice', 'lot'] | None = None,
                        compact: bool = False, dedupe: Literal['procedure'] | None = None) -> dict[str, Any]:
         """Find cached notices by a named profile or explicit filters. Optional refresh fetches at most 120 days.
 
@@ -114,6 +114,8 @@ def create_server(path, *, profiles=None, adapters=None, document_root=None, doc
                             ('exclude_buyers', exclude_buyers), ('notice_types', notice_types), ('notice_kinds', notice_kinds), ('regions', regions)):
             if value is not None:
                 data[name] = value
+        if exclude_scope is not None:
+            data['exclude_scope'] = exclude_scope
         if deadline_min_days is not None or deadline_max_days is not None:
             data['deadline_days'] = dict(min=deadline_min_days if deadline_min_days is not None else 0,
                                          max=deadline_max_days if deadline_max_days is not None else 120)

@@ -57,18 +57,19 @@ def notice_from_record(record):
         lots.append(Lot(**lot))
     data['lots'] = tuple(lots)
     data['lot_titles'] = tuple(data.get('lot_titles') or [])
-    if 'description' not in data:
-        raw = data.get('raw') or {}
-        if data['source'] == 'BZP':
-            description, titled_lots = bzp_scope(raw.get('htmlBody'))
-            merged = {lot.number: lot for lot in lots}
-            for lot in titled_lots:
-                existing = merged.get(lot.number)
-                merged[lot.number] = replace(existing, title=existing.title or lot.title) if existing else lot
-            data['description'] = description
-            data['lots'] = tuple(merged.values())
-        elif data['source'] == 'TED':
-            data['description'], data['lot_titles'] = ted_scope(raw)
+    raw = data.get('raw') or {}
+    legacy_lots = any('description' not in lot for lot in record.get('lots') or ())
+    if data['source'] == 'BZP' and ('description' not in data or (legacy_lots and raw.get('htmlBody'))):
+        description, titled_lots = bzp_scope(raw.get('htmlBody'))
+        merged = {lot.number: lot for lot in lots}
+        for lot in titled_lots:
+            existing = merged.get(lot.number)
+            merged[lot.number] = replace(existing, title=existing.title or lot.title,
+                                         description=existing.description or lot.description) if existing else lot
+        data.setdefault('description', description)
+        data['lots'] = tuple(merged.values())
+    elif data['source'] == 'TED' and 'description' not in data:
+        data['description'], data['lot_titles'] = ted_scope(raw)
     awards = []
     for award in data.get('awards') or []:
         award = dict(award)

@@ -76,8 +76,9 @@ def filtered(state, profile, *, start=None, end=None, source_names=(), on=None):
         if (notice.source == 'BZP' and notice.notice_type == AMENDMENT_TYPE
                 and AMENDMENT_TYPE not in profile.notice_types and 'corrigendum' not in profile.notice_kinds):
             continue
-        if profile.matches(notice, today=on):
-            yield notice
+        selected = profile.select(notice, today=on)
+        if selected is not None:
+            yield selected
 
 
 def procedure_publications(notices):

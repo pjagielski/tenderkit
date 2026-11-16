@@ -63,6 +63,12 @@ Regions refer to the buyer's voivodeship. Write the Polish name, such as `mazowi
 
 CLI filter, export and watch records and MCP search results include `keyword_matches` when inclusion keywords are configured. Each match names the configured keyword and the field (`title`, `description` or `lot_title`), with a lot number when the source identifies it. Cached records use the source fields they already contain. Older TED records gain descriptions and lot titles when refreshed.
 
+Set `exclude_scope = "lot"` in a profile or pass it to MCP `search_notices` to
+omit individual lots whose keyed title or description matches an exclusion.
+A notice with at least one remaining lot can still match. The default
+`"notice"` applies exclusions to the whole notice. When the source does not
+link text to lot IDs, exclusions still apply to the whole notice.
+
 ## Daily watch
 
 ```sh
