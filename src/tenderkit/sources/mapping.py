@@ -7,6 +7,7 @@ import re
 from zoneinfo import ZoneInfo
 
 from tenderkit.model import Award, Lot, Notice
+from tenderkit.platform_urls import normalize_platform_url
 from tenderkit.sources.bzp import timestamp
 
 REFERENCE = re.compile(r'4\.1\.2\.\)\s*Numer referencyjny:\s*(.+?)\s+\d\.\d\.\d+\.\)')
@@ -99,7 +100,7 @@ def bzp_notice(raw):
         cpv=tuple(dict.fromkeys(CPV.findall(raw.get('cpvCode') or ''))),
         value=amount(value[1]) if value else None, currency=value[2] if value and amount(value[1]) else None,
         reference=reference[1].strip() if reference else None,
-        platform_url=re.sub(r'\s+', '', platform[1]) if platform else None,
+        platform_url=normalize_platform_url(re.sub(r'^(https?://)\s+', r'\1', platform[1])) if platform else None,
         url=f"https://ezamowienia.gov.pl/mo-client-board/bzp/notice-details/id/{raw['objectId']}",
         notice_type=raw.get('noticeType'), raw=raw,
         description=description, lots=lots,
@@ -247,7 +248,7 @@ def ted_notice(raw):
     if value is None and values and all(amount(v) is not None for v in values) and len(set(currencies)) == 1:
         value, currency = sum(amount(v) for v in values), currencies[0]
     deadlines = sorted(d for d in raw.get('deadline-receipt-tender-date-lot') or [] if d)
-    urls = [u for u in raw.get('document-url-lot') or [] if u]
+    urls = [url for value in raw.get('document-url-lot') or [] if (url := normalize_platform_url(value))]
     description, lot_titles = ted_scope(raw)
     return Notice(
         source='TED', number=raw['publication-number'], procedure_id=first(raw.get('procedure-identifier')),
