@@ -14,7 +14,7 @@ from tenderkit.cli import main
 from tenderkit.documents import Documents, document_kind, with_kind
 from tenderkit.http import Response
 from tenderkit.interfaces import SourceQuery
-from tenderkit.model import Award, DocumentRef, Notice, PlatformLink
+from tenderkit.model import Lot, Award, DocumentRef, Notice, PlatformLink
 from tenderkit.serialization import notice_from_record, notice_record
 from tenderkit.service import procedure_results, search_results
 from tenderkit.sources.bzp import Bzp
@@ -189,6 +189,24 @@ class ResultServiceTests(unittest.TestCase):
         self.assertEqual(numbers(buyer='KRAKÓW'), ['contract-1', 'result-1'])
         self.assertEqual(numbers(buyer='lodz'), ['result-3'])
         self.assertEqual(numbers(procedure_id='proc-1'), ['contract-1', 'result-1'])
+
+    def test_search_filters_regions_and_keywords_and_returns_lot_metadata(self):
+        from dataclasses import replace
+        accepted = replace(self.result, buyer_region='12', url='https://example.org/result',
+                           notice_type='TenderResultNotice', description='Dostawa ambulansów',
+                           lots=(Lot(self.result.awards[0].lot, 'Ambulans B', cpv=('34114121',),
+                                     quantity=Decimal('5'), quantity_unit='C62'),))
+        rejected = replace(accepted, source='TED', number='other', buyer_region='14',
+                           title='Pojazdy pożarnicze')
+        for item in (accepted, rejected):
+            self.state.record_refresh(item.source, item.published, item.published, {}, [item])
+        result = search_results(self.state, keywords_any=['ambulans'], exclude_keywords=['pożarnicz'],
+                                regions=['małopolskie'])
+        award = result['awards'][0]
+        self.assertEqual((award['url'], award['buyer_region'], award['notice_kind'], award['lot_title']),
+                         ('https://example.org/result', '12', 'result', 'Ambulans B'))
+        self.assertEqual((award['cpv'], award['quantity'], award['quantity_unit']), (['34114121'], '5', 'C62'))
+        self.assertTrue(all(item['number'] == self.result.number for item in result['awards']))
 
     def test_a_read_only_database_without_result_indexes_still_answers(self):
         from contextlib import closing

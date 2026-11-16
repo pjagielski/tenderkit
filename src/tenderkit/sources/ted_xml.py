@@ -8,7 +8,7 @@ from datetime import date
 from decimal import Decimal, InvalidOperation
 import xml.etree.ElementTree as ET
 
-from tenderkit.model import Award
+from tenderkit.model import Award, Lot
 
 NS = {
     'cac': 'urn:oasis:names:specification:ubl:schema:xsd:CommonAggregateComponents-2',
@@ -37,7 +37,12 @@ def money(element):
 
 
 def parse_awards(document):
-    """Award tuples for one ContractAwardNotice XML document; raises ValueError when it is not one."""
+    """Award tuples for one ContractAwardNotice XML document."""
+    return parse_award_notice(document)[0]
+
+
+def parse_award_notice(document):
+    """Awards and keyed lot metadata from a ContractAwardNotice XML document."""
     try:
         root = ET.fromstring(document)
     except ET.ParseError as exc:
@@ -85,7 +90,25 @@ def parse_awards(document):
             currency=tender.get('currency') if awarded else None,
             offers=subscription_count(result),
             date=contracts.get(text(result, 'efac:SettledContract/cbc:ID')) if awarded else None))
-    return tuple(awards)
+    lots = []
+    for lot in root.findall('cac:ProcurementProjectLot', NS):
+        number = text(lot, 'cbc:ID')
+        project = lot.find('cac:ProcurementProject', NS)
+        if not number or project is None:
+            continue
+        quantity = project.find('cbc:EstimatedOverallContractQuantity', NS)
+        value = None
+        if quantity is not None:
+            try:
+                value = Decimal(quantity.text or '')
+                value = value if value.is_finite() and value >= 0 else None
+            except InvalidOperation:
+                pass
+        code = text(project, 'cac:MainCommodityClassification/cbc:ItemClassificationCode')
+        lots.append(Lot(number, title=text(project, 'cbc:Name'), description=text(project, 'cbc:Description'),
+                        cpv=(code,) if code else (), quantity=value,
+                        quantity_unit=quantity.get('unitCode') if value is not None else None))
+    return tuple(awards), tuple(lots)
 
 
 def subscription_count(result):
