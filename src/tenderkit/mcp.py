@@ -92,6 +92,7 @@ def create_server(path, *, profiles=None, adapters=None, document_root=None, doc
                        value_max: str | None = None, currency: str = 'PLN',
                        start: str | None = None, end: str | None = None,
                        limit: int = 25, offset: int = 0, refresh: bool = False,
+                       notice_kinds: list[str] | None = None,
                        compact: bool = False, dedupe: Literal['procedure'] | None = None) -> dict[str, Any]:
         """Find cached notices by a named profile or explicit filters. Optional refresh fetches at most 120 days.
 
@@ -102,6 +103,7 @@ def create_server(path, *, profiles=None, adapters=None, document_root=None, doc
         Keywords match word starts in titles, descriptions and lot titles (lek finds leków; lek* is the same).
         Use *term* for a substring anywhere in a word. A * elsewhere is an error.
         total counts all matching saved notices. Use compact=true for notice summaries, then get_notice for details.
+        notice_kinds compares normalized kinds across sources; notice_types compares raw source values.
         dedupe="procedure" groups matching publications and keeps the newest per procedure.
         keyword_matches identifies the configured inclusion terms and fields that matched.
         """
@@ -109,7 +111,7 @@ def create_server(path, *, profiles=None, adapters=None, document_root=None, doc
             raise ValueError('Unknown profile; read tenderkit://profiles')
         data = asdict(profiles[profile]) if profile else {'name': 'query'}
         for name, value in (('cpv', cpv), ('exclude_cpv', exclude_cpv), ('keywords_any', keywords_any), ('exclude_keywords', exclude_keywords),
-                            ('exclude_buyers', exclude_buyers), ('notice_types', notice_types), ('regions', regions)):
+                            ('exclude_buyers', exclude_buyers), ('notice_types', notice_types), ('notice_kinds', notice_kinds), ('regions', regions)):
             if value is not None:
                 data[name] = value
         if deadline_min_days is not None or deadline_max_days is not None:

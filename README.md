@@ -198,6 +198,11 @@ The library records nothing about its use. The public server at mcp.tenderkit.pl
 
 IP addresses are not stored. Detailed records are deleted after 90 days, and only daily totals are kept.
 
+Notice records expose normalized `notice_kind` values (`contract`, `result`,
+`corrigendum`, `prior_info`) when the source type is recognized. Filter on these
+with `notice_kinds` in a TOML profile or MCP `search_notices`. The raw
+`notice_type` field and `notice_types` filter remain available.
+
 MCP `search_notices` returns 25 notices per page by default, with the exact
 `total` and `next_offset`. Supply `compact=true` to omit descriptions, lot
 details and awards while keeping the notice identifiers, dates, buyer, CPV,

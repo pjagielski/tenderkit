@@ -22,6 +22,7 @@ import unicodedata
 
 from tenderkit.interfaces import SourceQuery
 from tenderkit.model import Notice
+from tenderkit.notice_kinds import NOTICE_TYPES, notice_kind, source_types
 
 _CPV = re.compile(r'^\d{1,8}\*?$')
 
@@ -132,16 +133,19 @@ class Profile:
     deadline_days: DeadlineRange | None = None
     exclude_buyers: tuple[str, ...] = ()
     documents: tuple[str, ...] = ()
+    notice_kinds: tuple[str, ...] = ()
 
     def __post_init__(self):
         if not isinstance(self.name, str) or not self.name.strip():
             raise ValueError('Profile name must be nonempty')
-        for name in ('cpv', 'exclude_cpv', 'keywords_any', 'exclude_keywords', 'notice_types', 'regions', 'exclude_buyers', 'documents'):
+        for name in ('cpv', 'exclude_cpv', 'keywords_any', 'exclude_keywords', 'notice_types', 'regions', 'exclude_buyers', 'documents', 'notice_kinds'):
             values = getattr(self, name)
             if (not isinstance(values, (list, tuple)) or len(values) > 64
                     or any(not isinstance(v, str) or not v.strip() or len(v) > 200 for v in values)):
                 raise ValueError(f'{name} must be an array of nonempty strings')
             object.__setattr__(self, name, tuple(values))
+        if set(self.notice_kinds) - NOTICE_TYPES.keys():
+            raise ValueError('notice_kinds must contain contract, result, corrigendum or prior_info')
         for name in ('keywords_any', 'exclude_keywords'):
             for keyword in getattr(self, name):
                 inner = keyword.strip().strip('*')
@@ -161,7 +165,7 @@ class Profile:
         return tuple(c.rstrip('*') for c in self.cpv)
 
     def source_query(self):
-        return SourceQuery(cpv_prefixes=self.cpv_prefixes(), notice_types=self.notice_types)
+        return SourceQuery(cpv_prefixes=self.cpv_prefixes(), notice_types=self.notice_types or source_types(self.notice_kinds))
 
     @staticmethod
     def _cpv_hit(code, patterns):
@@ -207,6 +211,8 @@ class Profile:
         if not self.matches_cpv(notice.cpv):
             return False
         if self.notice_types and notice.notice_type not in self.notice_types:
+            return False
+        if self.notice_kinds and notice_kind(notice) not in self.notice_kinds:
             return False
         if self.regions and notice.buyer_region not in self.regions:
             return False

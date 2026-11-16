@@ -117,6 +117,25 @@ class McpTests(unittest.IsolatedAsyncioTestCase):
             last = await client.call_tool('search_notices', dict(args, offset=1))
             self.assertEqual(last.structured_content['notices'][0]['number'], 'four')
 
+    async def test_normalized_notice_kinds_apply_across_sources(self):
+        from dataclasses import replace
+        from mcp.client import Client
+        from tenderkit.mcp import create_server
+
+        bzp = replace(self.notice, source='BZP', number='bzp', notice_type='ContractNotice')
+        correction = replace(self.notice, number='ted-change',
+                             raw={'change-notice-version-identifier': ['previous-01']})
+        for item in (bzp, correction):
+            self.state.record_refresh(item.source, item.published, item.published, {}, [item])
+
+        async with Client(create_server(self.path)) as client:
+            for kind, expected in [('contract', {'one', 'bzp'}), ('corrigendum', {'ted-change'}), ('result', {'two'})]:
+                result = await client.call_tool('search_notices', {'notice_kinds': [kind]})
+                self.assertFalse(result.is_error)
+                rows = result.structured_content['notices']
+                self.assertEqual({row['number'] for row in rows}, expected)
+                self.assertEqual({row['notice_kind'] for row in rows}, {kind})
+
     async def test_watch_updates_reads_the_latest_run_without_consuming_events(self):
         from io import StringIO
         from mcp.client import Client

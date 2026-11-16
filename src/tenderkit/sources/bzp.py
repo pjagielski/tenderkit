@@ -132,7 +132,8 @@ class Bzp:
                 for raw in rows:
                     notice = bzp_notice(raw)
                     found[notice.number] = notice
-        if query.include_amendments and any(kind in FRESH_NOTICE_TYPES for kind in kinds):
+        if AMENDMENT_TYPE in query.notice_types or (
+                query.include_amendments and any(kind in FRESH_NOTICE_TYPES for kind in kinds)):
             # Amendment records do not carry CPV codes. Keep the reference and changed deadline.
             rows, _ = fetch_window(self.session, start, end, AMENDMENT_TYPE, cpv_code='', delay=self.delay)
             for raw in rows:

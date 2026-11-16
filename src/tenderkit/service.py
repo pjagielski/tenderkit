@@ -73,7 +73,8 @@ def filtered(state, profile, *, start=None, end=None, source_names=(), on=None):
     on = on or today()
     # The search index narrows candidates in SQLite; Profile.matches still decides every notice.
     for notice in state.notices(start, end, source_names, profile=profile, today=on):
-        if notice.source == 'BZP' and notice.notice_type == AMENDMENT_TYPE and AMENDMENT_TYPE not in profile.notice_types:
+        if (notice.source == 'BZP' and notice.notice_type == AMENDMENT_TYPE
+                and AMENDMENT_TYPE not in profile.notice_types and 'corrigendum' not in profile.notice_kinds):
             continue
         if profile.matches(notice, today=on):
             yield notice
