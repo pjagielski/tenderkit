@@ -94,7 +94,8 @@ def create_server(path, *, profiles=None, adapters=None, document_root=None, doc
                        limit: int = 100, offset: int = 0, refresh: bool = False) -> dict[str, Any]:
         """Find cached notices by a named profile or explicit filters. Optional refresh fetches at most 120 days.
 
-        Regions are buyer TERYT voivodeship codes; unknown fields do not match a constrained filter.
+        Regions are buyer voivodeships by Polish name ("mazowieckie") or TERYT code ("14");
+        unknown fields do not match a constrained filter.
         Amounts must use the stated currency; no exchange-rate conversion is applied.
         CPV codes or prefixes ending in * in exclude_cpv never count; a notice whose every code is excluded is left out.
         Keywords match word starts in titles, descriptions and lot titles (lek finds leków; lek* is the same).

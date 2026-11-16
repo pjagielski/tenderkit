@@ -108,6 +108,17 @@ class ProfileTests(unittest.TestCase):
         self.assertFalse(Profile('split', keywords_any=('system informatyczn',)).matches(
             Notice('TED', '2', title='System', description='informatyczny')))
 
+    def test_regions_accept_voivodeship_names_and_teryt_codes(self):
+        for value in ('mazowieckie', 'Mazowieckie', 'woj. mazowieckie', 'Województwo Mazowieckie', '14'):
+            self.assertEqual(Profile('x', regions=(value,)).regions, ('14',), value)
+        self.assertEqual(Profile('x', regions=('Łódzkie', 'slaskie', 'swietokrzyskie')).regions, ('10', '24', '26'))
+        self.assertEqual(Profile('x', regions=('mazowieckie', '14')).regions, ('14',))
+        with self.assertRaisesRegex(ValueError, 'mazowieckie'):
+            Profile('x', regions=('mazowiekie',))
+        for value in ('99', '15', 'PL14', '1'):
+            with self.assertRaises(ValueError, msg=value):
+                Profile('x', regions=(value,))
+
     def test_the_interfaces_are_checkable_protocols(self):
         class Bzp:
             name = 'BZP'

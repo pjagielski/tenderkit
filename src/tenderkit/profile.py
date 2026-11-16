@@ -65,6 +65,28 @@ def fold(text):
     return ''.join(c for c in text if not unicodedata.combining(c)).casefold()
 
 
+# TERYT voivodeship codes, the form notices carry in buyer_region.
+VOIVODESHIPS = {
+    '02': 'dolnośląskie', '04': 'kujawsko-pomorskie', '06': 'lubelskie', '08': 'lubuskie',
+    '10': 'łódzkie', '12': 'małopolskie', '14': 'mazowieckie', '16': 'opolskie',
+    '18': 'podkarpackie', '20': 'podlaskie', '22': 'pomorskie', '24': 'śląskie',
+    '26': 'świętokrzyskie', '28': 'warmińsko-mazurskie', '30': 'wielkopolskie', '32': 'zachodniopomorskie',
+}
+_VOIVODESHIP_CODES = {fold(name): code for code, name in VOIVODESHIPS.items()}
+
+
+def region_code(value):
+    """'Mazowieckie', 'woj. mazowieckie' or '14' -> '14'. Names ignore case and Polish diacritics."""
+    text = value.strip()
+    if text in VOIVODESHIPS:
+        return text
+    name = re.sub(r'^(?:wojewodztwo|woj\.?)\s*', '', fold(text))
+    if name in _VOIVODESHIP_CODES:
+        return _VOIVODESHIP_CODES[name]
+    raise ValueError(f'Unknown region {value!r}; use a voivodeship name ({", ".join(VOIVODESHIPS.values())}) '
+                     'or its two-digit TERYT code')
+
+
 def keyword_term(keyword):
     """A keyword's folded text and whether it matches anywhere in a word.
 
@@ -132,8 +154,7 @@ class Profile:
             raise ValueError('value must be a ValueRange')
         if self.deadline_days is not None and not isinstance(self.deadline_days, DeadlineRange):
             raise ValueError('deadline_days must be a DeadlineRange')
-        if any(not re.fullmatch(r'\d{2}', r) for r in self.regions):
-            raise ValueError('regions must contain two-digit TERYT voivodeship codes')
+        object.__setattr__(self, 'regions', tuple(dict.fromkeys(region_code(r) for r in self.regions)))
 
     def cpv_prefixes(self):
         """'336*' -> '336'; a full code stays as it is."""

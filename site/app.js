@@ -8,7 +8,7 @@ const examples = {
   },
   profile: {
     filename: 'oprogramowanie.toml',
-    text: 'name = "oprogramowanie"\ncpv = ["72*", "48*"]\n\nkeywords_any = ["system", "oprogramowanie"]\nexclude_keywords = ["dostawa sprzętu"]\nregions = ["14"]\n\ndeadline_days = { min = 1, max = 30 }',
+    text: 'name = "oprogramowanie"\ncpv = ["72*", "48*"]\n\nkeywords_any = ["system", "oprogramowanie"]\nexclude_keywords = ["dostawa sprzętu"]\nregions = ["mazowieckie"]\n\ndeadline_days = { min = 1, max = 30 }',
     explanation: 'Jeden plik definiuje, które ogłoszenia trafią do Twojego procesu.'
   },
   cli: {
