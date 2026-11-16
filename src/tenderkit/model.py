@@ -14,6 +14,8 @@ class Lot:
     value: Decimal | None = None
     currency: str | None = None
     description: str | None = None
+    quantity: Decimal | None = None
+    quantity_unit: str | None = None
 
 
 @dataclass(frozen=True)

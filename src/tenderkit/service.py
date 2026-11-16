@@ -8,7 +8,8 @@ import re
 from zoneinfo import ZoneInfo
 
 from tenderkit.interfaces import Source
-from tenderkit.profile import fold
+from tenderkit.notice_kinds import notice_kind
+from tenderkit.profile import Profile, fold
 from tenderkit.serialization import compact_raw, dumps, notice_record
 from tenderkit.sources.bzp import AMENDMENT_TYPE, Bzp
 from tenderkit.sources.bk import Bk
@@ -164,7 +165,15 @@ def compact_notice_record(notice, profile):
 
 def _award_record(award, notice):
     record = json_roundtrip(asdict(award))
-    return dict(record, source=notice.source, number=notice.number,
+    lot = next((item for item in notice.lots if item.number == award.lot), None)
+    lot_title = lot.title if lot else None
+    if not lot_title and len(notice.lots) == len(notice.lot_titles) == 1:
+        lot_title = notice.lot_titles[0]
+    return dict(record, source=notice.source, number=notice.number, url=notice.url,
+                buyer_region=notice.buyer_region, cpv=list(lot.cpv if lot and lot.cpv else notice.cpv),
+                notice_kind=notice_kind(notice), lot_title=lot_title,
+                quantity=str(lot.quantity) if lot and lot.quantity is not None else None,
+                quantity_unit=lot.quantity_unit if lot else None,
                 published=str(notice.published) if notice.published else None,
                 title=notice.title, buyer_name=notice.buyer_name)
 
@@ -204,7 +213,8 @@ def procedure_results(state, source, number):
         awards=[_award_record(award, owner) for award, owner in latest_awards(related)])
 
 
-def search_results(state, *, buyer=None, cpv=(), start=None, end=None, limit=100, offset=0, source_names=()):
+def search_results(state, *, buyer=None, cpv=(), start=None, end=None, limit=100, offset=0, source_names=(),
+                   keywords_any=(), exclude_keywords=(), regions=()):
     """Earlier awards by buyer text and CPV, latest per procedure and lot, paginated like notice search."""
     if type(limit) is not int or not 1 <= limit <= MAX_RESULTS or type(offset) is not int or not 0 <= offset <= MAX_NOTICES:
         raise ValueError('Invalid result limit or offset')
@@ -214,10 +224,11 @@ def search_results(state, *, buyer=None, cpv=(), start=None, end=None, limit=100
     if any(not pattern or not (pattern.rstrip('*').isdigit()) for pattern in patterns):
         raise ValueError('Result CPV must be digits, optionally ending in *')
     folded_buyer = fold(buyer) if buyer else None
+    profile = Profile('results', keywords_any=keywords_any, exclude_keywords=exclude_keywords, regions=regions)
     candidates = []
     # SQLite narrows by awards, buyer and CPV; the checks below keep the exact matching rules.
     for notice in state.notices(start, end, source_names, awarded=True, cpv=patterns, buyer=buyer):
-        if not notice.awards:
+        if not notice.awards or not profile.matches(notice):
             continue
         if folded_buyer and folded_buyer not in fold(notice.buyer_name):
             continue
