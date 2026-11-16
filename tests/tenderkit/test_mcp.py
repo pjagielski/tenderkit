@@ -74,7 +74,7 @@ class McpTests(unittest.IsolatedAsyncioTestCase):
         server = create_server(self.path)
         async with Client(server) as client:
             await self.check_client(client)
-            for args in ({'profile': '../../private.toml'}, {'limit': 501}, {'regions': ['invalid']},
+            for args in ({'profile': '../../private.toml'}, {'limit': 501}, {'regions': ['invalid']}, {'keywords_any': ['on*log']},
                          {'refresh': True, 'start': '2000-01-01', 'end': '2026-11-01'}):
                 response = await client.call_tool('search_notices', args)
                 self.assertTrue(response.is_error, args)
