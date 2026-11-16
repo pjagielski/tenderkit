@@ -188,6 +188,14 @@ tenderkit --db /srv/tenderkit/notices.sqlite3 mcp --read-only --http --port 8000
 
 [mcp.tenderkit.pl](https://mcp.tenderkit.pl/mcp) runs this way. A systemd timer refreshes the database every 8 hours with `fetch --results --no-raw`. The first backfill uses windows of at most 14 days for BZP and 5 days for TED, because TED award details are read for at most 1000 result notices per window. nginx in front adds TLS and per-IP limits.
 
+The library records nothing about its use. The public server at mcp.tenderkit.pl records usage statistics:
+- each request's tool and arguments, keywords included;
+- the result count, duration and errors;
+- the client name and User-Agent;
+- a client ID that cannot be linked across days.
+
+IP addresses are not stored. Detailed records are deleted after 90 days, and only daily totals are kept.
+
 ### Analyze a procedure with MCP
 
 Clients that expose MCP prompts can start with `analyze_it_tender` or `compare_public_bids`. Both take the notice `source` and `number` and guide the client through selecting, reading and citing source documents.
