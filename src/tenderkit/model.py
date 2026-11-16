@@ -55,6 +55,7 @@ class Notice:
     description: str | None = None
     lot_titles: tuple[str, ...] = ()              # titles from sources that do not link them to lot IDs
     source_attribution: dict[str, str] | None = None
+    deadline_amendment: dict[str, str | None] | None = None
 
 
 @dataclass(frozen=True)

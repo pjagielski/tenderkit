@@ -45,6 +45,8 @@ Add `--results` to fetch formal result notices next to contract notices. Built-i
 
 Each notice also keeps the source's own record (`raw`), which is most of the database: about 85% for BZP and TED. Add `--no-raw` to `fetch`, `watch` or `mcp` to save only the few source fields tenderkit itself reads (watch versions and TED lot deadlines). Filtering, results, documents and the browser view work the same; `export` then omits the rest of the source record. A week of all BZP and TED notices with results takes about 30 MB instead of 185 MB. The option applies to notices saved from then on.
 
+BZP refreshes that fetch contract notices also fetch corrections published in the same window. A correction that changes the submission deadline updates the saved notice, even if the original was published before that window. The notice's `deadline` is the effective deadline; `deadline_amendment` includes the correction number and link plus the original deadline. Refresh the dates on which corrections may have been published to cover older gaps. This applies to BZP corrections that explicitly give a new submission deadline.
+
 Built-in profiles include `leki` (medicines), `oprogramowanie` (software), and `wyroby-medyczne` (medical devices). Pass a TOML file to `--profile` for a custom profile:
 
 ```toml

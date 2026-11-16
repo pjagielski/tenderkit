@@ -1,5 +1,4 @@
 """Refresh a profile and report newly matching or revised notices."""
-from dataclasses import replace
 from datetime import date, datetime, timedelta, timezone
 import json
 import re
@@ -85,24 +84,17 @@ def _latest_notices(conn, state, profile, source, start, end):
             identity, revision = notice.number, notice.number
         prior = latest.get(identity)
         if prior is None or revision > prior[0]:
-            changed_deadline = amendment.deadline if amendment else None
-            if amendment and changed_deadline is None and prior and prior[2]:
-                changed_deadline = prior[3]
-            latest[identity] = (revision, notice, amendment, changed_deadline)
+            latest[identity] = (revision, notice, amendment)
     return latest
 
 
 def _record_events(conn, run_id, profile, source, latest, on):
-    for identity, (revision, notice, amendment, changed_deadline) in latest.items():
+    for identity, (revision, notice, amendment) in latest.items():
         key = (profile.name, source, identity)
         previous = conn.execute('''select revision, deadline from watch_seen
             where profile=? and source=? and identity=?''', key).fetchone()
         if previous and revision < previous['revision']:
             continue
-        if amendment:
-            if changed_deadline is None and previous:
-                changed_deadline = datetime.fromisoformat(previous['deadline']) if previous['deadline'] else None
-            notice = replace(notice, deadline=changed_deadline or notice.deadline)
         if previous is None and not profile.matches(notice, today=on):
             continue
         deadline = notice.deadline

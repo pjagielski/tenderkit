@@ -9,6 +9,7 @@ import sqlite3
 
 from tenderkit.profile import fold
 from tenderkit.serialization import compact_raw, dumps, notice_from_record, notice_record
+from tenderkit.sources.bzp import AMENDMENT_TYPE, FRESH_NOTICE_TYPES
 from tenderkit.store import search_index
 
 SCHEMA = '''
@@ -93,6 +94,7 @@ class State:
             missing = conn.execute('select rowid, payload from notices where rowid not in (select id from notice_index)')
             for row in missing.fetchall():
                 search_index.write(conn, row['rowid'], notice_from_record(json.loads(row['payload'])))
+            self._initialize_amendments(conn)
 
     @contextmanager
     def connection(self):
@@ -106,9 +108,73 @@ class State:
         finally:
             conn.close()
 
+    @staticmethod
+    def _initialize_amendments(conn):
+        # Existing installations can already have corrections fetched by watch.
+        index_exists = "select 1 from sqlite_master where name='notices_amends'"
+        if conn.execute(index_exists).fetchone():
+            return
+        if not conn.in_transaction:
+            conn.execute('begin immediate')
+        if conn.execute(index_exists).fetchone():
+            return
+        conn.execute('''create index notices_amends on notices(source, json_extract(payload, '$.raw.amends'))
+                        where json_extract(payload, '$.raw.amends') is not null''')
+        targets = conn.execute('''select distinct json_extract(payload, '$.raw.amends') as target
+                                  from notices where source='BZP' and target is not null''').fetchall()
+        State._apply_bzp_deadlines(conn, (row['target'] for row in targets))
+
+    @staticmethod
+    def _apply_bzp_deadlines(conn, targets):
+        for number in targets:
+            row = conn.execute("select rowid, payload from notices where source='BZP' and number=?",
+                               (number,)).fetchone()
+            if row is None:
+                continue
+            notice = notice_from_record(json.loads(row['payload']))
+            if notice.notice_type is not None and notice.notice_type not in FRESH_NOTICE_TYPES:
+                continue
+            previous = notice.deadline_amendment
+            original = previous['original_deadline'] if previous else notice.deadline
+            if isinstance(original, str):
+                original = datetime.fromisoformat(original)
+            amendment = conn.execute('''
+                select payload from notices where source='BZP'
+                    and json_extract(payload, '$.raw.amends') = ?
+                    and json_extract(payload, '$.notice_type') = ?
+                    and json_extract(payload, '$.deadline') is not null
+                    and published >= ?
+                order by published desc, coalesce(
+                    json_extract(payload, '$.raw.amendment_published_at'),
+                    json_extract(payload, '$.raw.publicationDate'), '') desc, number desc limit 1
+                ''', (number, AMENDMENT_TYPE, str(notice.published))).fetchone()
+            evidence, deadline = None, original
+            if amendment:
+                correction = notice_from_record(json.loads(amendment['payload']))
+                deadline = correction.deadline
+                evidence = dict(number=correction.number, url=correction.url,
+                                original_deadline=original.isoformat() if original else None)
+            if previous == evidence and notice.deadline == deadline:
+                continue
+            notice = replace(notice, deadline=deadline, deadline_amendment=evidence)
+            conn.execute('update notices set payload=? where rowid=?', (dumps(notice_record(notice)), row['rowid']))
+            search_index.write(conn, row['rowid'], notice)
+
     def record_refresh(self, source, start, end, query, notices=None, error=None):
         with self.connection() as conn:
+            if source == 'BZP' and notices:
+                conn.execute('begin immediate')
+            targets = set()
             for notice in notices or []:
+                if notice.source == 'BZP':
+                    if notice.notice_type is None or notice.notice_type in FRESH_NOTICE_TYPES:
+                        targets.add(notice.number)
+                    elif notice.notice_type == AMENDMENT_TYPE:
+                        prior = conn.execute("select json_extract(payload, '$.raw.amends') from notices "
+                                             "where source='BZP' and number=?", (notice.number,)).fetchone()
+                        targets.update(target for target in (notice.raw.get('amends'), prior[0] if prior else None)
+                                       if target)
+
                 if not self.keep_raw:
                     notice = replace(notice, raw=compact_raw(notice.raw))
                 conn.execute('''insert into notices(source,number,published,payload) values(?,?,?,?)
@@ -118,6 +184,7 @@ class State:
                 rowid = conn.execute('select rowid from notices where source=? and number=?',
                                      (notice.source, notice.number)).fetchone()[0]
                 search_index.write(conn, rowid, notice)
+            self._apply_bzp_deadlines(conn, targets)
             conn.execute('''insert into refreshes(source,start,end,query,status,count,error,finished_at)
                 values(?,?,?,?,?,?,?,?)''', (source, str(start), str(end), dumps(query),
                     'FAILED' if error else 'COMPLETED', len(notices or []), error,

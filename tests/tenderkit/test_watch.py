@@ -11,7 +11,7 @@ from unittest.mock import patch
 from tenderkit.cli import main
 from tenderkit.model import Notice
 from tenderkit.profile import DeadlineRange, Profile
-from tenderkit.service import window
+from tenderkit.service import filtered, window
 from tenderkit.sources.mapping import bzp_amendment
 from tenderkit.store.state import State
 from tenderkit.watch import latest_updates, run_watch
@@ -122,6 +122,69 @@ class WatchTests(unittest.TestCase):
         self.assertEqual(events[0]['notice']['deadline'], '2026-12-30T10:00:00+01:00')
         self.assertEqual(events[0]['amendment']['number'], raw['noticeNumber'])
         self.assertEqual(self.watch(end=end)[0], [])
+
+    def test_fetch_applies_cached_bzp_corrections_and_updates_deadline_filter(self):
+        from tenderkit.http import Response
+        from tenderkit.sources.bzp import Bzp
+
+        original = replace(self.notice, notice_type='ContractNotice')
+        state = State(self.path, keep_raw=False)
+        state.record_refresh('BZP', DAY, DAY, {}, [original])
+        # Simulate a cache created before the deadline reconciliation migration.
+        with state.connection() as conn:
+            conn.execute('drop index notices_amends')
+        correction_day = DAY + timedelta(days=2)
+        raw = dict(objectId='correction', noticeType='NoticeUpdateNotice',
+                   noticeNumber='2026/BZP 00528560/01', publicationDate='2026-11-11T12:00:00Z',
+                   htmlBody='<h3>3.2.) Numer zmienianego ogłoszenia w BZP: 2026/BZP 00505877/01</h3>'
+                            '<h3>3.4.1.) Opis zmiany:</h3>8.1. Termin składania ofert '
+                            'Przed zmianą: 2026-11-16 10:00 Po zmianie: 2026-11-24 10:00')
+        earlier = dict(raw, objectId='earlier', noticeNumber='2026/BZP 00528561/01',
+                       publicationDate='2026-11-11T08:00:00Z',
+                       htmlBody=raw['htmlBody'].replace('2026-11-24', '2026-11-20'))
+        other = dict(raw, objectId='other', noticeNumber='2026/BZP 00528562/01',
+                     publicationDate='2026-11-11T14:00:00Z',
+                     htmlBody=raw['htmlBody'].replace('8.1. Termin składania ofert', '8.3. Termin otwarcia ofert'))
+
+        class Session:
+            def get(self, url, *, params, **kwargs):
+                if params['NoticeType'] != 'NoticeUpdateNotice':
+                    return Response(200, b'[]')
+                self.params = params
+                return Response(200, json.dumps([raw, earlier, other]).encode())
+
+        session = Session()
+        adapter = Bzp(session, delay=0)
+        with patch('tenderkit.cli.sources', return_value={'BZP': adapter}), redirect_stdout(StringIO()):
+            self.assertEqual(main(['--db', str(self.path), 'fetch', '--profile', 'oprogramowanie',
+                                   '--from', str(correction_day), '--to', str(correction_day)]), 0)
+        self.assertNotIn('CpvCode', session.params)
+
+        reader = State(self.path, read_only=True)
+        self.assertEqual([n.number for n in filtered(reader, Profile('all'))], [original.number])
+        correction_profile = Profile('corrections', notice_types=('NoticeUpdateNotice',))
+        self.assertEqual(len(list(filtered(reader, correction_profile))), 3)
+        profile = Profile('after-correction', notice_types=('ContractNotice',),
+                          deadline_days=DeadlineRange(min=0, max=0))
+        self.assertEqual(list(filtered(reader, profile, on=date(2026, 11, 16))), [])
+        updated, = filtered(reader, profile, on=date(2026, 11, 24))
+        self.assertEqual(updated.number, original.number)
+        self.assertEqual(updated.deadline.isoformat(), '2026-11-24T10:00:00+01:00')
+        self.assertEqual(updated.deadline_amendment['number'], raw['noticeNumber'])
+        self.assertEqual(updated.deadline_amendment['original_deadline'], original.deadline.isoformat())
+
+        # Replaying the original or an older correction must preserve the effective deadline.
+        state.record_refresh('BZP', DAY, DAY, {}, [original])
+        state.record_refresh('BZP', correction_day, correction_day, {}, [bzp_amendment(earlier)])
+        self.assertEqual(reader.get('BZP', original.number), updated)
+
+        # Existing watch caches are reconciled on their first write-enabled open.
+        with state.connection() as conn:
+            conn.execute('drop index notices_amends')
+            conn.execute("update notices set payload=json_remove(json_set(payload, '$.deadline', ?), '$.deadline_amendment') "
+                         "where source='BZP' and number=?", (original.deadline.isoformat(), original.number))
+        State(self.path)
+        self.assertEqual(reader.get('BZP', original.number), updated)
 
     def test_ted_amendment_chain_keeps_one_notice_identity(self):
         ids = [f'00000000-0000-4000-8000-{value:012d}' for value in range(3)]
