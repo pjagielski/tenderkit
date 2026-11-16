@@ -20,7 +20,7 @@ from tenderkit.service import procedure_results, search_results
 from tenderkit.sources.bzp import Bzp
 from tenderkit.sources.mapping import bzp_notice
 from tenderkit.sources.ted import Ted
-from tenderkit.sources.ted_xml import parse_awards
+from tenderkit.sources.ted_xml import NS, parse_awards
 from tenderkit.store.state import State
 
 FIXTURES = Path(__file__).resolve().parents[1] / 'fixtures/tenderkit/results'
@@ -76,6 +76,32 @@ class TedAwardTests(unittest.TestCase):
                          ('Enigma Systemy Ochrony Informacji Sp. z o.o.', '5261029614',
                           Decimal('1764040'), 1, date(2026, 9, 24)))
         self.assertEqual((second.contractor, second.price), ('COIG S.A.', Decimal('495000')))
+
+    def test_equal_lot_values_and_framework_ceiling_have_distinct_scopes(self):
+        def award_xml(rows, tenders, total):
+            namespace = ' '.join(f'xmlns:{name}="{uri}"' for name, uri in NS.items())
+            return f'<ContractAwardNotice {namespace}><efac:NoticeResult><cbc:TotalAmount currencyID="PLN">{total}</cbc:TotalAmount>{rows}{tenders}</efac:NoticeResult></ContractAwardNotice>'
+
+        def result(lot, tender, limit=''):
+            return (f'<efac:LotResult><cbc:TenderResultCode>selec-w</cbc:TenderResultCode>'
+                    f'<efac:TenderLot><cbc:ID>{lot}</cbc:ID></efac:TenderLot>'
+                    f'<efac:LotTender><cbc:ID>{tender}</cbc:ID></efac:LotTender>{limit}</efac:LotResult>')
+
+        def tender(identifier, price):
+            return (f'<efac:LotTender><cbc:ID>{identifier}</cbc:ID><cac:LegalMonetaryTotal>'
+                    f'<cbc:PayableAmount currencyID="PLN">{price}</cbc:PayableAmount>'
+                    '</cac:LegalMonetaryTotal></efac:LotTender>')
+
+        lots = parse_awards(award_xml(result('L1', 'T1') + result('L2', 'T2'),
+                                      tender('T1', 100) + tender('T2', 100), 200))
+        self.assertEqual([award.price_scope for award in lots], ['lot', 'lot'])
+        combined = parse_awards(award_xml(result('L1', 'T1') + result('L2', 'T1'), tender('T1', 200), 200))
+        self.assertEqual([award.price_scope for award in combined], ['notice_total', 'notice_total'])
+        cap = ('<efac:FrameworkAgreementValues><cbc:MaximumValueAmount currencyID="PLN">150'
+               '</cbc:MaximumValueAmount></efac:FrameworkAgreementValues>')
+        framework, = parse_awards(award_xml(result('L1', 'T1', cap), tender('T1', 150), 150))
+        self.assertEqual((framework.price_scope, framework.framework_max, framework.framework_currency),
+                         ('framework_max', Decimal('150'), 'PLN'))
 
     def test_cancelled_notice_keeps_status_without_a_winner(self):
         awards = parse_awards(fixture('ted-cancelled.xml').read_bytes())

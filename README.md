@@ -114,6 +114,11 @@ tenderkit results --buyer 'Kraków' --cpv '72*'
 
 `results --number` returns the contract and result notices of one procedure plus the latest award for each lot: contractor name and identifier, selected price and currency, bid count, date and status (`AWARDED` or `CANCELLED`). `results --buyer` and `--cpv` search stored awards, one latest record per procedure and lot.
 
+TED award prices can carry a `price_scope` of `lot`, `notice_total`, or `framework_max`, when the
+XML supports that interpretation. A result can also expose its explicitly published framework ceiling
+as `framework_max` and `framework_currency`. A total or a ceiling repeated on multiple award rows
+should be counted once at its stated scope. Older TED awards gain these fields on refresh.
+
 BZP results come from `TenderResultNotice` sections. TED results come from `can-standard` notices; per-lot winners and prices are read from the public notice XML because the Search API arrays carry no lot join. One XML request is made per award notice at a conservative pace, so a run with more than 1000 award notices fails and asks for a narrower window. Only formal source facts are mapped: extracting prices from bid forms stays in the industry project. In `list-documents`, the bid-opening information is marked with `kind: "bid_opening"` from its filename; the content is never parsed there.
 
 ## Local browser view
