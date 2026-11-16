@@ -97,7 +97,8 @@ def create_server(path, *, profiles=None, adapters=None, document_root=None, doc
         Regions are buyer TERYT voivodeship codes; unknown fields do not match a constrained filter.
         Amounts must use the stated currency; no exchange-rate conversion is applied.
         CPV codes or prefixes ending in * in exclude_cpv never count; a notice whose every code is excluded is left out.
-        Keywords match word starts in titles, descriptions and lot titles. Use *term* for substrings.
+        Keywords match word starts in titles, descriptions and lot titles (lek finds leków; lek* is the same).
+        Use *term* for a substring anywhere in a word. A * elsewhere is an error.
         keyword_matches identifies the configured inclusion terms and fields that matched.
         """
         if profile is not None and profile not in profiles:
