@@ -2,8 +2,12 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from datetime import date, datetime
+from datetime import date, datetime, timezone
 from decimal import Decimal
+from typing import Literal
+from zoneinfo import ZoneInfo
+
+WARSAW = ZoneInfo("Europe/Warsaw")
 
 
 @dataclass(frozen=True)
@@ -13,6 +17,9 @@ class Lot:
     cpv: tuple[str, ...] = ()
     value: Decimal | None = None
     currency: str | None = None
+    description: str | None = None
+    quantity: Decimal | None = None
+    quantity_unit: str | None = None
 
 
 @dataclass(frozen=True)
@@ -26,6 +33,9 @@ class Award:
     currency: str | None = None
     offers: int | None = None                    # bids received for this lot, when the source counts them
     date: date | None = None                     # award or contract date, when the source gives one
+    price_scope: str | None = None
+    framework_max: Decimal | None = None
+    framework_currency: str | None = None
 
 
 @dataclass(frozen=True)
@@ -56,6 +66,33 @@ class Notice:
     lot_titles: tuple[str, ...] = ()              # titles from sources that do not link them to lot IDs
     source_attribution: dict[str, str] | None = None
     deadline_amendment: dict[str, str | None] | None = None
+    value_source: str | None = None
+    value_tax_basis: str | None = None
+    deadline_precision: Literal['date', 'datetime'] | None = None
+
+    def __post_init__(self):
+        if self.deadline is not None and self.deadline_precision is None:
+            # Older TED records retain the original date array, even with --no-raw.
+            dates = self.raw.get('deadline-receipt-tender-date-lot') or []
+            first_date = min((item for item in dates if item), default='')
+            date_only = self.source == 'TED' and first_date and 'T' not in first_date
+            object.__setattr__(self, 'deadline_precision', 'date' if date_only else 'datetime')
+
+    def local_deadline(self):
+        if self.deadline is None:
+            return None
+        if self.deadline_precision == 'date' or self.deadline.tzinfo is None:
+            return self.deadline.replace(tzinfo=WARSAW)
+        return self.deadline.astimezone(WARSAW)
+
+    def deadline_status(self, now):
+        deadline = self.local_deadline()
+        if deadline is None:
+            return 'missing'
+        if self.deadline_precision == 'date' and deadline.date() == now.astimezone(WARSAW).date():
+            return 'today'
+        return 'upcoming' if deadline.astimezone(timezone.utc) > now else 'passed'
+
 
 
 @dataclass(frozen=True)

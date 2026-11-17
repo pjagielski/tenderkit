@@ -6,6 +6,7 @@ import json
 
 from tenderkit.model import Award, Lot, Notice
 from tenderkit.notice_kinds import notice_kind
+from tenderkit.platform_urls import normalize_platform_url, platform_url_specific
 from tenderkit.sources.mapping import bzp_scope, ted_scope
 
 
@@ -35,6 +36,8 @@ def compact_raw(raw):
 def notice_record(notice, *, raw=True):
     record = asdict(notice)
     record['notice_kind'] = notice_kind(notice)
+    record['platform_url'] = normalize_platform_url(notice.platform_url)
+    record['platform_url_specific'] = platform_url_specific(record['platform_url'])
     if record['deadline_amendment'] is None:
         record.pop('deadline_amendment')
     if not raw:
@@ -45,6 +48,8 @@ def notice_record(notice, *, raw=True):
 def notice_from_record(record):
     data = dict(record)
     data.pop('notice_kind', None)
+    data.pop('platform_url_specific', None)
+    data['platform_url'] = normalize_platform_url(data.get('platform_url'))
     data['published'] = date.fromisoformat(data['published']) if data.get('published') else None
     data['deadline'] = datetime.fromisoformat(data['deadline']) if data.get('deadline') else None
     data['value'] = Decimal(data['value']) if data.get('value') is not None else None
@@ -53,26 +58,31 @@ def notice_from_record(record):
     for lot in data.get('lots') or []:
         lot = dict(lot)
         lot['cpv'] = tuple(lot.get('cpv') or [])
-        lot['value'] = Decimal(lot['value']) if lot.get('value') is not None else None
+        for field in ('value', 'quantity'):
+            if lot.get(field) is not None:
+                lot[field] = Decimal(lot[field])
         lots.append(Lot(**lot))
     data['lots'] = tuple(lots)
     data['lot_titles'] = tuple(data.get('lot_titles') or [])
-    if 'description' not in data:
-        raw = data.get('raw') or {}
-        if data['source'] == 'BZP':
-            description, titled_lots = bzp_scope(raw.get('htmlBody'))
-            merged = {lot.number: lot for lot in lots}
-            for lot in titled_lots:
-                existing = merged.get(lot.number)
-                merged[lot.number] = replace(existing, title=existing.title or lot.title) if existing else lot
-            data['description'] = description
-            data['lots'] = tuple(merged.values())
-        elif data['source'] == 'TED':
-            data['description'], data['lot_titles'] = ted_scope(raw)
+    raw = data.get('raw') or {}
+    legacy_lots = any('description' not in lot for lot in record.get('lots') or ())
+    if data['source'] == 'BZP' and ('description' not in data or (legacy_lots and raw.get('htmlBody'))):
+        description, titled_lots = bzp_scope(raw.get('htmlBody'))
+        merged = {lot.number: lot for lot in lots}
+        for lot in titled_lots:
+            existing = merged.get(lot.number)
+            merged[lot.number] = replace(existing, title=existing.title or lot.title,
+                                         description=existing.description or lot.description) if existing else lot
+        data.setdefault('description', description)
+        data['lots'] = tuple(merged.values())
+    elif data['source'] == 'TED' and 'description' not in data:
+        data['description'], data['lot_titles'] = ted_scope(raw)
     awards = []
     for award in data.get('awards') or []:
         award = dict(award)
-        award['price'] = Decimal(award['price']) if award.get('price') is not None else None
+        for field in ('price', 'framework_max'):
+            if award.get(field) is not None:
+                award[field] = Decimal(award[field])
         award['date'] = date.fromisoformat(award['date']) if award.get('date') else None
         awards.append(Award(**award))
     data['awards'] = tuple(awards)

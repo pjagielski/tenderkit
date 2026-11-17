@@ -5,7 +5,7 @@ from zoneinfo import ZoneInfo
 
 from tenderkit.model import Lot, Notice
 from tenderkit.platforms.session import BK_HOST, PlatformSession
-from tenderkit.sources.mapping import CPV, amount, html_to_text, instant
+from tenderkit.sources.mapping import deadline_precision, CPV, amount, html_to_text, instant
 
 BASE = f'https://{BK_HOST}'
 WARSAW = ZoneInfo('Europe/Warsaw')
@@ -97,14 +97,15 @@ def bk_notice(summary, row, acquired):
     # A single order's estimate can be used directly. Variants and partial orders
     # cannot be added safely without an explicit whole-notice total.
     value = lots[0].value if len(orders) == 1 and not orders[0].get('is_variant') else None
-    deadline = instant(row.get('submission_deadline'))
+    deadline_value = row.get('submission_deadline')
+    deadline = instant(deadline_value)
     if deadline is not None and deadline.tzinfo is None:
         deadline = deadline.replace(tzinfo=WARSAW)
     address = row.get('advertiser_address_details') or {}
     url = f'{BASE}/ogloszenia/{identifier}'
     return Notice(
         'BK', str(identifier), procedure_id=str(identifier), title=row['title'], published=published,
-        deadline=deadline, buyer_name=summary.get('advertiser_name') or address.get('name'),
+        deadline=deadline, deadline_precision=deadline_precision(deadline_value), buyer_name=summary.get('advertiser_name') or address.get('name'),
         buyer_city=(address.get('address') or {}).get('locality'),
         cpv=tuple(dict.fromkeys(code for lot in lots for code in lot.cpv)), lots=tuple(lots),
         description='\n\n'.join(dict.fromkeys(text for text in descriptions if text)) or None,

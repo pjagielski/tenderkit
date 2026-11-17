@@ -11,6 +11,7 @@ from tenderkit.profile import fold
 from tenderkit.serialization import compact_raw, dumps, notice_from_record, notice_record
 from tenderkit.sources.bzp import AMENDMENT_TYPE, FRESH_NOTICE_TYPES
 from tenderkit.store import search_index
+from tenderkit.store.coverage import effective_coverage
 
 SCHEMA = '''
 create table if not exists notices (
@@ -136,6 +137,7 @@ class State:
                 continue
             previous = notice.deadline_amendment
             original = previous['original_deadline'] if previous else notice.deadline
+            original_precision = (previous.get('original_precision', 'datetime') if original else None) if previous else notice.deadline_precision
             if isinstance(original, str):
                 original = datetime.fromisoformat(original)
             amendment = conn.execute('''
@@ -148,15 +150,17 @@ class State:
                     json_extract(payload, '$.raw.amendment_published_at'),
                     json_extract(payload, '$.raw.publicationDate'), '') desc, number desc limit 1
                 ''', (number, AMENDMENT_TYPE, str(notice.published))).fetchone()
-            evidence, deadline = None, original
+            evidence, deadline, precision = None, original, original_precision
             if amendment:
                 correction = notice_from_record(json.loads(amendment['payload']))
-                deadline = correction.deadline
+                deadline, precision = correction.deadline, correction.deadline_precision
                 evidence = dict(number=correction.number, url=correction.url,
                                 original_deadline=original.isoformat() if original else None)
-            if previous == evidence and notice.deadline == deadline:
+                if original_precision == 'date':
+                    evidence['original_precision'] = original_precision
+            if previous == evidence and notice.deadline == deadline and notice.deadline_precision == precision:
                 continue
-            notice = replace(notice, deadline=deadline, deadline_amendment=evidence)
+            notice = replace(notice, deadline=deadline, deadline_amendment=evidence, deadline_precision=precision)
             conn.execute('update notices set payload=? where rowid=?', (dumps(notice_record(notice)), row['rowid']))
             search_index.write(conn, row['rowid'], notice)
 
@@ -247,7 +251,8 @@ class State:
             jobs = [dict(r) for r in conn.execute('select id,source,number,status,attempts,error,error_kind,next_attempt,summary from fetch_jobs order by id desc limit 50')]
             for job in jobs:
                 job['summary'] = json.loads(job['summary'])
-            return dict(counts=counts, refreshes=refreshes, jobs=jobs)
+            coverage = effective_coverage(conn.execute('select distinct source,start,end,query,status from refreshes'))
+            return dict(counts=counts, refreshes=refreshes, jobs=jobs, effective_coverage=coverage)
 
     def set_coverage(self, source, number, status):
         if status not in ('PENDING', 'FETCHED', 'NO_DOCUMENTS', 'UNSUPPORTED_PLATFORM', 'NO_REFERENCE', 'FETCH_FAILED'):

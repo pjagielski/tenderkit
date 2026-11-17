@@ -5,7 +5,6 @@ the caller still applies `Profile.matches` to each decoded notice, so results ne
 """
 from datetime import timedelta
 import re
-from zoneinfo import ZoneInfo
 
 from tenderkit.profile import fold, keyword_term, keyword_texts
 
@@ -17,7 +16,6 @@ create table if not exists notice_index (
 );
 create virtual table if not exists notice_fts using fts5(text, tokenize = 'unicode61 remove_diacritics 0');
 '''
-_WARSAW = ZoneInfo('Europe/Warsaw')
 # unicode61 splits on everything that is not a letter or a digit; underscore separates as well.
 _TOKEN = re.compile(r'[^\W_]+')
 # Private-use characters (Wingdings bullets pasted into BZP text) are token characters for unicode61 but not word
@@ -29,16 +27,15 @@ def _searchable(text):
     return _PRIVATE_USE.sub(' ', fold(text))
 
 
-def _deadline_day(deadline):
-    if deadline is None:
-        return None
-    return str((deadline.astimezone(_WARSAW) if deadline.tzinfo else deadline).date())
+def _deadline_day(notice):
+    deadline = notice.local_deadline()
+    return deadline.date().isoformat() if deadline else None
 
 
 def write(conn, rowid, notice):
     conn.execute('insert or replace into notice_index(id,notice_type,region,deadline_day,value,currency,cpv) '
                  'values(?,?,?,?,?,?,?)',
-                 (rowid, notice.notice_type, notice.buyer_region, _deadline_day(notice.deadline),
+                 (rowid, notice.notice_type, notice.buyer_region, _deadline_day(notice),
                   float(notice.value) if notice.value is not None else None, notice.currency,
                   ' ' + ' '.join(str(code) for code in notice.cpv) + ' '))
     conn.execute('delete from notice_fts where rowid=?', (rowid,))
@@ -89,9 +86,10 @@ def prefilter(profile, today):
             index.append('value <= ?')
             params.append(float(profile.value.max))
     if profile.deadline_days:
+        # Old index rows converted date-only offsets to Warsaw before taking the calendar day.
         index.append('deadline_day between ? and ?')
-        params += [str(today + timedelta(days=profile.deadline_days.min)),
-                   str(today + timedelta(days=profile.deadline_days.max))]
+        params += [str(today + timedelta(days=profile.deadline_days.min - 1)),
+                   str(today + timedelta(days=profile.deadline_days.max + 1))]
     conditions = ['rowid in (select id from notice_index where ' + ' and '.join(index) + ')'] if index else []
     if profile.keywords_any:
         fts = [_fts_term(keyword) for keyword in profile.keywords_any]
