@@ -5,8 +5,9 @@ import unittest
 
 from tenderkit import Notice, Profile, load_profile
 from tenderkit.interfaces import Platform, Source, SourceQuery
-from tenderkit.model import Lot, Lot
+from tenderkit.model import Lot
 from tenderkit.profile import fold
+from tenderkit.profiles import builtin_profiles
 
 
 def write(text):
@@ -52,7 +53,6 @@ class ProfileTests(unittest.TestCase):
             Profile('x', exclude_cpv=('33696-5',))
 
     def test_the_builtin_medicines_profile_leaves_out_reagents_and_disinfectants(self):
-        from tenderkit.profiles import builtin_profiles
         leki = builtin_profiles()['leki']
         self.assertEqual(leki.exclude_cpv, ('33696*', '336316*'))
         self.assertEqual(leki.source_query().cpv_prefixes, ('336',))
@@ -145,3 +145,24 @@ class LotExclusionTests(unittest.TestCase):
         self.assertEqual(len(notice.lots), 2)
         self.assertIsNone(Profile('none', exclude_scope='lot',
                                   exclude_keywords=('szczepionk', 'onkologiczn')).select(notice))
+
+
+class BuiltInIndustryProfileTests(unittest.TestCase):
+    def test_software_excludes_server_only_and_keeps_mixed_notices(self):
+        profile = builtin_profiles()['oprogramowanie']
+        server = Notice('TED', 'server', notice_type='cn-standard', cpv=('48823000',))
+        self.assertFalse(profile.matches(server))
+        mixed = Notice('TED', 'mixed', notice_type='cn-standard', cpv=('48820000', '72200000'))
+        self.assertTrue(profile.matches(mixed))
+
+    def test_ambulances_profile_excludes_fire_and_police_vehicles(self):
+        profile = builtin_profiles()['ambulanse']
+        for number, title, cpv, expected in (
+            ('1', 'Dostawa ambulansów typu B', '34114121', True),
+            ('2', 'Dostawa karetki', '34114100', True),
+            ('3', 'Zakup samochodu pożarniczego', '34114110', False),
+            ('4', 'Radiowóz policyjny', '34114200', False),
+        ):
+            with self.subTest(number=number):
+                notice = Notice('BZP', number, title=title, notice_type='ContractNotice', cpv=(cpv,))
+                self.assertEqual(profile.matches(notice), expected)

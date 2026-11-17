@@ -47,7 +47,7 @@ Each notice also keeps the source's own record (`raw`), which is most of the dat
 
 BZP refreshes that fetch contract notices also fetch corrections published in the same window. A correction that changes the submission deadline updates the saved notice, even if the original was published before that window. The notice's `deadline` is the effective deadline; `deadline_amendment` includes the correction number and link plus the original deadline. Refresh the dates on which corrections may have been published to cover older gaps. This applies to BZP corrections that explicitly give a new submission deadline.
 
-Built-in profiles include `leki` (medicines), `oprogramowanie` (software), and `wyroby-medyczne` (medical devices). Pass a TOML file to `--profile` for a custom profile:
+Built-in profiles include `leki` (medicines), `oprogramowanie` (software), `wyroby-medyczne` (medical devices), and `ambulanse` (ambulances). Pass a TOML file to `--profile` for a custom profile:
 
 ```toml
 name = "software-mazowieckie"
@@ -56,6 +56,11 @@ notice_types = ["ContractNotice", "cn-standard"]
 regions = ["mazowieckie"]
 deadline_days = { min = 1, max = 60 }
 ```
+
+The software profile excludes server and NAS-only codes in `4882*`. A mixed
+procurement can still match on a qualifying software code. The ambulance
+profile uses the `341141*` emergency-vehicle family with ambulance keywords
+and excludes fire and police vehicle terms. [EU CPV vocabulary](https://eur-lex.europa.eu/eli/reg/2008/213/oj)
 
 Regions refer to the buyer's voivodeship. Write the Polish name, such as `mazowieckie` or `Małopolskie`; case and diacritics do not matter. The two-digit TERYT code (`14` for mazowieckie) also works, so existing profiles keep matching. TED buyers are mapped from NUTS 2, and Warsaw and the surrounding region both count as mazowieckie. A CPV ending in `*` matches a prefix. `exclude_cpv` lists codes or prefixes that never count: a notice matches only if one of its main or lot codes is in `cpv` and not excluded. The built-in `leki` profile excludes laboratory reagents (`33696*`) and disinfectants (`336316*`), which share the `336` branch. Required keywords and CPV restrictions are applied together, and exclusions take precedence.
 
