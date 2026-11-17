@@ -81,6 +81,18 @@ value in the procedure description or the description of its only lot may popula
 lot descriptions of a multi-lot notice stay unresolved. Refresh older TED notices to
 apply the fallback.
 
+
+### Open submission deadlines
+
+Use `tenderkit filter --profile oprogramowanie --open-now`, `open_now=true` in MCP
+`search_notices`, or `open_now = true` in a TOML profile. The filter compares timed
+deadlines to the current time. A date without a time qualifies only if it is a
+future day in Warsaw. Same-day deadlines with an unknown hour and notices with
+no deadline are left out. `deadline_precision` identifies `date` or `datetime`.
+TED publishes dates and times in separate search fields. Tenderkit combines them
+for a single lot when both are available. Refresh previously saved TED notices
+to retrieve the time field. [TED field list](https://docs.ted.europa.eu/ODS/latest/reuse/field-list.html)
+
 ## Daily watch
 
 ```sh

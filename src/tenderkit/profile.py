@@ -135,6 +135,7 @@ class Profile:
     documents: tuple[str, ...] = ()
     notice_kinds: tuple[str, ...] = ()
     exclude_scope: str = 'notice'
+    open_now: bool = False
 
     def __post_init__(self):
         if not isinstance(self.name, str) or not self.name.strip():
@@ -161,6 +162,8 @@ class Profile:
             raise ValueError('value must be a ValueRange')
         if self.deadline_days is not None and not isinstance(self.deadline_days, DeadlineRange):
             raise ValueError('deadline_days must be a DeadlineRange')
+        if type(self.open_now) is not bool:
+            raise ValueError('open_now must be a boolean')
         object.__setattr__(self, 'regions', tuple(dict.fromkeys(region_code(r) for r in self.regions)))
 
     def cpv_prefixes(self):
@@ -228,10 +231,10 @@ class Profile:
                        lot_count=max(len(kept), (notice.lot_count or len(notice.lots)) - len(removed_ids)),
                        awards=tuple(award for award in notice.awards if award.lot not in removed_ids))
 
-    def matches(self, notice: Notice, *, today=None):
-        return self.select(notice, today=today) is not None
+    def matches(self, notice: Notice, *, today=None, now=None):
+        return self.select(notice, today=today, now=now) is not None
 
-    def select(self, notice: Notice, *, today=None):
+    def select(self, notice: Notice, *, today=None, now=None):
         if not self.matches_cpv(notice.cpv):
             return None
         if self.notice_types and notice.notice_type not in self.notice_types:
@@ -249,10 +252,12 @@ class Profile:
                 return None
             if self.value.max is not None and notice.value > self.value.max:
                 return None
+        if self.open_now and notice.deadline_status(now or datetime.now(ZoneInfo('Europe/Warsaw'))) != 'upcoming':
+            return None
         if self.deadline_days:
-            if notice.deadline is None:
+            deadline = notice.local_deadline()
+            if deadline is None:
                 return None
-            deadline = notice.deadline.astimezone(ZoneInfo('Europe/Warsaw')) if notice.deadline.tzinfo else notice.deadline
             days = (deadline.date() - (today or datetime.now(ZoneInfo('Europe/Warsaw')).date())).days
             if not self.deadline_days.min <= days <= self.deadline_days.max:
                 return None

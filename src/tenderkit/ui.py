@@ -8,7 +8,6 @@ import re
 import sqlite3
 from string import Template
 from urllib.parse import parse_qsl, urlencode, urlsplit
-from zoneinfo import ZoneInfo
 
 from tenderkit.profile import fold
 from tenderkit.service import filtered
@@ -43,21 +42,6 @@ def page_link(params):
 def options(labels, selected):
     return ''.join(f'<option value="{key}"{" selected" if key == selected else ""}>{label}</option>'
                    for key, label in labels.items())
-
-
-def local_deadline(notice, warsaw):
-    deadline = notice.deadline
-    if deadline is None:
-        return None
-    return deadline.astimezone(warsaw) if deadline.tzinfo else deadline.replace(tzinfo=warsaw)
-
-
-def deadline_date_only(notice):
-    if notice.source != 'TED':
-        return False
-    dates = notice.raw.get('deadline-receipt-tender-date-lot') or []
-    first = min((value for value in dates if value), default='')
-    return bool(first and len(first) <= 16 and 'T' not in first)
 
 
 def tab(label, href, active):
@@ -103,7 +87,6 @@ def render(template, state, profiles, params):
     page = int(params['page'])
     profile = profiles[active]
     terms = fold(query).split()
-    warsaw = ZoneInfo('Europe/Warsaw')
     now = datetime.now(timezone.utc)
     found_sources, matches = set(), []
     offset = (page - 1) * PAGE_SIZE
@@ -121,18 +104,10 @@ def render(template, state, profiles, params):
             haystack = fold(f'{notice.title or ""} {notice.buyer_name or ""}')
             if not all(term in haystack for term in terms):
                 continue
-        deadline = local_deadline(notice, warsaw)
-        date_only = deadline_date_only(notice)
-        if deadline and date_only:
-            # Date-only TED fields were stored at midnight with the source offset.
-            deadline = notice.deadline.replace(tzinfo=warsaw)
+        deadline = notice.local_deadline()
+        date_only = notice.deadline_precision == 'date'
         deadline_utc = deadline.astimezone(timezone.utc) if deadline else None
-        if deadline is None:
-            status = 'missing'
-        elif date_only and deadline.date() == now.astimezone(warsaw).date():
-            status = 'today'
-        else:
-            status = 'upcoming' if deadline_utc >= now else 'passed'
+        status = notice.deadline_status(now)
         if deadline_filter and status != deadline_filter:
             continue
         matches.append((replace(notice, raw={}, lots=()), deadline, deadline_utc, date_only))
