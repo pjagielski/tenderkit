@@ -204,6 +204,14 @@ tenderkit mcp
 
 Configure your client with the absolute path to the installed `tenderkit` executable and arguments `["mcp"]`. For an alternate database, pass `["--db", "/absolute/path/notices.sqlite3", "mcp"]`. Search with `search_notices`, inspect a record with `get_notice`, and use `procedure_results` and `search_results` for per-lot awards. Use `list_documents`, `fetch_documents`, and `read_document` for attachments. Use `--profile-file` at startup to register custom profiles.
 
+The `tenderkit://coverage` resource and `tenderkit status` report
+`effective_coverage` by source based on successful refreshes. Each source
+includes merged publication windows, gaps within the attempted interval,
+and the same information per recorded query. The source-level summary
+combines different queries. Use the query entries to check the scope of
+a CPV- or notice-type-filtered refresh. `counts[].coverage` describes
+document state rather than missing publication dates.
+
 `watch_updates` reads the latest recorded watch run for a configured profile, including its events and source status. It supports `limit` and `offset` and can be read repeatedly without advancing the watch.
 
 ### Shared read-only server over HTTP
