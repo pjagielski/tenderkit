@@ -81,7 +81,6 @@ value in the procedure description or the description of its only lot may popula
 lot descriptions of a multi-lot notice stay unresolved. Refresh older TED notices to
 apply the fallback.
 
-
 ### Open submission deadlines
 
 Use `tenderkit filter --profile oprogramowanie --open-now`, `open_now=true` in MCP
@@ -152,8 +151,8 @@ new lot metadata on refresh.
 
 TED award prices can carry a `price_scope` of `lot`, `notice_total`, or `framework_max`, when the
 XML supports that interpretation. A result can also expose its explicitly published framework ceiling
-as `framework_max` and `framework_currency`. A total or a ceiling repeated on multiple award rows
-should be counted once at its stated scope. Older TED awards gain these fields on refresh.
+as `framework_max` and `framework_currency`. Use the stated scope to identify shared totals and
+framework ceilings before adding award amounts. Older TED awards gain these fields on refresh.
 
 BZP results come from `TenderResultNotice` sections. TED results come from `can-standard` notices; per-lot winners and prices are read from the public notice XML because the Search API arrays carry no lot join. One XML request is made per award notice at a conservative pace, so a run with more than 1000 award notices fails and asks for a narrower window. Only formal source facts are mapped: extracting prices from bid forms stays in the industry project. In `list-documents`, the bid-opening information is marked with `kind: "bid_opening"` from its filename; the content is never parsed there.
 
