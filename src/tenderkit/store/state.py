@@ -11,6 +11,7 @@ from tenderkit.profile import fold
 from tenderkit.serialization import compact_raw, dumps, notice_from_record, notice_record
 from tenderkit.sources.bzp import AMENDMENT_TYPE, FRESH_NOTICE_TYPES
 from tenderkit.store import search_index
+from tenderkit.store.coverage import effective_coverage
 
 SCHEMA = '''
 create table if not exists notices (
@@ -247,7 +248,8 @@ class State:
             jobs = [dict(r) for r in conn.execute('select id,source,number,status,attempts,error,error_kind,next_attempt,summary from fetch_jobs order by id desc limit 50')]
             for job in jobs:
                 job['summary'] = json.loads(job['summary'])
-            return dict(counts=counts, refreshes=refreshes, jobs=jobs)
+            coverage = effective_coverage(conn.execute('select distinct source,start,end,query,status from refreshes'))
+            return dict(counts=counts, refreshes=refreshes, jobs=jobs, effective_coverage=coverage)
 
     def set_coverage(self, source, number, status):
         if status not in ('PENDING', 'FETCHED', 'NO_DOCUMENTS', 'UNSUPPORTED_PLATFORM', 'NO_REFERENCE', 'FETCH_FAILED'):
