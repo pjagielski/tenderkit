@@ -69,6 +69,13 @@ A notice with at least one remaining lot can still match. The default
 `"notice"` applies exclusions to the whole notice. When the source does not
 link text to lot IDs, exclusions still apply to the whole notice.
 
+For TED contract notices without a structured estimate, a clearly presented
+value in the procedure description or the description of its only lot may populate `value` with
+`value_source="description"`. When the description states the tax basis,
+`value_tax_basis` is `net` or `gross`. Conflicting values and amounts found only in individual
+lot descriptions of a multi-lot notice stay unresolved. Refresh older TED notices to
+apply the fallback.
+
 ## Daily watch
 
 ```sh
@@ -119,6 +126,17 @@ tenderkit results --buyer 'Kraków' --cpv '72*'
 ```
 
 `results --number` returns the contract and result notices of one procedure plus the latest award for each lot: contractor name and identifier, selected price and currency, bid count, date and status (`AWARDED` or `CANCELLED`). `results --buyer` and `--cpv` search stored awards, one latest record per procedure and lot.
+
+MCP `search_results` also accepts `keywords_any`, `exclude_keywords` and
+`regions`. Result rows include the source URL, buyer region, notice kind,
+CPV and the lot name when available. TED result XML can also provide a
+structured lot quantity and unit. Previously saved TED results gain the
+new lot metadata on refresh.
+
+TED award prices can carry a `price_scope` of `lot`, `notice_total`, or `framework_max`, when the
+XML supports that interpretation. A result can also expose its explicitly published framework ceiling
+as `framework_max` and `framework_currency`. A total or a ceiling repeated on multiple award rows
+should be counted once at its stated scope. Older TED awards gain these fields on refresh.
 
 BZP results come from `TenderResultNotice` sections. TED results come from `can-standard` notices; per-lot winners and prices are read from the public notice XML because the Search API arrays carry no lot join. One XML request is made per award notice at a conservative pace, so a run with more than 1000 award notices fails and asks for a narrower window. Only formal source facts are mapped: extracting prices from bid forms stays in the industry project. In `list-documents`, the bid-opening information is marked with `kind: "bid_opening"` from its filename; the content is never parsed there.
 

@@ -14,6 +14,8 @@ class Lot:
     value: Decimal | None = None
     currency: str | None = None
     description: str | None = None
+    quantity: Decimal | None = None
+    quantity_unit: str | None = None
 
 
 @dataclass(frozen=True)
@@ -27,6 +29,9 @@ class Award:
     currency: str | None = None
     offers: int | None = None                    # bids received for this lot, when the source counts them
     date: date | None = None                     # award or contract date, when the source gives one
+    price_scope: str | None = None
+    framework_max: Decimal | None = None
+    framework_currency: str | None = None
 
 
 @dataclass(frozen=True)
@@ -57,6 +62,8 @@ class Notice:
     lot_titles: tuple[str, ...] = ()              # titles from sources that do not link them to lot IDs
     source_attribution: dict[str, str] | None = None
     deadline_amendment: dict[str, str | None] | None = None
+    value_source: str | None = None
+    value_tax_basis: str | None = None
 
 
 @dataclass(frozen=True)

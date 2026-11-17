@@ -110,7 +110,8 @@ class Ted:
             response = self.session.get(TED_XML.format(number=notice.number),
                                         headers={'Accept': 'application/xml'}, timeout=90)
             response.raise_for_status()
-            from tenderkit.sources.ted_xml import parse_awards
-            return replace(notice, awards=parse_awards(response.content))
+            from tenderkit.sources.ted_xml import parse_award_notice
+            awards, lots = parse_award_notice(response.content)
+            return replace(notice, awards=awards, lots=lots or notice.lots)
         except (OSError, ValueError, RuntimeError):
             return notice

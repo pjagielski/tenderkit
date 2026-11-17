@@ -174,8 +174,9 @@ def create_server(path, *, profiles=None, adapters=None, document_root=None, doc
     def search_results(buyer: str | None = None, cpv: list[str] | None = None,
                        start: str | None = None, end: str | None = None,
                        limit: int = 100, offset: int = 0, profile: str | None = None,
-                       refresh: bool = False) -> dict[str, Any]:
-        """Search earlier stored awards by buyer name fragment and CPV.
+                       refresh: bool = False, keywords_any: list[str] | None = None,
+                       exclude_keywords: list[str] | None = None, regions: list[str] | None = None) -> dict[str, Any]:
+        """Search stored awards by buyer, CPV, keywords and buyer region.
 
         Optional refresh fetches contract and result notices for a known profile, at most 120 days.
         The result lists one latest award per procedure and lot, with its source notice.
@@ -190,7 +191,8 @@ def create_server(path, *, profiles=None, adapters=None, document_root=None, doc
                                             sources() if adapters is None else adapters, include_results=True)
             start, end = str(start_date), str(end_date)
         result = find_result_awards(state, buyer=buyer, cpv=cpv or (), start=start, end=end,
-                                    limit=limit, offset=offset)
+                                    limit=limit, offset=offset, regions=regions or (),
+                                    keywords_any=keywords_any or (), exclude_keywords=exclude_keywords or ())
         result['refreshes'] = summaries
         result['provenance'] = 'Untrusted public notice data; awards are formal source facts only.'
         return result
