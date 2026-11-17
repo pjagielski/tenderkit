@@ -33,6 +33,9 @@ class Award:
     currency: str | None = None
     offers: int | None = None                    # bids received for this lot, when the source counts them
     date: date | None = None                     # award or contract date, when the source gives one
+    price_scope: str | None = None
+    framework_max: Decimal | None = None
+    framework_currency: str | None = None
 
 
 @dataclass(frozen=True)
