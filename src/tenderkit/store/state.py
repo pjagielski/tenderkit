@@ -137,6 +137,7 @@ class State:
                 continue
             previous = notice.deadline_amendment
             original = previous['original_deadline'] if previous else notice.deadline
+            original_precision = (previous.get('original_precision', 'datetime') if original else None) if previous else notice.deadline_precision
             if isinstance(original, str):
                 original = datetime.fromisoformat(original)
             amendment = conn.execute('''
@@ -149,15 +150,17 @@ class State:
                     json_extract(payload, '$.raw.amendment_published_at'),
                     json_extract(payload, '$.raw.publicationDate'), '') desc, number desc limit 1
                 ''', (number, AMENDMENT_TYPE, str(notice.published))).fetchone()
-            evidence, deadline = None, original
+            evidence, deadline, precision = None, original, original_precision
             if amendment:
                 correction = notice_from_record(json.loads(amendment['payload']))
-                deadline = correction.deadline
+                deadline, precision = correction.deadline, correction.deadline_precision
                 evidence = dict(number=correction.number, url=correction.url,
                                 original_deadline=original.isoformat() if original else None)
-            if previous == evidence and notice.deadline == deadline:
+                if original_precision == 'date':
+                    evidence['original_precision'] = original_precision
+            if previous == evidence and notice.deadline == deadline and notice.deadline_precision == precision:
                 continue
-            notice = replace(notice, deadline=deadline, deadline_amendment=evidence)
+            notice = replace(notice, deadline=deadline, deadline_amendment=evidence, deadline_precision=precision)
             conn.execute('update notices set payload=? where rowid=?', (dumps(notice_record(notice)), row['rowid']))
             search_index.write(conn, row['rowid'], notice)
 
