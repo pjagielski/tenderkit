@@ -8,7 +8,7 @@ from datetime import date
 from decimal import Decimal, InvalidOperation
 import xml.etree.ElementTree as ET
 
-from tenderkit.model import Award
+from tenderkit.model import Award, Lot
 
 NS = {
     'cac': 'urn:oasis:names:specification:ubl:schema:xsd:CommonAggregateComponents-2',
@@ -25,8 +25,8 @@ def text(element, path):
     return value or None
 
 
-def money(element):
-    node = element.find('cac:LegalMonetaryTotal/cbc:PayableAmount', NS) if element is not None else None
+def money(element, path):
+    node = element.find(path, NS) if element is not None else None
     if node is None or not (node.text or '').strip():
         return None, None
     try:
@@ -37,7 +37,12 @@ def money(element):
 
 
 def parse_awards(document):
-    """Award tuples for one ContractAwardNotice XML document; raises ValueError when it is not one."""
+    """Award tuples for one ContractAwardNotice XML document."""
+    return parse_award_notice(document)[0]
+
+
+def parse_award_notice(document):
+    """Awards and keyed lot metadata from a ContractAwardNotice XML document."""
     try:
         root = ET.fromstring(document)
     except ET.ParseError as exc:
@@ -50,15 +55,30 @@ def parse_awards(document):
         if key:
             organizations[key] = (text(company, 'cac:PartyName/cbc:Name'),
                                   text(company, 'cac:PartyLegalEntity/cbc:CompanyID'))
+    notice_result = root.find('.//efac:NoticeResult', NS)
+    notice_total = money(notice_result, 'cbc:TotalAmount')
+    results = root.findall('.//efac:NoticeResult/efac:LotResult', NS)
+    all_lots = {text(result, 'efac:TenderLot/cbc:ID') for result in results}
+    referenced_lots = {}
+    for result in results:
+        tender_id = text(result, 'efac:LotTender/cbc:ID')
+        lot_id = text(result, 'efac:TenderLot/cbc:ID')
+        if tender_id and lot_id:
+            referenced_lots.setdefault(tender_id, set()).add(lot_id)
+
     tenders = {}
     for tender in root.findall('.//efac:NoticeResult/efac:LotTender', NS):
         key = text(tender, 'cbc:ID')
         if key:
-            price, currency = money(tender)
-            tenders[key] = dict(tenderer=text(tender, 'efac:TenderingParty/cbc:ID'), price=price, currency=currency)
-    contracts = {}
+            price, currency = money(tender, 'cac:LegalMonetaryTotal/cbc:PayableAmount')
+            lots = {node.text for node in tender.findall('efac:TenderLot/cbc:ID', NS)}
+            tenders[key] = dict(tenderer=text(tender, 'efac:TenderingParty/cbc:ID'),
+                                price=price, currency=currency, lots=lots)
+    contracts, framework_contracts = {}, set()
     for contract in root.findall('.//efac:NoticeResult/efac:SettledContract', NS):
         key, issued = text(contract, 'cbc:ID'), text(contract, 'cbc:IssueDate')
+        if key and text(contract, 'efbc:ContractFrameworkIndicator') in ('true', '1'):
+            framework_contracts.add(key)
         if key and issued:
             try:
                 contracts[key] = date.fromisoformat(issued[:10])
@@ -70,22 +90,54 @@ def parse_awards(document):
         if key and organization:
             parties[key] = organization
     awards = []
-    for result in root.findall('.//efac:NoticeResult/efac:LotResult', NS):
+    for result in results:
         lot = text(result, 'efac:TenderLot/cbc:ID')
         if not lot:
             continue
-        tender = tenders.get(text(result, 'efac:LotTender/cbc:ID')) or {}
+        tender_id = text(result, 'efac:LotTender/cbc:ID')
+        tender = tenders.get(tender_id, {})
+        contract_id = text(result, 'efac:SettledContract/cbc:ID')
         contractor, contractor_id = organizations.get(parties.get(tender.get('tenderer')), (None, None))
         awarded = text(result, 'cbc:TenderResultCode') == AWARDED_STATUS
+        price, currency = (tender.get('price'), tender.get('currency')) if awarded else (None, None)
+        cap, cap_currency = money(result, 'efac:FrameworkAgreementValues/cbc:MaximumValueAmount')
+        scope = None
+        if price is not None:
+            lots = tender.get('lots', set()) | referenced_lots.get(tender_id, set())
+            if cap is not None and cap_currency and (price, currency) == (cap, cap_currency):
+                scope = 'framework_max'
+            elif contract_id in framework_contracts:
+                scope = None
+            elif len(lots) > 1 and lots == all_lots and currency and (price, currency) == notice_total:
+                scope = 'notice_total'
+            elif lots == {lot}:
+                scope = 'lot'
         awards.append(Award(
             lot=lot, status='AWARDED' if awarded else 'CANCELLED',
             contractor=contractor if awarded else None,
             contractor_id=contractor_id if awarded else None,
-            price=tender.get('price') if awarded else None,
-            currency=tender.get('currency') if awarded else None,
+            price=price, currency=currency, price_scope=scope, framework_max=cap, framework_currency=cap_currency,
             offers=subscription_count(result),
-            date=contracts.get(text(result, 'efac:SettledContract/cbc:ID')) if awarded else None))
-    return tuple(awards)
+            date=contracts.get(contract_id) if awarded else None))
+    lots = []
+    for lot in root.findall('cac:ProcurementProjectLot', NS):
+        number = text(lot, 'cbc:ID')
+        project = lot.find('cac:ProcurementProject', NS)
+        if not number or project is None:
+            continue
+        quantity = project.find('cbc:EstimatedOverallContractQuantity', NS)
+        value = None
+        if quantity is not None:
+            try:
+                value = Decimal(quantity.text or '')
+                value = value if value.is_finite() and value >= 0 else None
+            except InvalidOperation:
+                pass
+        code = text(project, 'cac:MainCommodityClassification/cbc:ItemClassificationCode')
+        lots.append(Lot(number, title=text(project, 'cbc:Name'), description=text(project, 'cbc:Description'),
+                        cpv=(code,) if code else (), quantity=value,
+                        quantity_unit=quantity.get('unitCode') if value is not None else None))
+    return tuple(awards), tuple(lots)
 
 
 def subscription_count(result):

@@ -44,7 +44,7 @@ class SourceTests(unittest.TestCase):
             '<h3>4.2.2.) Krótki opis przedmiotu zamówienia</h3><p>Integracja i wdrożenie.</p>'
             '<h3>4.2.6.) Główny kod CPV:</h3>72000000'))
         self.assertEqual(bzp.description, 'Integracja i wdrożenie.')
-        self.assertEqual(bzp.lots, (Lot('2', 'System obiegu dokumentów'),))
+        self.assertEqual(bzp.lots, (Lot('2', 'System obiegu dokumentów', description='Integracja i wdrożenie.'),))
         ted = ted_notice(ted_raw(**{'description-proc': {'pol': 'Zakup sprzętu'},
             'description-lot': {'pol': ['Dostawa strzykawek', 'Dostawa rękawic']},
             'title-lot': {'pol': ['Rękawice', 'Strzykawki'], 'eng': ['Gloves', 'Syringes']},
@@ -59,6 +59,40 @@ class SourceTests(unittest.TestCase):
             if notice.source == 'BZP':
                 record['lots'] = []
             self.assertEqual(notice_from_record(record), notice)
+
+    def test_platform_url_normalization_and_specificity_on_cached_records(self):
+        examples = (
+            ('www.ezamowienia.gov.pl', 'https://www.ezamowienia.gov.pl', False),
+            ('https://nfz.ezamawiajacy.pl.', 'https://nfz.ezamawiajacy.pl', False),
+            ('www.ncbj.gov.pl;', 'https://www.ncbj.gov.pl', False),
+            ('https://brodnowski.eb2b.com.pl/open-preview-auction.html/',
+             'https://brodnowski.eb2b.com.pl/open-preview-auction.html/', False),
+            ('https://platformazakupowa.pl/transakcja/42);',
+             'https://platformazakupowa.pl/transakcja/42', True),
+            ('https://platformazakupowa.pl@invalid.example/transakcja/42', None, False),
+        )
+        for original, normalized, specific in examples:
+            with self.subTest(url=original):
+                notice = notice_from_record(dict(source='BZP', number='example', platform_url=original))
+                record = notice_record(notice)
+                self.assertEqual(record['platform_url'], normalized)
+                self.assertIs(record['platform_url_specific'], specific)
+
+    def test_ted_uses_only_unambiguous_description_estimates(self):
+        raw = ted_raw(**{'description-proc': {'pol': ['Licencje\n2 896 500,00 zł netto']}})
+        notice = ted_notice(raw)
+        self.assertEqual((str(notice.value), notice.currency, notice.value_source, notice.value_tax_basis),
+                         ('2896500.00', 'PLN', 'description', 'net'))
+        single_lot = ted_raw(**{'description-proc': {'pol': 'Licencje'},
+                                'identifier-lot': ['LOT-0001'],
+                                'description-lot': {'pol': ['2 896 500,00 zł netto']}})
+        self.assertEqual(ted_notice(single_lot).value, notice.value)
+        self.assertIsNone(ted_notice(dict(single_lot, **{'identifier-lot': ['L1', 'L2']})).value)
+        structured = ted_notice(dict(raw, **{'estimated-value-proc': ['300'], 'estimated-value-cur-proc': ['EUR']}))
+        self.assertEqual((str(structured.value), structured.currency, structured.value_source), ('300', 'EUR', None))
+        conflicting = ted_notice(dict(raw, **{'description-proc': {'pol': [
+            'Szacunkowa wartość: 120,00 PLN brutto\n130,00 PLN brutto']}}))
+        self.assertIsNone(conflicting.value)
 
     def test_stdlib_transport_sets_identity_and_bounds_response_size(self):
         response = mock.MagicMock(code=200)
@@ -227,3 +261,24 @@ class StateTests(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main()
+
+
+class RefreshCoverageTests(unittest.TestCase):
+    def test_coverage_merges_successes_without_hiding_query_specific_gaps(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            state = State(Path(tmp) / 'notices.sqlite3')
+            query = {'cpv_prefixes': ['72']}
+            other = {'cpv_prefixes': ['33']}
+            when = lambda day: date(2026, 11, day)
+            state.record_refresh('TED', when(1), when(14), query, error='TedIncomplete')
+            for start, end in ((1, 5), (6, 10), (13, 14)):
+                state.record_refresh('TED', when(start), when(end), query)
+            state.record_refresh('TED', when(11), when(12), other)
+            state.record_refresh('BZP', when(5), when(7), query, error='FetchFailure')
+            coverage = State(state.path, read_only=True).coverage()['effective_coverage']
+            self.assertEqual(coverage['TED']['windows'], [{'from': '2026-11-01', 'to': '2026-11-14'}])
+            self.assertEqual(coverage['TED']['gaps'], [])
+            software = next(row for row in coverage['TED']['queries'] if row['query'] == query)
+            self.assertEqual(software['gaps'], [{'from': '2026-11-11', 'to': '2026-11-12'}])
+            self.assertIsNone(coverage['BZP']['from'])
+            self.assertEqual(coverage['BZP']['gaps'], [{'from': '2026-11-05', 'to': '2026-11-07'}])

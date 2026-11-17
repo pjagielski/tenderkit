@@ -7,6 +7,7 @@ import re
 from zoneinfo import ZoneInfo
 
 from tenderkit.model import Award, Lot, Notice
+from tenderkit.platform_urls import normalize_platform_url
 from tenderkit.sources.bzp import timestamp
 
 REFERENCE = re.compile(r'4\.1\.2\.\)\s*Numer referencyjny:\s*(.+?)\s+\d\.\d\.\d+\.\)')
@@ -90,16 +91,18 @@ def bzp_notice(raw):
     reference, platform = REFERENCE.search(text), PLATFORM_URL.search(text)
     value = re.search(r'Wartość zamówienia:\s*(\d[\d\s]*(?:,\d+)?)\s*([A-Z]{3})\b', text)
     description, lots = bzp_scope(body)
+    deadline = raw.get('submittingOffersDate')
     return Notice(
         source='BZP', number=raw['noticeNumber'], procedure_id=raw.get('tenderId'),
-        published=bzp_publication_day(raw.get('publicationDate')), deadline=instant(raw.get('submittingOffersDate')),
+        published=bzp_publication_day(raw.get('publicationDate')), deadline=instant(deadline),
+        deadline_precision=deadline_precision(deadline),
         title=raw.get('orderObject'), buyer_name=raw.get('organizationName'),
         buyer_id=raw.get('organizationNationalId'), buyer_city=raw.get('organizationCity'),
         buyer_region=region(raw.get('organizationProvince')),
         cpv=tuple(dict.fromkeys(CPV.findall(raw.get('cpvCode') or ''))),
         value=amount(value[1]) if value else None, currency=value[2] if value and amount(value[1]) else None,
         reference=reference[1].strip() if reference else None,
-        platform_url=re.sub(r'\s+', '', platform[1]) if platform else None,
+        platform_url=normalize_platform_url(re.sub(r'^(https?://)\s+', r'\1', platform[1])) if platform else None,
         url=f"https://ezamowienia.gov.pl/mo-client-board/bzp/notice-details/id/{raw['objectId']}",
         notice_type=raw.get('noticeType'), raw=raw,
         description=description, lots=lots,
@@ -150,7 +153,7 @@ _SCOPE_LABELS = re.compile(r'Krótki opis przedmiotu zamówienia|Część\s+\d|N
 
 
 def bzp_scope(body):
-    descriptions, titles = [], {}
+    descriptions, titles, lot_descriptions = [], {}, defaultdict(list)
     lot_number = None
     for label, value in bzp_blocks(body, _SCOPE_LABELS):
         lot = re.fullmatch(r'Część\s+(\d+)(?:\s*[-–—:]\s*(.+))?', label, re.I)
@@ -160,10 +163,13 @@ def bzp_scope(body):
                 titles[lot_number] = lot[2]
         elif 'krótki opis przedmiotu zamówienia' in label.casefold() and value:
             descriptions.append(value)
+            if lot_number is not None and label.startswith('4.2.2'):
+                lot_descriptions[lot_number].append(value)
         elif lot_number is not None and 'nazwa części' in label.casefold() and value:
             titles[lot_number] = value
     return '\n\n'.join(dict.fromkeys(descriptions)) or None, tuple(
-        Lot(number, title=title) for number, title in titles.items())
+        Lot(number, title=titles.get(number), description='\n\n'.join(lot_descriptions[number]) or None)
+        for number in dict.fromkeys((*titles, *lot_descriptions)))
 
 
 def bzp_fields(body):
@@ -237,30 +243,84 @@ def ted_scope(raw):
     return '\n\n'.join(dict.fromkeys(descriptions)) or None, tuple(dict.fromkeys(_ted_texts(raw.get('title-lot'))))
 
 
+_ESTIMATE_LINE = re.compile(
+    r'(?P<label>(?:szacunkowa\s+wartość(?:\s+zamówienia)?|wartość\s+szacunkowa)\s*[:=]\s*)?'
+    r'(?P<amount>\d{1,3}(?:[ \u00a0\u202f]+\d{3})+(?:[,.]\d{2})?|\d+(?:[,.]\d{2})?)'
+    r'\s*(?P<currency>zł|PLN|EUR|USD|GBP|CHF)'
+    r'(?:\s+(?P<tax>netto|brutto|bez VAT|z VAT))?\.?', re.I)
+
+
+def described_estimate(descriptions):
+    """Take one clearly presented procedure estimate, leaving conflicting amounts unresolved."""
+    candidates = set()
+    for description in descriptions:
+        lines = [line.strip() for line in description.splitlines() if line.strip()]
+        for i, line in enumerate(lines):
+            match = _ESTIMATE_LINE.fullmatch(line)
+            if not match or not (match['label'] or (i == len(lines) - 1 and match['tax'])):
+                continue
+            currency = 'PLN' if match['currency'].casefold() == 'zł' else match['currency'].upper()
+            tax = match['tax'].casefold() if match['tax'] else None
+            tax_basis = {'netto': 'net', 'bez vat': 'net', 'brutto': 'gross', 'z vat': 'gross'}.get(tax)
+            value = amount(match['amount'])
+            if value is not None:
+                candidates.add((value, currency, tax_basis))
+    return candidates.pop() if len(candidates) == 1 else (None, None, None)
+
+
+def deadline_precision(value):
+    return ('date' if len(value) <= 16 and 'T' not in value else 'datetime') if value else None
+
+
 def ted_notice(raw):
     ids = raw.get('identifier-lot') or []
     values, currencies = raw.get('estimated-value-lot') or [], raw.get('estimated-value-cur-lot') or []
     value, currency = amount(raw.get('estimated-value-proc')), first(raw.get('estimated-value-cur-proc'))
     if value is None and values and all(amount(v) is not None for v in values) and len(set(currencies)) == 1:
         value, currency = sum(amount(v) for v in values), currencies[0]
+    notice_type = first(raw.get('notice-type')) or 'cn-standard'
+    value_source = value_tax_basis = None
+    if value is None and notice_type in ('cn-standard', 'cn-social', 'pin-cfc-standard'):
+        descriptions = _ted_texts(raw.get('description-proc'))
+        if len(ids) == 1:
+            descriptions += _ted_texts(raw.get('description-lot'))
+        value, currency, value_tax_basis = described_estimate(descriptions)
+        if value is not None:
+            value_source = 'description'
     deadlines = sorted(d for d in raw.get('deadline-receipt-tender-date-lot') or [] if d)
-    urls = [u for u in raw.get('document-url-lot') or [] if u]
+    deadline = deadlines[0] if deadlines else None
+    times = raw.get('deadline-receipt-tender-time-lot') or []
+    # Search arrays are flattened. Join the two fields only for a single lot.
+    if deadline_precision(deadline) == 'date' and len(ids) == len(deadlines) == len(times) == 1 and times[0]:
+        hour = times[0]
+        if not re.search(r'(?:Z|[+-]\d{2}:\d{2})$', hour):
+            hour += deadline[10:]
+        candidate = deadline[:10] + 'T' + hour
+        try:
+            instant(candidate)
+        except ValueError:
+            pass
+        else:
+            deadline = candidate
+    urls = [url for value in raw.get('document-url-lot') or [] if (url := normalize_platform_url(value))]
     description, lot_titles = ted_scope(raw)
     return Notice(
         source='TED', number=raw['publication-number'], procedure_id=first(raw.get('procedure-identifier')),
-        published=day(raw.get('publication-date')), deadline=instant(deadlines[0]) if deadlines else None,
+        published=day(raw.get('publication-date')), deadline=instant(deadline),
+        deadline_precision=deadline_precision(deadline),
         title=polish(raw.get('title-proc')) or polish(raw.get('notice-title')),
         buyer_name=polish(raw.get('buyer-name')), buyer_city=first(raw.get('organisation-city-buyer')),
         buyer_id=first(raw.get('organisation-identifier-buyer')),
         buyer_region=ted_region(raw.get('organisation-country-sub-buyer')),
         cpv=tuple(dict.fromkeys(str(c).split('-')[0] for c in raw.get('classification-cpv') or [])),
         value=value, currency=currency if value else None,
+        value_source=value_source, value_tax_basis=value_tax_basis,
         # Search API arrays are flattened, without a join between each amount
         # and its lot id. Keep the IDs; never infer per-lot amounts by position.
         lots=tuple(Lot(str(number)) for number in ids),
         description=description, lot_titles=lot_titles,
         reference=first(raw.get('internal-identifier-proc')), platform_url=urls[0] if urls else None,
         url=f"https://ted.europa.eu/pl/notice/-/detail/{raw['publication-number']}",
-        notice_type=first(raw.get('notice-type')) or 'cn-standard', raw=raw,
+        notice_type=notice_type, raw=raw,
         lot_count=len(ids) or None,
     )

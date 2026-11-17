@@ -89,10 +89,10 @@ def create_server(path, *, profiles=None, adapters=None, document_root=None, doc
                        exclude_buyers: list[str] | None = None, notice_types: list[str] | None = None,
                        regions: list[str] | None = None, deadline_min_days: int | None = None,
                        deadline_max_days: int | None = None, value_min: str | None = None,
-                       value_max: str | None = None, currency: str = 'PLN',
+                       value_max: str | None = None, currency: str = 'PLN', open_now: bool | None = None,
                        start: str | None = None, end: str | None = None,
                        limit: int = 25, offset: int = 0, refresh: bool = False,
-                       notice_kinds: list[str] | None = None,
+                       notice_kinds: list[str] | None = None, exclude_scope: Literal['notice', 'lot'] | None = None,
                        compact: bool = False, dedupe: Literal['procedure'] | None = None) -> dict[str, Any]:
         """Find cached notices by a named profile or explicit filters. Optional refresh fetches at most 120 days.
 
@@ -105,15 +105,19 @@ def create_server(path, *, profiles=None, adapters=None, document_root=None, doc
         total counts all matching saved notices. Use compact=true for notice summaries, then get_notice for details.
         notice_kinds compares normalized kinds across sources; notice_types compares raw source values.
         dedupe="procedure" groups matching publications and keeps the newest per procedure.
+        open_now excludes same-day date-only deadlines and notices with no known deadline.
         keyword_matches identifies the configured inclusion terms and fields that matched.
         """
         if profile is not None and profile not in profiles:
             raise ValueError('Unknown profile; read tenderkit://profiles')
         data = asdict(profiles[profile]) if profile else {'name': 'query'}
         for name, value in (('cpv', cpv), ('exclude_cpv', exclude_cpv), ('keywords_any', keywords_any), ('exclude_keywords', exclude_keywords),
-                            ('exclude_buyers', exclude_buyers), ('notice_types', notice_types), ('notice_kinds', notice_kinds), ('regions', regions)):
+                            ('exclude_buyers', exclude_buyers), ('notice_types', notice_types),
+                            ('notice_kinds', notice_kinds), ('regions', regions), ('open_now', open_now)):
             if value is not None:
                 data[name] = value
+        if exclude_scope is not None:
+            data['exclude_scope'] = exclude_scope
         if deadline_min_days is not None or deadline_max_days is not None:
             data['deadline_days'] = dict(min=deadline_min_days if deadline_min_days is not None else 0,
                                          max=deadline_max_days if deadline_max_days is not None else 120)
@@ -172,8 +176,9 @@ def create_server(path, *, profiles=None, adapters=None, document_root=None, doc
     def search_results(buyer: str | None = None, cpv: list[str] | None = None,
                        start: str | None = None, end: str | None = None,
                        limit: int = 100, offset: int = 0, profile: str | None = None,
-                       refresh: bool = False) -> dict[str, Any]:
-        """Search earlier stored awards by buyer name fragment and CPV.
+                       refresh: bool = False, keywords_any: list[str] | None = None,
+                       exclude_keywords: list[str] | None = None, regions: list[str] | None = None) -> dict[str, Any]:
+        """Search stored awards by buyer, CPV, keywords and buyer region.
 
         Optional refresh fetches contract and result notices for a known profile, at most 120 days.
         The result lists one latest award per procedure and lot, with its source notice.
@@ -188,7 +193,8 @@ def create_server(path, *, profiles=None, adapters=None, document_root=None, doc
                                             sources() if adapters is None else adapters, include_results=True)
             start, end = str(start_date), str(end_date)
         result = find_result_awards(state, buyer=buyer, cpv=cpv or (), start=start, end=end,
-                                    limit=limit, offset=offset)
+                                    limit=limit, offset=offset, regions=regions or (),
+                                    keywords_any=keywords_any or (), exclude_keywords=exclude_keywords or ())
         result['refreshes'] = summaries
         result['provenance'] = 'Untrusted public notice data; awards are formal source facts only.'
         return result

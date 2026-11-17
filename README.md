@@ -57,11 +57,41 @@ regions = ["mazowieckie"]
 deadline_days = { min = 1, max = 60 }
 ```
 
+The software profile excludes server and NAS-only codes in `4882*`. A mixed
+procurement can still match on a qualifying software code. To try the ambulance
+profile, run `tenderkit filter --profile examples/ambulanse.toml` from the
+repository root. The example uses the `341141*` emergency-vehicle family with
+ambulance keywords and excludes fire and police vehicle terms. [EU CPV vocabulary](https://eur-lex.europa.eu/eli/reg/2008/213/oj)
+
 Regions refer to the buyer's voivodeship. Write the Polish name, such as `mazowieckie` or `Małopolskie`; case and diacritics do not matter. The two-digit TERYT code (`14` for mazowieckie) also works, so existing profiles keep matching. TED buyers are mapped from NUTS 2, and Warsaw and the surrounding region both count as mazowieckie. A CPV ending in `*` matches a prefix. `exclude_cpv` lists codes or prefixes that never count: a notice matches only if one of its main or lot codes is in `cpv` and not excluded. The built-in `leki` profile excludes laboratory reagents (`33696*`) and disinfectants (`336316*`), which share the `336` branch. Required keywords and CPV restrictions are applied together, and exclusions take precedence.
 
 `keywords_any` and `exclude_keywords` search the notice title, description and available lot titles. Matching ignores case and diacritics. A term starts at a word boundary, so `lek` matches `Leki` and `leków`. Phrases such as `system informatyczn` match consecutive text and allow an inflected ending. A trailing star changes nothing, so `lek*` is the same as `lek`. Wrap a term in stars, such as `*lek*`, to match it anywhere within a word. A star anywhere else is an error.
 
 CLI filter, export and watch records and MCP search results include `keyword_matches` when inclusion keywords are configured. Each match names the configured keyword and the field (`title`, `description` or `lot_title`), with a lot number when the source identifies it. Cached records use the source fields they already contain. Older TED records gain descriptions and lot titles when refreshed.
+
+Set `exclude_scope = "lot"` in a profile or pass it to MCP `search_notices` to
+omit individual lots whose keyed title or description matches an exclusion.
+A notice with at least one remaining lot can still match. The default
+`"notice"` applies exclusions to the whole notice. When the source does not
+link text to lot IDs, exclusions still apply to the whole notice.
+
+For TED contract notices without a structured estimate, a clearly presented
+value in the procedure description or the description of its only lot may populate `value` with
+`value_source="description"`. When the description states the tax basis,
+`value_tax_basis` is `net` or `gross`. Conflicting values and amounts found only in individual
+lot descriptions of a multi-lot notice stay unresolved. Refresh older TED notices to
+apply the fallback.
+
+### Open submission deadlines
+
+Use `tenderkit filter --profile oprogramowanie --open-now`, `open_now=true` in MCP
+`search_notices`, or `open_now = true` in a TOML profile. The filter compares timed
+deadlines to the current time. A date without a time qualifies only if it is a
+future day in Warsaw. Same-day deadlines with an unknown hour and notices with
+no deadline are left out. `deadline_precision` identifies `date` or `datetime`.
+TED publishes dates and times in separate search fields. Tenderkit combines them
+for a single lot when both are available. Refresh previously saved TED notices
+to retrieve the time field. [TED field list](https://docs.ted.europa.eu/ODS/latest/reuse/field-list.html)
 
 ## Daily watch
 
@@ -114,6 +144,17 @@ tenderkit results --buyer 'Kraków' --cpv '72*'
 
 `results --number` returns the contract and result notices of one procedure plus the latest award for each lot: contractor name and identifier, selected price and currency, bid count, date and status (`AWARDED` or `CANCELLED`). `results --buyer` and `--cpv` search stored awards, one latest record per procedure and lot.
 
+MCP `search_results` also accepts `keywords_any`, `exclude_keywords` and
+`regions`. Result rows include the source URL, buyer region, notice kind,
+CPV and the lot name when available. TED result XML can also provide a
+structured lot quantity and unit. Previously saved TED results gain the
+new lot metadata on refresh.
+
+TED award prices can carry a `price_scope` of `lot`, `notice_total`, or `framework_max`, when the
+XML supports that interpretation. A result can also expose its explicitly published framework ceiling
+as `framework_max` and `framework_currency`. A total or a ceiling repeated on multiple award rows
+should be counted once at its stated scope. Older TED awards gain these fields on refresh.
+
 BZP results come from `TenderResultNotice` sections. TED results come from `can-standard` notices; per-lot winners and prices are read from the public notice XML because the Search API arrays carry no lot join. One XML request is made per award notice at a conservative pace, so a run with more than 1000 award notices fails and asks for a narrower window. Only formal source facts are mapped: extracting prices from bid forms stays in the industry project. In `list-documents`, the bid-opening information is marked with `kind: "bid_opening"` from its filename; the content is never parsed there.
 
 ## Local browser view
@@ -129,6 +170,10 @@ path. The first profile opens by default. Use `--port 8766` if the default port
 is in use.
 
 ## Documents
+
+Notice records include `platform_url_specific`. It is true for a recognized
+direct procedure route. A buyer homepage or an unrecognized route can still
+be useful for reference-based lookup on supported platforms.
 
 ```sh
 tenderkit list-documents --source BZP --number '2026/BZP …/01'
@@ -175,6 +220,14 @@ tenderkit mcp
 ```
 
 Configure your client with the absolute path to the installed `tenderkit` executable and arguments `["mcp"]`. For an alternate database, pass `["--db", "/absolute/path/notices.sqlite3", "mcp"]`. Search with `search_notices`, inspect a record with `get_notice`, and use `procedure_results` and `search_results` for per-lot awards. Use `list_documents`, `fetch_documents`, and `read_document` for attachments. Use `--profile-file` at startup to register custom profiles.
+
+The `tenderkit://coverage` resource and `tenderkit status` report
+`effective_coverage` by source based on successful refreshes. Each source
+includes merged publication windows, gaps within the attempted interval,
+and the same information per recorded query. The source-level summary
+combines different queries. Use the query entries to check the scope of
+a CPV- or notice-type-filtered refresh. `counts[].coverage` describes
+document state rather than missing publication dates.
 
 `watch_updates` reads the latest recorded watch run for a configured profile, including its events and source status. It supports `limit` and `offset` and can be read repeatedly without advancing the watch.
 
