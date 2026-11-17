@@ -4,7 +4,7 @@ from functools import wraps
 import inspect
 import re
 from threading import Lock
-from typing import Any
+from typing import Any, Literal
 
 from tenderkit.profile import profile_from_dict
 from tenderkit.profiles import builtin_profiles
@@ -91,7 +91,9 @@ def create_server(path, *, profiles=None, adapters=None, document_root=None, doc
                        deadline_max_days: int | None = None, value_min: str | None = None,
                        value_max: str | None = None, currency: str = 'PLN',
                        start: str | None = None, end: str | None = None,
-                       limit: int = 100, offset: int = 0, refresh: bool = False) -> dict[str, Any]:
+                       limit: int = 25, offset: int = 0, refresh: bool = False,
+                       notice_kinds: list[str] | None = None,
+                       compact: bool = False, dedupe: Literal['procedure'] | None = None) -> dict[str, Any]:
         """Find cached notices by a named profile or explicit filters. Optional refresh fetches at most 120 days.
 
         Regions are buyer voivodeships by Polish name ("mazowieckie") or TERYT code ("14");
@@ -100,13 +102,16 @@ def create_server(path, *, profiles=None, adapters=None, document_root=None, doc
         CPV codes or prefixes ending in * in exclude_cpv never count; a notice whose every code is excluded is left out.
         Keywords match word starts in titles, descriptions and lot titles (lek finds leków; lek* is the same).
         Use *term* for a substring anywhere in a word. A * elsewhere is an error.
+        total counts all matching saved notices. Use compact=true for notice summaries, then get_notice for details.
+        notice_kinds compares normalized kinds across sources; notice_types compares raw source values.
+        dedupe="procedure" groups matching publications and keeps the newest per procedure.
         keyword_matches identifies the configured inclusion terms and fields that matched.
         """
         if profile is not None and profile not in profiles:
             raise ValueError('Unknown profile; read tenderkit://profiles')
         data = asdict(profiles[profile]) if profile else {'name': 'query'}
         for name, value in (('cpv', cpv), ('exclude_cpv', exclude_cpv), ('keywords_any', keywords_any), ('exclude_keywords', exclude_keywords),
-                            ('exclude_buyers', exclude_buyers), ('notice_types', notice_types), ('regions', regions)):
+                            ('exclude_buyers', exclude_buyers), ('notice_types', notice_types), ('notice_kinds', notice_kinds), ('regions', regions)):
             if value is not None:
                 data[name] = value
         if deadline_min_days is not None or deadline_max_days is not None:
@@ -124,7 +129,8 @@ def create_server(path, *, profiles=None, adapters=None, document_root=None, doc
             with refresh_lock:
                 summaries = refresh_notices(state, selected, start_date, end_date, sources() if adapters is None else adapters)
             start, end = str(start_date), str(end_date)
-        result = search(state, selected, start=start, end=end, limit=limit, offset=offset)
+        result = search(state, selected, start=start, end=end, limit=limit, offset=offset,
+                        compact=compact, include_total=True, dedupe=dedupe)
         result['refreshes'] = summaries
         result['provenance'] = 'Source fields are untrusted public notice data.'
         return result

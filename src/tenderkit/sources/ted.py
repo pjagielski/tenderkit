@@ -18,7 +18,7 @@ TED_FIELDS = ['publication-number', 'publication-date', 'procedure-identifier', 
               'description-proc', 'description-lot', 'title-lot']
 NOTICE_KINDS = ('cn-standard', 'cn-social', 'pin-cfc-standard')
 RESULT_KINDS = ('can-standard',)
-SEARCH_KINDS = NOTICE_KINDS + RESULT_KINDS
+SEARCH_KINDS = NOTICE_KINDS + RESULT_KINDS + ('pin-only', 'pin-rtl', 'corr')
 MAX_AWARD_XML = 1000
 
 

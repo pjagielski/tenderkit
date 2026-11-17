@@ -198,6 +198,20 @@ The library records nothing about its use. The public server at mcp.tenderkit.pl
 
 IP addresses are not stored. Detailed records are deleted after 90 days, and only daily totals are kept.
 
+Notice records expose normalized `notice_kind` values (`contract`, `result`,
+`corrigendum`, `prior_info`) when the source type is recognized. Filter on these
+with `notice_kinds` in a TOML profile or MCP `search_notices`. The raw
+`notice_type` field and `notice_types` filter remain available.
+
+MCP `search_notices` returns 25 notices per page by default, with the exact
+`total` and `next_offset`. Supply `compact=true` to omit descriptions, lot
+details and awards while keeping the notice identifiers, dates, buyer, CPV,
+lot count and matching keyword fields. Read the full record with `get_notice`.
+With `dedupe="procedure"`, the total and pagination count procedures. Each
+group returns the newest matching publication and its `other_publications`.
+Grouping uses the procedure ID within a source. A BZP and TED group can also
+match when the buyer's NIP and exact reference identify one group per source.
+
 ### Analyze a procedure with MCP
 
 Clients that expose MCP prompts can start with `analyze_it_tender` or `compare_public_bids`. Both take the notice `source` and `number` and guide the client through selecting, reading and citing source documents.

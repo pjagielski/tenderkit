@@ -48,6 +48,17 @@ class McpTests(unittest.IsolatedAsyncioTestCase):
         self.assertFalse(matched.is_error)
         self.assertEqual(matched.structured_content['notices'][0]['keyword_matches'],
                          [{'keyword': 'onkologiczn', 'field': 'description'}])
+        compact = await client.call_tool('search_notices', {'profile': 'leki', 'compact': True,
+                                                             'keywords_any': ['onkologiczn'], 'limit': 1})
+        self.assertFalse(compact.is_error)
+        summary = compact.structured_content
+        self.assertEqual((summary['total'], summary['next_offset']), (1, None))
+        row, = summary['notices']
+        self.assertEqual((row['number'], row['lot_count']), ('one', 1))
+        self.assertFalse({'description', 'lots', 'lot_titles', 'awards'} & row.keys())
+        self.assertEqual(row['keyword_matches'], [{'keyword': 'onkologiczn', 'field': 'description'}])
+        beyond = await client.call_tool('search_notices', {'profile': 'leki', 'offset': 1})
+        self.assertEqual((beyond.structured_content['notices'], beyond.structured_content['total']), ([], 1))
         notice = await client.call_tool('get_notice', {'source': 'TED', 'number': 'one'})
         self.assertEqual(notice.structured_content['notice']['lots'][0]['number'], 'LOT-0001')
         procedure = await client.call_tool('procedure_results', {'source': 'TED', 'number': 'two'})
@@ -78,6 +89,52 @@ class McpTests(unittest.IsolatedAsyncioTestCase):
                          {'refresh': True, 'start': '2000-01-01', 'end': '2026-11-01'}):
                 response = await client.call_tool('search_notices', args)
                 self.assertTrue(response.is_error, args)
+
+    async def test_search_groups_procedure_publications_before_pagination(self):
+        from dataclasses import replace
+        from mcp.client import Client
+        from tenderkit.mcp import create_server
+
+        older = replace(self.notice, buyer_id='PL1234567890', reference='ABC 12/26')
+        newer = replace(older, number='three', published=date(2026, 11, 12))
+        bzp = replace(older, source='BZP', number='bzp-1', procedure_id='ocds-1',
+                      notice_type='ContractNotice', buyer_id='123-456-78-90')
+        independent = replace(older, number='four', procedure_id='proc-2', reference='ABC 13/26')
+        for item in (older, newer, bzp, independent):
+            self.state.record_refresh(item.source, item.published, item.published, {}, [item])
+
+        async with Client(create_server(self.path)) as client:
+            args = {'profile': 'leki', 'dedupe': 'procedure', 'compact': True, 'limit': 1}
+            result = await client.call_tool('search_notices', args)
+            self.assertFalse(result.is_error)
+            page = result.structured_content
+            self.assertEqual((page['total'], page['next_offset']), (2, 1))
+            row, = page['notices']
+            self.assertEqual(row['number'], 'three')
+            self.assertCountEqual(row['other_publications'], [
+                {'source': 'TED', 'number': 'one'}, {'source': 'BZP', 'number': 'bzp-1'},
+            ])
+            last = await client.call_tool('search_notices', dict(args, offset=1))
+            self.assertEqual(last.structured_content['notices'][0]['number'], 'four')
+
+    async def test_normalized_notice_kinds_apply_across_sources(self):
+        from dataclasses import replace
+        from mcp.client import Client
+        from tenderkit.mcp import create_server
+
+        bzp = replace(self.notice, source='BZP', number='bzp', notice_type='ContractNotice')
+        correction = replace(self.notice, number='ted-change',
+                             raw={'change-notice-version-identifier': ['previous-01']})
+        for item in (bzp, correction):
+            self.state.record_refresh(item.source, item.published, item.published, {}, [item])
+
+        async with Client(create_server(self.path)) as client:
+            for kind, expected in [('contract', {'one', 'bzp'}), ('corrigendum', {'ted-change'}), ('result', {'two'})]:
+                result = await client.call_tool('search_notices', {'notice_kinds': [kind], 'compact': True})
+                self.assertFalse(result.is_error)
+                rows = result.structured_content['notices']
+                self.assertEqual({row['number'] for row in rows}, expected)
+                self.assertEqual({row['notice_kind'] for row in rows}, {kind})
 
     async def test_watch_updates_reads_the_latest_run_without_consuming_events(self):
         from io import StringIO
