@@ -80,7 +80,9 @@ def notice_from_record(record):
     awards = []
     for award in data.get('awards') or []:
         award = dict(award)
-        award['price'] = Decimal(award['price']) if award.get('price') is not None else None
+        for field in ('price', 'framework_max'):
+            if award.get(field) is not None:
+                award[field] = Decimal(award[field])
         award['date'] = date.fromisoformat(award['date']) if award.get('date') else None
         awards.append(Award(**award))
     data['awards'] = tuple(awards)
