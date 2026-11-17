@@ -241,12 +241,46 @@ def ted_scope(raw):
     return '\n\n'.join(dict.fromkeys(descriptions)) or None, tuple(dict.fromkeys(_ted_texts(raw.get('title-lot'))))
 
 
+_ESTIMATE_LINE = re.compile(
+    r'(?P<label>(?:szacunkowa\s+wartość(?:\s+zamówienia)?|wartość\s+szacunkowa)\s*[:=]\s*)?'
+    r'(?P<amount>\d{1,3}(?:[ \u00a0\u202f]+\d{3})+(?:[,.]\d{2})?|\d+(?:[,.]\d{2})?)'
+    r'\s*(?P<currency>zł|PLN|EUR|USD|GBP|CHF)'
+    r'(?:\s+(?P<tax>netto|brutto|bez VAT|z VAT))?\.?', re.I)
+
+
+def described_estimate(descriptions):
+    """Take one clearly presented procedure estimate, leaving conflicting amounts unresolved."""
+    candidates = set()
+    for description in descriptions:
+        lines = [line.strip() for line in description.splitlines() if line.strip()]
+        for i, line in enumerate(lines):
+            match = _ESTIMATE_LINE.fullmatch(line)
+            if not match or not (match['label'] or (i == len(lines) - 1 and match['tax'])):
+                continue
+            currency = 'PLN' if match['currency'].casefold() == 'zł' else match['currency'].upper()
+            tax = match['tax'].casefold() if match['tax'] else None
+            tax_basis = {'netto': 'net', 'bez vat': 'net', 'brutto': 'gross', 'z vat': 'gross'}.get(tax)
+            value = amount(match['amount'])
+            if value is not None:
+                candidates.add((value, currency, tax_basis))
+    return candidates.pop() if len(candidates) == 1 else (None, None, None)
+
+
 def ted_notice(raw):
     ids = raw.get('identifier-lot') or []
     values, currencies = raw.get('estimated-value-lot') or [], raw.get('estimated-value-cur-lot') or []
     value, currency = amount(raw.get('estimated-value-proc')), first(raw.get('estimated-value-cur-proc'))
     if value is None and values and all(amount(v) is not None for v in values) and len(set(currencies)) == 1:
         value, currency = sum(amount(v) for v in values), currencies[0]
+    notice_type = first(raw.get('notice-type')) or 'cn-standard'
+    value_source = value_tax_basis = None
+    if value is None and notice_type in ('cn-standard', 'cn-social', 'pin-cfc-standard'):
+        descriptions = _ted_texts(raw.get('description-proc'))
+        if len(ids) == 1:
+            descriptions += _ted_texts(raw.get('description-lot'))
+        value, currency, value_tax_basis = described_estimate(descriptions)
+        if value is not None:
+            value_source = 'description'
     deadlines = sorted(d for d in raw.get('deadline-receipt-tender-date-lot') or [] if d)
     urls = [url for value in raw.get('document-url-lot') or [] if (url := normalize_platform_url(value))]
     description, lot_titles = ted_scope(raw)
@@ -259,12 +293,13 @@ def ted_notice(raw):
         buyer_region=ted_region(raw.get('organisation-country-sub-buyer')),
         cpv=tuple(dict.fromkeys(str(c).split('-')[0] for c in raw.get('classification-cpv') or [])),
         value=value, currency=currency if value else None,
+        value_source=value_source, value_tax_basis=value_tax_basis,
         # Search API arrays are flattened, without a join between each amount
         # and its lot id. Keep the IDs; never infer per-lot amounts by position.
         lots=tuple(Lot(str(number)) for number in ids),
         description=description, lot_titles=lot_titles,
         reference=first(raw.get('internal-identifier-proc')), platform_url=urls[0] if urls else None,
         url=f"https://ted.europa.eu/pl/notice/-/detail/{raw['publication-number']}",
-        notice_type=first(raw.get('notice-type')) or 'cn-standard', raw=raw,
+        notice_type=notice_type, raw=raw,
         lot_count=len(ids) or None,
     )

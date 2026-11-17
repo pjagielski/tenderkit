@@ -78,6 +78,22 @@ class SourceTests(unittest.TestCase):
                 self.assertEqual(record['platform_url'], normalized)
                 self.assertIs(record['platform_url_specific'], specific)
 
+    def test_ted_uses_only_unambiguous_description_estimates(self):
+        raw = ted_raw(**{'description-proc': {'pol': ['Licencje\n2 896 500,00 zł netto']}})
+        notice = ted_notice(raw)
+        self.assertEqual((str(notice.value), notice.currency, notice.value_source, notice.value_tax_basis),
+                         ('2896500.00', 'PLN', 'description', 'net'))
+        single_lot = ted_raw(**{'description-proc': {'pol': 'Licencje'},
+                                'identifier-lot': ['LOT-0001'],
+                                'description-lot': {'pol': ['2 896 500,00 zł netto']}})
+        self.assertEqual(ted_notice(single_lot).value, notice.value)
+        self.assertIsNone(ted_notice(dict(single_lot, **{'identifier-lot': ['L1', 'L2']})).value)
+        structured = ted_notice(dict(raw, **{'estimated-value-proc': ['300'], 'estimated-value-cur-proc': ['EUR']}))
+        self.assertEqual((str(structured.value), structured.currency, structured.value_source), ('300', 'EUR', None))
+        conflicting = ted_notice(dict(raw, **{'description-proc': {'pol': [
+            'Szacunkowa wartość: 120,00 PLN brutto\n130,00 PLN brutto']}}))
+        self.assertIsNone(conflicting.value)
+
     def test_stdlib_transport_sets_identity_and_bounds_response_size(self):
         response = mock.MagicMock(code=200)
         response.__enter__.return_value = response

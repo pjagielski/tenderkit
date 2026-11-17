@@ -69,6 +69,13 @@ A notice with at least one remaining lot can still match. The default
 `"notice"` applies exclusions to the whole notice. When the source does not
 link text to lot IDs, exclusions still apply to the whole notice.
 
+For TED contract notices without a structured estimate, a clearly presented
+value in the procedure description or the description of its only lot may populate `value` with
+`value_source="description"`. When the description states the tax basis,
+`value_tax_basis` is `net` or `gross`. Conflicting values and amounts found only in individual
+lot descriptions of a multi-lot notice stay unresolved. Refresh older TED notices to
+apply the fallback.
+
 ## Daily watch
 
 ```sh
