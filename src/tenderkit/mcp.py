@@ -89,7 +89,7 @@ def create_server(path, *, profiles=None, adapters=None, document_root=None, doc
                        exclude_buyers: list[str] | None = None, notice_types: list[str] | None = None,
                        regions: list[str] | None = None, deadline_min_days: int | None = None,
                        deadline_max_days: int | None = None, value_min: str | None = None,
-                       value_max: str | None = None, currency: str = 'PLN',
+                       value_max: str | None = None, currency: str = 'PLN', open_now: bool | None = None,
                        start: str | None = None, end: str | None = None,
                        limit: int = 25, offset: int = 0, refresh: bool = False,
                        notice_kinds: list[str] | None = None, exclude_scope: Literal['notice', 'lot'] | None = None,
@@ -105,13 +105,15 @@ def create_server(path, *, profiles=None, adapters=None, document_root=None, doc
         total counts all matching saved notices. Use compact=true for notice summaries, then get_notice for details.
         notice_kinds compares normalized kinds across sources; notice_types compares raw source values.
         dedupe="procedure" groups matching publications and keeps the newest per procedure.
+        open_now excludes same-day date-only deadlines and notices with no known deadline.
         keyword_matches identifies the configured inclusion terms and fields that matched.
         """
         if profile is not None and profile not in profiles:
             raise ValueError('Unknown profile; read tenderkit://profiles')
         data = asdict(profiles[profile]) if profile else {'name': 'query'}
         for name, value in (('cpv', cpv), ('exclude_cpv', exclude_cpv), ('keywords_any', keywords_any), ('exclude_keywords', exclude_keywords),
-                            ('exclude_buyers', exclude_buyers), ('notice_types', notice_types), ('notice_kinds', notice_kinds), ('regions', regions)):
+                            ('exclude_buyers', exclude_buyers), ('notice_types', notice_types),
+                            ('notice_kinds', notice_kinds), ('regions', regions), ('open_now', open_now)):
             if value is not None:
                 data[name] = value
         if exclude_scope is not None:
