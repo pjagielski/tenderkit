@@ -5,7 +5,7 @@ import unittest
 
 from tenderkit import Notice, Profile, load_profile
 from tenderkit.interfaces import Platform, Source, SourceQuery
-from tenderkit.model import Lot
+from tenderkit.model import Lot, Lot
 from tenderkit.profile import fold
 
 
@@ -129,3 +129,21 @@ class ProfileTests(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main()
+
+
+class LotExclusionTests(unittest.TestCase):
+    def test_lot_exclusion_keeps_other_lots_and_removes_matched_text(self):
+        notice = Notice('BZP', 'example', title='Leki i szczepionki', lot_count=2,
+                        description='Szczepionki dla dzieci\n\nPreparaty onkologiczne',
+                        lot_titles=('Szczepionki', 'Preparaty onkologiczne'),
+                        lots=(Lot('1', 'Szczepionki', description='Szczepionki dla dzieci'),
+                              Lot('2', 'Preparaty onkologiczne', description='Preparaty onkologiczne')))
+        self.assertFalse(Profile('whole', exclude_keywords=('szczepionk',)).matches(notice))
+        profile = Profile('lots', exclude_scope='lot', exclude_keywords=('szczepionk',))
+        kept = profile.select(notice)
+        self.assertEqual(([item.number for item in kept.lots], kept.description, kept.lot_count),
+                         (['2'], 'Preparaty onkologiczne', 1))
+        self.assertEqual(kept.lot_titles, ('Preparaty onkologiczne',))
+        self.assertEqual(len(notice.lots), 2)
+        self.assertIsNone(Profile('none', exclude_scope='lot',
+                                  exclude_keywords=('szczepionk', 'onkologiczn')).select(notice))

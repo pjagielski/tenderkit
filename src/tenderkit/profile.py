@@ -10,7 +10,7 @@ Keywords match from the start of a word in the title, description or lot titles;
 Use *term* (or *term) for a substring anywhere in a word.
 Matching is case- and diacritics-insensitive. Profile.matches applies the filters the source cannot handle.
 """
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from datetime import datetime
 from decimal import Decimal, InvalidOperation
 from functools import lru_cache
@@ -134,6 +134,7 @@ class Profile:
     exclude_buyers: tuple[str, ...] = ()
     documents: tuple[str, ...] = ()
     notice_kinds: tuple[str, ...] = ()
+    exclude_scope: str = 'notice'
 
     def __post_init__(self):
         if not isinstance(self.name, str) or not self.name.strip():
@@ -144,6 +145,8 @@ class Profile:
                     or any(not isinstance(v, str) or not v.strip() or len(v) > 200 for v in values)):
                 raise ValueError(f'{name} must be an array of nonempty strings')
             object.__setattr__(self, name, tuple(values))
+        if self.exclude_scope not in ('notice', 'lot'):
+            raise ValueError('exclude_scope must be notice or lot')
         if set(self.notice_kinds) - NOTICE_TYPES.keys():
             raise ValueError('notice_kinds must contain contract, result, corrigendum or prior_info')
         for name in ('keywords_any', 'exclude_keywords'):
@@ -185,11 +188,11 @@ class Profile:
     def matches_text(self, text):
         return self._matches_keywords((text,))
 
-    def _matches_keywords(self, texts):
+    def _matches_keywords(self, texts, *, exclude=True):
         if not (self.keywords_any or self.exclude_keywords):
             return True
         folded = tuple(fold(text) for text in texts if text)
-        if any(_keyword_pattern(term).search(text) for term in self.exclude_keywords for text in folded):
+        if exclude and any(_keyword_pattern(term).search(text) for term in self.exclude_keywords for text in folded):
             return False
         return not self.keywords_any or any(
             _keyword_pattern(term).search(text) for term in self.keywords_any for text in folded)
@@ -207,32 +210,63 @@ class Profile:
         return [dict(keyword=term, field=field, lot=lot) if lot is not None else dict(keyword=term, field=field)
                 for term, field, lot in hits]
 
+    def _lots_after_exclusions(self, notice):
+        patterns = tuple(_keyword_pattern(term) for term in self.exclude_keywords)
+        removed = [lot for lot in notice.lots if any(pattern.search(fold(value))
+                   for pattern in patterns for value in (lot.title, lot.description) if value)]
+        if not removed:
+            return notice
+        removed_ids = {lot.number for lot in removed}
+        kept = tuple(lot for lot in notice.lots if lot.number not in removed_ids)
+        if not kept:
+            return None
+        removed_text = {paragraph for lot in removed for paragraph in (lot.description or '').split('\n\n')}
+        kept_text = {paragraph for lot in kept for paragraph in (lot.description or '').split('\n\n')}
+        discarded_text = removed_text - kept_text
+        description = '\n\n'.join(paragraph for paragraph in (notice.description or '').split('\n\n')
+                                if paragraph not in discarded_text) or None
+        discarded_titles = {lot.title for lot in removed} - {lot.title for lot in kept}
+        lot_titles = tuple(title for title in notice.lot_titles if title not in discarded_titles)
+        return replace(notice, lots=kept, description=description, lot_titles=lot_titles,
+                       lot_count=max(len(kept), (notice.lot_count or len(notice.lots)) - len(removed_ids)),
+                       awards=tuple(award for award in notice.awards if award.lot not in removed_ids))
+
     def matches(self, notice: Notice, *, today=None):
+        return self.select(notice, today=today) is not None
+
+    def select(self, notice: Notice, *, today=None):
         if not self.matches_cpv(notice.cpv):
-            return False
+            return None
         if self.notice_types and notice.notice_type not in self.notice_types:
-            return False
+            return None
         if self.notice_kinds and notice_kind(notice) not in self.notice_kinds:
-            return False
+            return None
         if self.regions and notice.buyer_region not in self.regions:
-            return False
+            return None
         if any(fold(b) in fold(notice.buyer_name) or b == notice.buyer_id for b in self.exclude_buyers):
-            return False
+            return None
         if self.value:
             if notice.value is None or notice.currency != self.value.currency:
-                return False
+                return None
             if self.value.min is not None and notice.value < self.value.min:
-                return False
+                return None
             if self.value.max is not None and notice.value > self.value.max:
-                return False
+                return None
         if self.deadline_days:
             if notice.deadline is None:
-                return False
+                return None
             deadline = notice.deadline.astimezone(ZoneInfo('Europe/Warsaw')) if notice.deadline.tzinfo else notice.deadline
             days = (deadline.date() - (today or datetime.now(ZoneInfo('Europe/Warsaw')).date())).days
             if not self.deadline_days.min <= days <= self.deadline_days.max:
-                return False
-        return self._matches_keywords(text for _, _, text in _keyword_fields(notice))
+                return None
+        per_lot = self.exclude_scope == 'lot' and any(lot.title or lot.description for lot in notice.lots)
+        if per_lot and self.exclude_keywords:
+            notice = self._lots_after_exclusions(notice)
+            if notice is None:
+                return None
+        if self._matches_keywords((text for _, _, text in _keyword_fields(notice)), exclude=not per_lot):
+            return notice
+        return None
 
 
 def load_profile(path):

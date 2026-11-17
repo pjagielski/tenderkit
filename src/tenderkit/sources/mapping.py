@@ -7,6 +7,7 @@ import re
 from zoneinfo import ZoneInfo
 
 from tenderkit.model import Award, Lot, Notice
+from tenderkit.platform_urls import normalize_platform_url
 from tenderkit.sources.bzp import timestamp
 
 REFERENCE = re.compile(r'4\.1\.2\.\)\s*Numer referencyjny:\s*(.+?)\s+\d\.\d\.\d+\.\)')
@@ -99,7 +100,7 @@ def bzp_notice(raw):
         cpv=tuple(dict.fromkeys(CPV.findall(raw.get('cpvCode') or ''))),
         value=amount(value[1]) if value else None, currency=value[2] if value and amount(value[1]) else None,
         reference=reference[1].strip() if reference else None,
-        platform_url=re.sub(r'\s+', '', platform[1]) if platform else None,
+        platform_url=normalize_platform_url(re.sub(r'^(https?://)\s+', r'\1', platform[1])) if platform else None,
         url=f"https://ezamowienia.gov.pl/mo-client-board/bzp/notice-details/id/{raw['objectId']}",
         notice_type=raw.get('noticeType'), raw=raw,
         description=description, lots=lots,
@@ -150,7 +151,7 @@ _SCOPE_LABELS = re.compile(r'Krótki opis przedmiotu zamówienia|Część\s+\d|N
 
 
 def bzp_scope(body):
-    descriptions, titles = [], {}
+    descriptions, titles, lot_descriptions = [], {}, defaultdict(list)
     lot_number = None
     for label, value in bzp_blocks(body, _SCOPE_LABELS):
         lot = re.fullmatch(r'Część\s+(\d+)(?:\s*[-–—:]\s*(.+))?', label, re.I)
@@ -160,10 +161,13 @@ def bzp_scope(body):
                 titles[lot_number] = lot[2]
         elif 'krótki opis przedmiotu zamówienia' in label.casefold() and value:
             descriptions.append(value)
+            if lot_number is not None and label.startswith('4.2.2'):
+                lot_descriptions[lot_number].append(value)
         elif lot_number is not None and 'nazwa części' in label.casefold() and value:
             titles[lot_number] = value
     return '\n\n'.join(dict.fromkeys(descriptions)) or None, tuple(
-        Lot(number, title=title) for number, title in titles.items())
+        Lot(number, title=titles.get(number), description='\n\n'.join(lot_descriptions[number]) or None)
+        for number in dict.fromkeys((*titles, *lot_descriptions)))
 
 
 def bzp_fields(body):
@@ -244,7 +248,7 @@ def ted_notice(raw):
     if value is None and values and all(amount(v) is not None for v in values) and len(set(currencies)) == 1:
         value, currency = sum(amount(v) for v in values), currencies[0]
     deadlines = sorted(d for d in raw.get('deadline-receipt-tender-date-lot') or [] if d)
-    urls = [u for u in raw.get('document-url-lot') or [] if u]
+    urls = [url for value in raw.get('document-url-lot') or [] if (url := normalize_platform_url(value))]
     description, lot_titles = ted_scope(raw)
     return Notice(
         source='TED', number=raw['publication-number'], procedure_id=first(raw.get('procedure-identifier')),

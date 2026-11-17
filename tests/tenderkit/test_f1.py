@@ -44,7 +44,7 @@ class SourceTests(unittest.TestCase):
             '<h3>4.2.2.) Krótki opis przedmiotu zamówienia</h3><p>Integracja i wdrożenie.</p>'
             '<h3>4.2.6.) Główny kod CPV:</h3>72000000'))
         self.assertEqual(bzp.description, 'Integracja i wdrożenie.')
-        self.assertEqual(bzp.lots, (Lot('2', 'System obiegu dokumentów'),))
+        self.assertEqual(bzp.lots, (Lot('2', 'System obiegu dokumentów', description='Integracja i wdrożenie.'),))
         ted = ted_notice(ted_raw(**{'description-proc': {'pol': 'Zakup sprzętu'},
             'description-lot': {'pol': ['Dostawa strzykawek', 'Dostawa rękawic']},
             'title-lot': {'pol': ['Rękawice', 'Strzykawki'], 'eng': ['Gloves', 'Syringes']},
@@ -59,6 +59,24 @@ class SourceTests(unittest.TestCase):
             if notice.source == 'BZP':
                 record['lots'] = []
             self.assertEqual(notice_from_record(record), notice)
+
+    def test_platform_url_normalization_and_specificity_on_cached_records(self):
+        examples = (
+            ('www.ezamowienia.gov.pl', 'https://www.ezamowienia.gov.pl', False),
+            ('https://nfz.ezamawiajacy.pl.', 'https://nfz.ezamawiajacy.pl', False),
+            ('www.ncbj.gov.pl;', 'https://www.ncbj.gov.pl', False),
+            ('https://brodnowski.eb2b.com.pl/open-preview-auction.html/',
+             'https://brodnowski.eb2b.com.pl/open-preview-auction.html/', False),
+            ('https://platformazakupowa.pl/transakcja/42);',
+             'https://platformazakupowa.pl/transakcja/42', True),
+            ('https://platformazakupowa.pl@invalid.example/transakcja/42', None, False),
+        )
+        for original, normalized, specific in examples:
+            with self.subTest(url=original):
+                notice = notice_from_record(dict(source='BZP', number='example', platform_url=original))
+                record = notice_record(notice)
+                self.assertEqual(record['platform_url'], normalized)
+                self.assertIs(record['platform_url_specific'], specific)
 
     def test_stdlib_transport_sets_identity_and_bounds_response_size(self):
         response = mock.MagicMock(code=200)
