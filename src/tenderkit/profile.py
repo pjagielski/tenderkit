@@ -222,9 +222,12 @@ class Profile:
             return None
         removed_text = {paragraph for lot in removed for paragraph in (lot.description or '').split('\n\n')}
         kept_text = {paragraph for lot in kept for paragraph in (lot.description or '').split('\n\n')}
+        discarded_text = removed_text - kept_text
         description = '\n\n'.join(paragraph for paragraph in (notice.description or '').split('\n\n')
-                                if paragraph not in removed_text - kept_text) or None
-        return replace(notice, lots=kept, description=description,
+                                if paragraph not in discarded_text) or None
+        discarded_titles = {lot.title for lot in removed} - {lot.title for lot in kept}
+        lot_titles = tuple(title for title in notice.lot_titles if title not in discarded_titles)
+        return replace(notice, lots=kept, description=description, lot_titles=lot_titles,
                        lot_count=max(len(kept), (notice.lot_count or len(notice.lots)) - len(removed_ids)),
                        awards=tuple(award for award in notice.awards if award.lot not in removed_ids))
 
