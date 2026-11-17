@@ -261,3 +261,24 @@ class StateTests(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main()
+
+
+class RefreshCoverageTests(unittest.TestCase):
+    def test_coverage_merges_successes_without_hiding_query_specific_gaps(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            state = State(Path(tmp) / 'notices.sqlite3')
+            query = {'cpv_prefixes': ['72']}
+            other = {'cpv_prefixes': ['33']}
+            when = lambda day: date(2026, 11, day)
+            state.record_refresh('TED', when(1), when(14), query, error='TedIncomplete')
+            for start, end in ((1, 5), (6, 10), (13, 14)):
+                state.record_refresh('TED', when(start), when(end), query)
+            state.record_refresh('TED', when(11), when(12), other)
+            state.record_refresh('BZP', when(5), when(7), query, error='FetchFailure')
+            coverage = State(state.path, read_only=True).coverage()['effective_coverage']
+            self.assertEqual(coverage['TED']['windows'], [{'from': '2026-11-01', 'to': '2026-11-14'}])
+            self.assertEqual(coverage['TED']['gaps'], [])
+            software = next(row for row in coverage['TED']['queries'] if row['query'] == query)
+            self.assertEqual(software['gaps'], [{'from': '2026-11-11', 'to': '2026-11-12'}])
+            self.assertIsNone(coverage['BZP']['from'])
+            self.assertEqual(coverage['BZP']['gaps'], [{'from': '2026-11-05', 'to': '2026-11-07'}])

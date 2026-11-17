@@ -57,6 +57,12 @@ regions = ["mazowieckie"]
 deadline_days = { min = 1, max = 60 }
 ```
 
+The software profile excludes server and NAS-only codes in `4882*`. A mixed
+procurement can still match on a qualifying software code. To try the ambulance
+profile, run `tenderkit filter --profile examples/ambulanse.toml` from the
+repository root. The example uses the `341141*` emergency-vehicle family with
+ambulance keywords and excludes fire and police vehicle terms. [EU CPV vocabulary](https://eur-lex.europa.eu/eli/reg/2008/213/oj)
+
 Regions refer to the buyer's voivodeship. Write the Polish name, such as `mazowieckie` or `Małopolskie`; case and diacritics do not matter. The two-digit TERYT code (`14` for mazowieckie) also works, so existing profiles keep matching. TED buyers are mapped from NUTS 2, and Warsaw and the surrounding region both count as mazowieckie. A CPV ending in `*` matches a prefix. `exclude_cpv` lists codes or prefixes that never count: a notice matches only if one of its main or lot codes is in `cpv` and not excluded. The built-in `leki` profile excludes laboratory reagents (`33696*`) and disinfectants (`336316*`), which share the `336` branch. Required keywords and CPV restrictions are applied together, and exclusions take precedence.
 
 `keywords_any` and `exclude_keywords` search the notice title, description and available lot titles. Matching ignores case and diacritics. A term starts at a word boundary, so `lek` matches `Leki` and `leków`. Phrases such as `system informatyczn` match consecutive text and allow an inflected ending. A trailing star changes nothing, so `lek*` is the same as `lek`. Wrap a term in stars, such as `*lek*`, to match it anywhere within a word. A star anywhere else is an error.
@@ -203,6 +209,14 @@ tenderkit mcp
 ```
 
 Configure your client with the absolute path to the installed `tenderkit` executable and arguments `["mcp"]`. For an alternate database, pass `["--db", "/absolute/path/notices.sqlite3", "mcp"]`. Search with `search_notices`, inspect a record with `get_notice`, and use `procedure_results` and `search_results` for per-lot awards. Use `list_documents`, `fetch_documents`, and `read_document` for attachments. Use `--profile-file` at startup to register custom profiles.
+
+The `tenderkit://coverage` resource and `tenderkit status` report
+`effective_coverage` by source based on successful refreshes. Each source
+includes merged publication windows, gaps within the attempted interval,
+and the same information per recorded query. The source-level summary
+combines different queries. Use the query entries to check the scope of
+a CPV- or notice-type-filtered refresh. `counts[].coverage` describes
+document state rather than missing publication dates.
 
 `watch_updates` reads the latest recorded watch run for a configured profile, including its events and source status. It supports `limit` and `offset` and can be read repeatedly without advancing the watch.
 

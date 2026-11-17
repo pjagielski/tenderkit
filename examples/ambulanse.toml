@@ -1,0 +1,5 @@
+name = "ambulanse"
+cpv = ["341141*"]
+keywords_any = ["ambulans", "karetk"]
+exclude_keywords = ["pożarnicz", "policyj", "radiowóz"]
+notice_types = ["ContractNotice", "SmallContractNotice", "cn-standard", "BKAnnouncement"]
