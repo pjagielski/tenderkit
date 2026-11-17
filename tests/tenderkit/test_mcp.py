@@ -130,7 +130,7 @@ class McpTests(unittest.IsolatedAsyncioTestCase):
 
         async with Client(create_server(self.path)) as client:
             for kind, expected in [('contract', {'one', 'bzp'}), ('corrigendum', {'ted-change'}), ('result', {'two'})]:
-                result = await client.call_tool('search_notices', {'notice_kinds': [kind]})
+                result = await client.call_tool('search_notices', {'notice_kinds': [kind], 'compact': True})
                 self.assertFalse(result.is_error)
                 rows = result.structured_content['notices']
                 self.assertEqual({row['number'] for row in rows}, expected)

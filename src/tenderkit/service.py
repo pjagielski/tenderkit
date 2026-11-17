@@ -9,7 +9,7 @@ from zoneinfo import ZoneInfo
 
 from tenderkit.interfaces import Source
 from tenderkit.profile import fold
-from tenderkit.serialization import dumps, notice_record
+from tenderkit.serialization import compact_raw, dumps, notice_record
 from tenderkit.sources.bzp import AMENDMENT_TYPE, Bzp
 from tenderkit.sources.bk import Bk
 from tenderkit.sources.ted import Ted
@@ -148,7 +148,8 @@ def matched_notice_record(notice, profile, *, raw=False):
 def compact_notice_record(notice, profile):
     # Compute keyword evidence against the complete notice before omitting its long text.
     evidence = profile.keyword_matches(notice) if profile.keywords_any else None
-    record = notice_record(replace(notice, description=None, lots=(), lot_titles=(), awards=(), raw={}), raw=False)
+    summary = replace(notice, description=None, lots=(), lot_titles=(), awards=(), raw=compact_raw(notice.raw))
+    record = notice_record(summary, raw=False)
     for key in ('description', 'lots', 'lot_titles', 'awards'):
         record.pop(key)
     record['lot_count'] = notice.lot_count if notice.lot_count is not None else max(len(notice.lots), len(notice.lot_titles))
