@@ -223,14 +223,28 @@
 
 @media(max-width:1100px){.site-header nav{margin-left:0;gap:20px;font-size:12px}}
 @media(max-width:960px){.site-header nav{display:none}}
-.mcp-section{padding-top:0}
-.mcp-section .developer-copy>p.mcp-limits,.mcp-section .developer-copy>p.mcp-privacy{margin-top:14px;font-size:11px;max-width:360px}
-.mcp-section .developer-copy>p.mcp-privacy{color:#8796ab}
-.mcp-connect .mcp-url{padding:16px 21px 4px;margin:0;color:#e6eeff;font-size:14px;overflow-wrap:anywhere}
+/* Public MCP server: a blue band with a white connection card, set apart from the pale developer section. */
+.mcp-section{background:var(--blue);color:#fff}
+.mcp-section .section-label{color:#e3eaff}
+.mcp-section .developer-copy h2{color:#fff}
+.mcp-section .developer-copy>p{color:#dfe7ff;max-width:380px}
+.mcp-section .developer-copy>p.mcp-limits,.mcp-section .developer-copy>p.mcp-privacy{margin-top:14px;font-size:11px}
+.mcp-section .developer-copy>p.mcp-privacy{color:#e3eaff}
+.mcp-section .capability-list{color:#eef2ff}
+.mcp-section .capability-list li>span{color:#fff}
+.mcp-section .mcp-connect{background:#fff;border-color:#fff;box-shadow:0 24px 40px -24px #0b1d5c80}
+.mcp-section .mcp-connect .code-file{color:var(--muted);border-bottom-color:var(--line)}
+.mcp-section .mcp-connect .code-file button{color:var(--blue);border-color:#c9d5f5}
+.mcp-section .mcp-connect .code-file button:hover{background:var(--pale)}
+.mcp-connect .mcp-url{padding:16px 21px 4px;margin:0;color:var(--navy);font-size:15px;font-weight:700;overflow-wrap:anywhere}
 .mcp-connect .mcp-url code{font-family:"Consolas","SFMono-Regular",monospace}
 .mcp-clients{display:grid;gap:14px;padding:12px 21px 22px}
-.mcp-client h3{margin:0 0 6px;font-size:10px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:#8da6cc}
-.mcp-client p,.mcp-questions{margin:0;color:#cad7ee;font-size:11px;line-height:1.7}
-.mcp-connect .mcp-client pre{min-height:0;padding:10px 12px;border:1px solid #ffffff14;border-radius:6px;background:#0f2242;font-size:11px;line-height:1.6;white-space:pre-wrap;overflow-wrap:anywhere}
+.mcp-client h3{margin:0 0 6px;font-size:10px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--blue)}
+.mcp-client p,.mcp-questions{margin:0;color:var(--ink);font-size:11px;line-height:1.7}
+.mcp-connect .mcp-client pre{min-height:0;padding:10px 12px;border:1px solid var(--line);border-radius:6px;background:var(--ice);color:var(--navy);font-size:11px;line-height:1.6;white-space:pre-wrap;overflow-wrap:anywhere}
 .mcp-questions{padding-left:16px;display:grid;gap:4px}
+.mcp-section .code-note{color:#e3eaff}
+.mcp-section .code-note .status-dot{background:#9fe3c4}
+.mcp-section .code-note>span:last-child{color:#e3eaff}
+.mcp-section a:focus-visible,.mcp-section button:focus-visible{outline:2px solid #fff;outline-offset:2px}
 @media(max-width:660px){.mcp-connect .mcp-url{font-size:12px;padding-inline:14px}.mcp-clients{padding-inline:14px}.mcp-connect .mcp-client pre{font-size:10px}}
