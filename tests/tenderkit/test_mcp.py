@@ -40,7 +40,7 @@ class McpTests(unittest.IsolatedAsyncioTestCase):
         tools = await client.list_tools()
         self.assertEqual({t.name for t in tools.tools}, {'search_notices', 'get_notice', 'procedure_results',
                                                          'search_results', 'list_documents', 'fetch_documents', 'read_document',
-                                                         'watch_updates'})
+                                                         'watch_updates', 'save_profile', 'delete_profile'})
         result = await client.call_tool('search_notices', {'profile': 'leki'})
         self.assertFalse(result.is_error)
         self.assertEqual(result.structured_content['notices'], search(self.state, self.profile)['notices'])
@@ -135,6 +135,57 @@ class McpTests(unittest.IsolatedAsyncioTestCase):
                 rows = result.structured_content['notices']
                 self.assertEqual({row['number'] for row in rows}, expected)
                 self.assertEqual({row['notice_kind'] for row in rows}, {kind})
+
+    async def test_saved_profiles_update_live_clients_persist_and_restore_fallbacks(self):
+        from mcp.client import Client
+        from tenderkit.mcp import create_server
+
+        writer = create_server(self.path)
+        observer = create_server(self.path, read_only=True)
+        async with Client(writer) as client, Client(observer) as other:
+            criteria = {'cpv': ['336*'], 'keywords_any': ['lek'], 'notice_types': ['cn-standard']}
+            created = await client.call_tool('save_profile', {'name': 'moje-leki', 'criteria': criteria})
+            self.assertFalse(created.is_error)
+            listed = await other.read_resource('tenderkit://profiles')
+            self.assertIn('moje-leki', json.loads(listed.contents[0].text))
+            found = await other.call_tool('search_notices', {'profile': 'moje-leki'})
+            self.assertEqual(found.structured_content['notices'][0]['number'], 'one')
+            awards = await other.call_tool('search_results', {'profile': 'moje-leki'})
+            self.assertEqual(awards.structured_content['total'], 1)
+
+            duplicate = await client.call_tool('save_profile', {'name': 'moje-leki', 'criteria': {}})
+            self.assertTrue(duplicate.is_error)
+            changed = await client.call_tool('save_profile', {
+                'name': 'moje-leki', 'criteria': {'cpv': ['72*']}, 'overwrite': True})
+            self.assertFalse(changed.is_error)
+            found = await other.call_tool('search_notices', {'profile': 'moje-leki'})
+            self.assertEqual(found.structured_content['notices'], [])
+            # Replacing uses full criteria; previous inclusion terms have been cleared.
+            listed = json.loads((await other.read_resource('tenderkit://profiles')).contents[0].text)
+            self.assertEqual(listed['moje-leki']['keywords_any'], [])
+
+            for name, invalid in [('invalid/name', {}), ('bad-cpv', {'cpv': ['invalid']}),
+                                  ('bad-field', {'unexpected': True}), ('bad-name', {'name': 'different'})]:
+                rejected = await client.call_tool('save_profile', {'name': name, 'criteria': invalid})
+                self.assertTrue(rejected.is_error)
+
+            refused = await client.call_tool('save_profile', {'name': 'leki', 'criteria': {'cpv': ['72*']}})
+            self.assertTrue(refused.is_error)
+            self.assertFalse((await client.call_tool('save_profile', {
+                'name': 'leki', 'criteria': {'cpv': ['72*']}, 'overwrite': True})).is_error)
+            removed = await client.call_tool('delete_profile', {'name': 'leki'})
+            self.assertEqual(removed.structured_content['active_profile']['cpv'], ['336*'])
+            found = await other.call_tool('search_notices', {'profile': 'leki'})
+            self.assertEqual(found.structured_content['notices'][0]['number'], 'one')
+
+        async with Client(create_server(self.path)) as reopened:
+            found = await reopened.call_tool('search_notices', {'profile': 'moje-leki'})
+            self.assertFalse(found.is_error)
+            self.assertEqual(found.structured_content['notices'], [])
+            self.assertFalse((await reopened.call_tool('delete_profile', {'name': 'moje-leki'})).is_error)
+            self.assertTrue((await reopened.call_tool('search_notices', {'profile': 'moje-leki'})).is_error)
+            self.assertTrue((await reopened.call_tool('delete_profile', {'name': 'moje-leki'})).is_error)
+        self.assertEqual(State(self.path).saved_profiles(), {})
 
     async def test_watch_updates_reads_the_latest_run_without_consuming_events(self):
         from io import StringIO
@@ -297,6 +348,8 @@ class ReadOnlyMcpTests(unittest.IsolatedAsyncioTestCase):
         stray = await client.call_tool('search_notices', {'profile': 'leki', 'refresh': True})
         self.assertEqual(stray.structured_content['refreshes'], [])
         self.assertTrue((await client.call_tool('read_document', {'document_id': '0' * 64})).is_error)
+        self.assertTrue((await client.call_tool('save_profile', {'name': 'remote', 'criteria': {}})).is_error)
+        self.assertTrue((await client.call_tool('delete_profile', {'name': 'leki'})).is_error)
         coverage = await client.read_resource('tenderkit://coverage')
         self.assertEqual(json.loads(coverage.contents[0].text)['counts'][0]['count'], 2)
 
@@ -310,6 +363,17 @@ class ReadOnlyMcpTests(unittest.IsolatedAsyncioTestCase):
         adapter.fetch.assert_not_called()
         self.assertEqual(self.path.read_bytes(), before)
         self.assertFalse((self.path.parent / 'documents').exists())
+
+    async def test_read_only_profiles_resource_accepts_database_without_saved_profiles_table(self):
+        from mcp.client import Client
+        from tenderkit.mcp import create_server
+        with self.state.connection() as conn:
+            conn.execute('drop table saved_profiles')
+        before = self.path.read_bytes()
+        async with Client(create_server(self.path, read_only=True)) as client:
+            resource = await client.read_resource('tenderkit://profiles')
+            self.assertIn('leki', json.loads(resource.contents[0].text))
+        self.assertEqual(self.path.read_bytes(), before)
 
     def test_read_only_server_needs_an_existing_database(self):
         from tenderkit.mcp import create_server

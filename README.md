@@ -231,6 +231,35 @@ tenderkit mcp
 
 Configure your client with the absolute path to the installed `tenderkit` executable and arguments `["mcp"]`. For an alternate database, pass `["--db", "/absolute/path/notices.sqlite3", "mcp"]`. Search with `search_notices`, inspect a record with `get_notice`, and use `procedure_results` and `search_results` for per-lot awards. Use `list_documents`, `fetch_documents`, and `read_document` for attachments. Use `--profile-file` at startup to register custom profiles.
 
+### Save profiles from an MCP client
+
+Use `save_profile` to define a profile in the local server's database:
+
+```json
+{
+  "name": "moje-it",
+  "criteria": {
+    "cpv": ["72*", "48*"],
+    "exclude_cpv": ["4882*"],
+    "regions": ["mazowieckie"],
+    "keywords_any": ["wdrożenie", "oprogramowanie"]
+  }
+}
+```
+
+It is immediately available as `search_notices(profile="moje-it")` and
+`search_results(profile="moje-it")`, and appears in `tenderkit://profiles`.
+Saved profiles persist across server restarts and are shared by MCP clients
+using the same database. Call `save_profile` with `overwrite=true` and the
+complete new criteria to replace a profile. Empty criteria match all notices.
+
+A saved profile overrides a built-in or startup-file profile of the same
+name. `delete_profile(name="moje-it")` removes the saved version and restores
+any built-in or startup-file fallback. Watch history stays associated with the
+profile name. Read-only servers can use profiles already saved in their database;
+the save and delete tools are exposed by write-enabled local MCP servers.
+The CLI continues to accept profile names from its built-ins and TOML files.
+
 The `tenderkit://coverage` resource and `tenderkit status` report
 `effective_coverage` by source based on successful refreshes. Each source
 includes merged publication windows, gaps within the attempted interval,
