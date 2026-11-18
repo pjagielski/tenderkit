@@ -201,7 +201,6 @@ def bzp_awards(raw):
     body = raw.get('htmlBody') or ''
     sections = [match for match in re.finditer(r'<h2\b[^>]*>(.*?)</h2>', body, re.I | re.S)
                 if re.search(r'\bSEKCJA\s+V\b', match[1])]
-    published = bzp_publication_day(raw.get('publicationDate'))
     awards = []
     for index, section in enumerate(sections):
         heading = html_to_text(section[1]).strip()
@@ -214,15 +213,24 @@ def bzp_awards(raw):
         lot = lot[1] if lot else '__all__'
         normalized = status.casefold()
         if 'unieważn' in normalized and 'zawarciem umowy' not in normalized:
-            awards.append(Award(lot=lot, status='CANCELLED', offers=_offer_count(fields), date=published))
+            awards.append(Award(lot=lot, status='CANCELLED', offers=_offer_count(fields)))
         elif 'zawarciem umowy' in normalized:
             winner = _one(fields, '7.3.1')
             if _one(fields, '7.1') != 'Nie':
                 continue    # consortium or unknown structure: do not invent a single contractor
             price, currency = _bid_amount(fields, '6.4')
+            contract_date = None
+            value = _one(fields, '8.1')
+            if re.fullmatch(r'\d{4}-\d{2}-\d{2}', value or ''):
+                try:
+                    contract_date = date.fromisoformat(value)
+                except ValueError:
+                    pass
             awards.append(Award(lot=lot, status='AWARDED', contractor=winner,
                                 contractor_id=_one(fields, '7.3.2'), price=price, currency=currency,
-                                offers=_offer_count(fields), date=published))
+                                offers=_offer_count(fields), date=contract_date,
+                                date_kind='contract' if contract_date else None,
+                                date_source='BZP:8.1' if contract_date else None))
     return tuple(awards)
 
 
