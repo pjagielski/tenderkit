@@ -7,7 +7,7 @@ import json
 from tenderkit.model import Award, Lot, Notice
 from tenderkit.notice_kinds import notice_kind
 from tenderkit.platform_urls import normalize_platform_url, platform_url_specific
-from tenderkit.sources.mapping import bzp_scope, ted_scope
+from tenderkit.sources.mapping import bzp_awards, bzp_scope, ted_scope
 
 
 def json_default(value):
@@ -78,8 +78,17 @@ def notice_from_record(record):
     elif data['source'] == 'TED' and 'description' not in data:
         data['description'], data['lot_titles'] = ted_scope(raw)
     awards = []
+    # Old BZP records used publication day as the result date. Recover the
+    # per-lot contract date from retained source HTML, also on read-only servers.
+    legacy_bzp = data['source'] == 'BZP' and any('date_kind' not in a for a in data.get('awards') or ())
+    corrected = {award.lot: award for award in bzp_awards(raw)} if legacy_bzp and raw.get('htmlBody') else {}
     for award in data.get('awards') or []:
         award = dict(award)
+        if legacy_bzp and 'date_kind' not in award:
+            fixed = corrected.get(award['lot'])
+            award.update(date=fixed.date.isoformat() if fixed and fixed.date else None,
+                         date_kind=fixed.date_kind if fixed else None,
+                         date_source=fixed.date_source if fixed else None)
         for field in ('price', 'framework_max'):
             if award.get(field) is not None:
                 award[field] = Decimal(award[field])

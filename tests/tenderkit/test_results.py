@@ -43,8 +43,33 @@ class BzpAwardTests(unittest.TestCase):
         self.assertEqual((first.status, first.contractor, first.contractor_id),
                          ('AWARDED', 'Example Supplier', '0000000000'))
         self.assertEqual((first.price, first.currency, first.offers, first.date),
-                         (Decimal('92250.00'), 'PLN', 1, date(2026, 10, 1)))
+                         (Decimal('92250.00'), 'PLN', 1, date(2026, 7, 9)))
         self.assertEqual((second.price, second.offers), (Decimal('138137.78'), 2))
+        self.assertEqual(second.date, date(2026, 7, 28))
+        self.assertEqual((first.date_kind, first.date_source), ('contract', 'BZP:8.1'))
+
+    def test_missing_invalid_and_ambiguous_contract_dates_stay_unknown(self):
+        raw = bzp_raw('bzp-awarded-multilot.json')
+        for value in ('', '2026-02-30', 'not a date'):
+            with self.subTest(value=value):
+                edited = dict(raw, htmlBody=raw['htmlBody'].replace('2026-07-09', value))
+                award = bzp_notice(edited).awards[0]
+                self.assertEqual((award.date, award.date_kind, award.date_source), (None, None, None))
+        edited = dict(raw, htmlBody=raw['htmlBody'].replace('2026-07-09',
+            '2026-07-09</h3><h3>8.1.) Data zawarcia umowy:<span>2026-07-10</span></h3>'))
+        self.assertIsNone(bzp_notice(edited).awards[0].date)
+
+    def test_legacy_cache_recovers_dates_without_changing_other_award_fields(self):
+        record = notice_record(bzp_notice(bzp_raw('bzp-awarded-multilot.json')))
+        for award in record['awards']:
+            award.pop('date_kind')
+            award.pop('date_source')
+            award['date'] = record['published']
+        restored = notice_from_record(record)
+        self.assertEqual([a.date for a in restored.awards], [date(2026, 7, 9), date(2026, 7, 28)])
+        self.assertEqual(restored.awards[0].contractor, record['awards'][0]['contractor'])
+        record['raw'] = {}
+        self.assertTrue(all(a.date is None for a in notice_from_record(record).awards))
 
     def test_cancelled_notice_has_no_contractor_or_price(self):
         notice = bzp_notice(bzp_raw('bzp-cancelled.json'))
@@ -53,6 +78,7 @@ class BzpAwardTests(unittest.TestCase):
         self.assertEqual((award.lot, award.status, award.contractor, award.price),
                          ('__all__', 'CANCELLED', None, None))
         self.assertEqual(award.offers, 4)
+        self.assertEqual((award.date, award.date_kind, award.date_source), (None, None, None))
 
     def test_non_result_notice_has_no_awards(self):
         raw = dict(bzp_raw('bzp-cancelled.json'), noticeType='ContractNotice')
@@ -75,6 +101,8 @@ class TedAwardTests(unittest.TestCase):
         self.assertEqual((first.contractor, first.contractor_id, first.price, first.offers, first.date),
                          ('Enigma Systemy Ochrony Informacji Sp. z o.o.', '5261029614',
                           Decimal('1764040'), 1, date(2026, 9, 24)))
+        self.assertEqual((first.date_kind, first.date_source),
+                         ('contract', 'TED:SettledContract/cbc:IssueDate'))
         self.assertEqual((second.contractor, second.price), ('COIG S.A.', Decimal('495000')))
 
     def test_equal_lot_values_and_framework_ceiling_have_distinct_scopes(self):

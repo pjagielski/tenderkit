@@ -118,7 +118,9 @@ def parse_award_notice(document):
             contractor_id=contractor_id if awarded else None,
             price=price, currency=currency, price_scope=scope, framework_max=cap, framework_currency=cap_currency,
             offers=subscription_count(result),
-            date=contracts.get(contract_id) if awarded else None))
+            date=contracts.get(contract_id) if awarded else None,
+            date_kind='contract' if awarded and contracts.get(contract_id) else None,
+            date_source='TED:SettledContract/cbc:IssueDate' if awarded and contracts.get(contract_id) else None))
     lots = []
     for lot in root.findall('cac:ProcurementProjectLot', NS):
         number = text(lot, 'cbc:ID')

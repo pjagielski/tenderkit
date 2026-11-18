@@ -144,6 +144,14 @@ tenderkit results --buyer 'Kraków' --cpv '72*'
 
 `results --number` returns the contract and result notices of one procedure plus the latest award for each lot: contractor name and identifier, selected price and currency, bid count, date and status (`AWARDED` or `CANCELLED`). `results --buyer` and `--cpv` search stored awards, one latest record per procedure and lot.
 
+An award's `date` is the contract signing date when provided, identified by
+`date_kind: "contract"` and `date_source` (`BZP:8.1` or
+`TED:SettledContract/cbc:IssueDate`). The notice's `published` remains its
+publication date. Missing contract dates and cancellation dates stay null.
+Older cached BZP awards are corrected on read from retained source HTML.
+If that HTML was discarded with `--no-raw`, the old publication-based date is
+cleared until the notice is fetched again. This also works in read-only mode.
+
 MCP `search_results(profile="leki")` applies the profile to stored awards,
 including CPV exclusions. It is available on local and read-only servers.
 Explicit `cpv`, `exclude_cpv`, `keywords_any`, `exclude_keywords` and `regions`

@@ -36,6 +36,8 @@ class Award:
     price_scope: str | None = None
     framework_max: Decimal | None = None
     framework_currency: str | None = None
+    date_kind: str | None = None                  # 'contract' when date is the contract signing date
+    date_source: str | None = None                # source field, never the notice publication date
 
 
 @dataclass(frozen=True)
