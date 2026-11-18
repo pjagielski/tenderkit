@@ -123,6 +123,8 @@ def search(state, profile, *, start=None, end=None, limit=100, offset=0, source_
         raise ValueError('Invalid result limit or offset')
     if dedupe not in (None, 'procedure'):
         raise ValueError('dedupe must be procedure')
+    if start is not None or end is not None:
+        start, end = window(start, end)
     notices = filtered(state, profile, start=start, end=end, source_names=source_names)
     rows = procedure_publications(notices) if dedupe else ((notice, None) for notice in notices)
     found, total = [], 0
@@ -138,6 +140,7 @@ def search(state, profile, *, start=None, end=None, limit=100, offset=0, source_
     result = dict(notices=found, offset=offset, next_offset=offset + limit if total > offset + limit else None)
     if include_total:
         result['total'] = total
+    result['coverage'] = state.search_coverage(profile, start, end, source_names)
     return result
 
 
@@ -244,4 +247,5 @@ def search_results(state, *, buyer=None, cpv=None, start=None, end=None, limit=1
     awards = [_award_record(award, owner) for award, owner in latest_awards(candidates)]
     page = awards[offset:offset + limit]
     return dict(awards=page, offset=offset, total=len(awards),
-                next_offset=offset + len(page) if offset + len(page) < len(awards) else None)
+                next_offset=offset + len(page) if offset + len(page) < len(awards) else None,
+                coverage=state.search_coverage(profile, start, end, source_names, results=True))

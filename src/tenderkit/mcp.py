@@ -111,6 +111,8 @@ def create_server(path, *, profiles=None, adapters=None, document_root=None, doc
         dedupe="procedure" groups matching publications and keeps the newest per procedure.
         open_now excludes same-day date-only deadlines and notices with no known deadline.
         keyword_matches identifies the configured inclusion terms and fields that matched.
+        coverage reports the requested publication window, covered intervals, last acquisition attempt and
+        acquisition status per source. Empty results outside coverage do not prove absence.
         """
         configured = available_profiles()
         if profile is not None and profile not in configured:
@@ -192,6 +194,7 @@ def create_server(path, *, profiles=None, adapters=None, document_root=None, doc
         keyword and region arguments override that profile's corresponding fields, including empty lists.
         Contract notice types and submission deadline rules do not constrain historical awards.
         The result lists one latest award per procedure and lot, with its source notice.
+        coverage describes acquisition windows and scopes per source, independently of result counts.
         """
         configured = available_profiles()
         if profile is not None and profile not in configured:

@@ -152,6 +152,41 @@ Older cached BZP awards are corrected on read from retained source HTML.
 If that HTML was discarded with `--no-raw`, the old publication-based date is
 cleared until the notice is fetched again. This also works in read-only mode.
 
+Notice and award searches include `coverage` in CLI and MCP JSON responses:
+
+```json
+{
+  "requested_window": {"from": "2025-01-01", "to": "2025-03-31"},
+  "sources": {
+    "BZP": {
+      "coverage_status": "outside_coverage",
+      "covered_windows": [],
+      "partial_windows": [],
+      "requested_scope": {"cpv_prefixes": ["336"], "notice_types": ["TenderResultNotice"]},
+      "last_refresh": null
+    }
+  }
+}
+```
+
+`full` means completed refreshes cover the bounded requested window and all
+requested acquisition scopes. `partial` means only some dates, CPV prefixes or
+notice types overlap. `outside_coverage` means no completed overlapping refresh
+is recorded. `not_applicable` means the source supplies none of the requested
+notice types. `covered_windows` covers the entire requested scope;
+`partial_windows` includes intervals with any overlapping scope, including full
+ones. `last_refresh` is the latest recorded attempt for that source, including
+failures, and may concern a different scope or window.
+
+Coverage uses the complete refresh history and is independent of pagination and
+matching row counts. Separate completed scopes can jointly cover a query.
+A narrower CPV prefix never proves full coverage of a broader one. Searches
+without date bounds cannot claim `full`. Award searches require result-notice
+refreshes. Coverage describes the built-in adapters' acquisition scope, not
+catalogue completeness or successful extraction of every award field. Unknown
+source plugins cannot establish full coverage. Empty results outside coverage
+mean the database cannot answer whether such notices exist.
+
 MCP `search_results(profile="leki")` applies the profile to stored awards,
 including CPV exclusions. It is available on local and read-only servers.
 Explicit `cpv`, `exclude_cpv`, `keywords_any`, `exclude_keywords` and `regions`
