@@ -40,7 +40,8 @@ class McpTests(unittest.IsolatedAsyncioTestCase):
         tools = await client.list_tools()
         self.assertEqual({t.name for t in tools.tools}, {'search_notices', 'get_notice', 'procedure_results',
                                                          'search_results', 'list_documents', 'fetch_documents', 'read_document',
-                                                         'watch_updates', 'save_profile', 'delete_profile'})
+                                                         'watch_updates', 'save_profile', 'delete_profile',
+                                                         'start_refresh', 'refresh_status', 'resume_refresh'})
         result = await client.call_tool('search_notices', {'profile': 'leki'})
         self.assertFalse(result.is_error)
         self.assertEqual(result.structured_content['notices'], search(self.state, self.profile)['notices'])
