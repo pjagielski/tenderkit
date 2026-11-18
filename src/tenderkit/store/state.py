@@ -11,7 +11,7 @@ from tenderkit.profile import fold, profile_from_dict
 from tenderkit.serialization import compact_raw, dumps, notice_from_record, notice_record
 from tenderkit.sources.bzp import AMENDMENT_TYPE, FRESH_NOTICE_TYPES
 from tenderkit.store import search_index
-from tenderkit.store.coverage import effective_coverage
+from tenderkit.store.coverage import effective_coverage, search_coverage
 
 SCHEMA = '''
 create table if not exists saved_profiles (
@@ -266,6 +266,11 @@ class State:
         with self.connection() as conn:
             row = conn.execute('select payload from notices where source=? and number=?', (source, number)).fetchone()
             return notice_from_record(json.loads(row['payload'])) if row else None
+
+    def search_coverage(self, profile, start=None, end=None, source_names=(), *, results=False):
+        with self.connection() as conn:
+            return search_coverage(conn.execute('select id,source,start,end,query,status,finished_at from refreshes'),
+                                   profile, start, end, source_names, results=results)
 
     def coverage(self):
         with self.connection() as conn:
