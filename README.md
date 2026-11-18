@@ -144,6 +144,16 @@ tenderkit results --buyer 'Kraków' --cpv '72*'
 
 `results --number` returns the contract and result notices of one procedure plus the latest award for each lot: contractor name and identifier, selected price and currency, bid count, date and status (`AWARDED` or `CANCELLED`). `results --buyer` and `--cpv` search stored awards, one latest record per procedure and lot.
 
+MCP `search_results(profile="leki")` applies the profile to stored awards,
+including CPV exclusions. It is available on local and read-only servers.
+Explicit `cpv`, `exclude_cpv`, `keywords_any`, `exclude_keywords` and `regions`
+arguments override the corresponding profile fields. Empty lists clear that
+field's restriction. The profile's notice types, notice kinds, submission
+deadline range and `open_now` are ignored when filtering historical awards.
+Other criteria, including buyer exclusions, keyword scope and value constraints,
+still apply. With `refresh=true`, the selected profile and overrides also
+control the refresh, which includes formal result notices.
+
 MCP `search_results` also accepts `keywords_any`, `exclude_keywords` and
 `regions`. Result rows include the source URL, buyer region, notice kind,
 CPV and the lot name when available. TED result XML can also provide a

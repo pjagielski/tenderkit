@@ -214,30 +214,33 @@ def procedure_results(state, source, number):
         awards=[_award_record(award, owner) for award, owner in latest_awards(related)])
 
 
-def search_results(state, *, buyer=None, cpv=(), start=None, end=None, limit=100, offset=0, source_names=(),
-                   keywords_any=(), exclude_keywords=(), regions=()):
+def search_results(state, *, buyer=None, cpv=None, start=None, end=None, limit=100, offset=0, source_names=(),
+                   keywords_any=None, exclude_keywords=None, regions=None, exclude_cpv=None, profile=None):
     """Earlier awards by buyer text and CPV, latest per procedure and lot, paginated like notice search."""
     if type(limit) is not int or not 1 <= limit <= MAX_RESULTS or type(offset) is not int or not 0 <= offset <= MAX_NOTICES:
         raise ValueError('Invalid result limit or offset')
     if start is not None or end is not None:
         start, end = window(start, end)
-    patterns = tuple(str(code).strip() for code in cpv)
-    if any(not pattern or not (pattern.rstrip('*').isdigit()) for pattern in patterns):
-        raise ValueError('Result CPV must be digits, optionally ending in *')
+    overrides = {name: value for name, value in (
+        ('cpv', cpv), ('exclude_cpv', exclude_cpv), ('keywords_any', keywords_any),
+        ('exclude_keywords', exclude_keywords), ('regions', regions)) if value is not None}
+    # Historical awards use the profile's subject criteria. Contract-only notice types and
+    # submission deadline constraints describe opportunities, so they do not constrain awards.
+    profile = replace(profile or Profile('results'), notice_types=(), notice_kinds=(),
+                      deadline_days=None, open_now=False, **overrides)
+    patterns = profile.cpv
     folded_buyer = fold(buyer) if buyer else None
-    profile = Profile('results', keywords_any=keywords_any, exclude_keywords=exclude_keywords, regions=regions)
     candidates = []
     # SQLite narrows by awards, buyer and CPV; the checks below keep the exact matching rules.
     for notice in state.notices(start, end, source_names, awarded=True, cpv=patterns, buyer=buyer):
-        if not notice.awards or not profile.matches(notice):
+        if not notice.awards:
+            continue
+        selected = profile.select(notice)
+        if selected is None:
             continue
         if folded_buyer and folded_buyer not in fold(notice.buyer_name):
             continue
-        if patterns and not any(
-                str(code).startswith(pattern[:-1]) if pattern.endswith('*') else str(code) == pattern
-                for pattern in patterns for code in notice.cpv):
-            continue
-        candidates.append(notice)
+        candidates.append(selected)
     awards = [_award_record(award, owner) for award, owner in latest_awards(candidates)]
     page = awards[offset:offset + limit]
     return dict(awards=page, offset=offset, total=len(awards),

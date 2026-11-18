@@ -1,5 +1,5 @@
 """Official SDK client against the real server, including its stdio entry point."""
-from dataclasses import asdict
+from dataclasses import asdict, replace
 from datetime import date
 from decimal import Decimal
 import importlib.util
@@ -64,7 +64,7 @@ class McpTests(unittest.IsolatedAsyncioTestCase):
         procedure = await client.call_tool('procedure_results', {'source': 'TED', 'number': 'two'})
         self.assertEqual(procedure.structured_content['awards'][0]['contractor'], 'Acme')
         self.assertEqual(procedure.structured_content['contracts'][0]['number'], 'one')
-        awards = await client.call_tool('search_results', {'cpv': ['336*']})
+        awards = await client.call_tool('search_results', {'profile': 'leki'})
         self.assertEqual(awards.structured_content['awards'][0]['contractor'], 'Acme')
         prompts = await client.list_prompts()
         self.assertEqual({prompt.name for prompt in prompts.prompts}, {'analyze_it_tender', 'compare_public_bids'})
@@ -196,6 +196,58 @@ class McpTests(unittest.IsolatedAsyncioTestCase):
                 start='2026-11-02', end='2026-11-02', cpv=['336*']))
             self.assertEqual(result.structured_content['refreshes'][0]['status'], 'COMPLETED')
             self.assertEqual(result.structured_content['awards'][0]['contractor'], 'Beta')
+            self.assertEqual(adapter.fetch.call_args.args[2].cpv_prefixes, ('336',))
+            for invalid in ({'profile': 'missing'}, {'profile': 'leki', 'cpv': ['invalid']},
+                            {'profile': 'leki', 'limit': 501}):
+                adapter.reset_mock()
+                refused = await client.call_tool('search_results', dict(invalid, refresh=True,
+                    start='2026-11-02', end='2026-11-02'))
+                self.assertTrue(refused.is_error)
+                adapter.fetch.assert_not_called()
+            overridden = await client.call_tool('search_results', dict(profile='leki', cpv=['72*'], refresh=True,
+                start='2026-11-02', end='2026-11-02'))
+            self.assertFalse(overridden.is_error)
+            self.assertEqual(overridden.structured_content['total'], 0)
+            self.assertEqual(adapter.fetch.call_args.args[2].cpv_prefixes, ('72',))
+
+    async def test_result_profiles_filter_awards_and_allow_explicit_overrides(self):
+        from mcp.client import Client
+        from tenderkit.mcp import create_server
+        from tenderkit.profile import DeadlineRange, Profile
+
+        for number, title, code in (
+            ('software', 'Wynik: oprogramowanie', '72200000'),
+            ('server', 'Wynik: serwer', '48820000'),
+            ('reagent', 'Wynik: odczynniki', '33696500'),
+            ('disinfectant', 'Wynik: dezynfekcja', '33631600'),
+        ):
+            item = replace(self.result, number=number, procedure_id=number, title=title, cpv=(code,))
+            self.state.record_refresh(item.source, item.published, item.published, {}, [item])
+        adapter = mock.Mock()
+        configured = builtin_profiles()
+        configured['custom'] = Profile('custom', cpv=('336*',), keywords_any=('lek',),
+                                       exclude_keywords=('odczynnik', 'dezynfekcj'),
+                                       notice_types=('ContractNotice',), notice_kinds=('contract',),
+                                       deadline_days=DeadlineRange(min=1, max=5), open_now=True)
+        for read_only in (False, True):
+            with self.subTest(read_only=read_only):
+                before = self.path.read_bytes()
+                server = create_server(self.path, profiles=configured, adapters={'TED': adapter}, read_only=read_only)
+                async with Client(server) as client:
+                    for profile, expected in (('leki', {'two'}), ('oprogramowanie', {'software'}), ('custom', {'two'})):
+                        result = await client.call_tool('search_results', {'profile': profile, 'limit': 1})
+                        self.assertFalse(result.is_error)
+                        self.assertEqual(result.structured_content['total'], len(expected))
+                        self.assertEqual({row['number'] for row in result.structured_content['awards']}, expected)
+                    overridden = await client.call_tool('search_results', {'profile': 'leki', 'cpv': ['72*']})
+                    self.assertEqual(overridden.structured_content['awards'][0]['number'], 'software')
+                    cleared = await client.call_tool('search_results', {'profile': 'leki', 'exclude_cpv': []})
+                    self.assertEqual(cleared.structured_content['total'], 3)
+                    for invalid in ({'profile': 'missing'}, {'profile': 'leki', 'exclude_cpv': ['invalid']}):
+                        self.assertTrue((await client.call_tool('search_results', invalid)).is_error)
+                if read_only:
+                    self.assertEqual(self.path.read_bytes(), before)
+        adapter.fetch.assert_not_called()
 
     async def test_f2_list_fetch_and_read_share_the_queue_and_store(self):
         from mcp.client import Client
@@ -233,13 +285,13 @@ class ReadOnlyMcpTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(set(tools), {'search_notices', 'get_notice', 'procedure_results', 'search_results'})
         self.assertNotIn('refresh', tools['search_notices'].input_schema['properties'])
         self.assertNotIn('refresh', tools['search_results'].input_schema['properties'])
-        self.assertNotIn('profile', tools['search_results'].input_schema['properties'])
+        self.assertIn('profile', tools['search_results'].input_schema['properties'])
         self.assertNotIn('refresh', tools['search_notices'].description)
         self.assertEqual((await client.list_prompts()).prompts, [])
         result = await client.call_tool('search_notices', {'profile': 'leki'})
         self.assertEqual(result.structured_content['notices'], search(self.state, self.profile)['notices'])
         self.assertEqual(result.structured_content['refreshes'], [])
-        awards = await client.call_tool('search_results', {'cpv': ['336*']})
+        awards = await client.call_tool('search_results', {'profile': 'leki'})
         self.assertEqual(awards.structured_content['awards'][0]['contractor'], 'Acme')
         # The schema has no refresh; the SDK drops the stray argument before the tool runs.
         stray = await client.call_tool('search_notices', {'profile': 'leki', 'refresh': True})
