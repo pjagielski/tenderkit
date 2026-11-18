@@ -32,6 +32,18 @@ create table if not exists refreshes (
     query text not null, status text not null, count integer not null,
     error text, finished_at text not null
 );
+create table if not exists refresh_jobs (
+    id integer primary key, request_key text not null, request text not null,
+    status text not null, created_at text not null, finished_at text
+);
+create unique index if not exists active_refresh_request on refresh_jobs(request_key)
+    where status in ('QUEUED','RUNNING');
+create table if not exists refresh_job_sources (
+    job_id integer not null, source text not null, status text not null,
+    attempts integer not null default 0, observed integer not null default 0,
+    saved integer not null default 0, error text, updated_at text,
+    primary key(job_id,source)
+);
 create table if not exists document_refs (
     source text not null, number text not null, document_key text not null, payload text not null,
     primary key(source,number,document_key)
@@ -190,7 +202,7 @@ class State:
             if not deleted:
                 raise ValueError('No saved profile with this name')
 
-    def record_refresh(self, source, start, end, query, notices=None, error=None):
+    def record_refresh(self, source, start, end, query, notices=None, error=None, *, job_id=None):
         with self.connection() as conn:
             if source == 'BZP' and notices:
                 conn.execute('begin immediate')
@@ -219,6 +231,12 @@ class State:
                 values(?,?,?,?,?,?,?,?)''', (source, str(start), str(end), dumps(query),
                     'FAILED' if error else 'COMPLETED', len(notices or []), error,
                     datetime.now(timezone.utc).isoformat()))
+            if job_id is not None:
+                timed_out = error in ('TimeoutError', 'Timeout', 'ReadTimeout', 'ConnectTimeout')
+                conn.execute('''update refresh_job_sources set status=?,saved=?,error=?,updated_at=?
+                    where job_id=? and source=?''',
+                    ('TIMED_OUT' if timed_out else 'FAILED' if error else 'COMPLETED',
+                     len(notices or []), error, datetime.now(timezone.utc).isoformat(), job_id, source))
 
     def notices(self, start=None, end=None, sources=(), *, awarded=False, procedure_id=None, cpv=(), buyer=None,
                 profile=None, today=None):

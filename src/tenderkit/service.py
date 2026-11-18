@@ -52,20 +52,37 @@ def refresh(state, profile, start, end, adapters=None, include_results=False, in
     for source, adapter in adapters.items():
         query = replace(base_query, include_results=include_results,
                         include_amendments=include_amendments or source == 'BZP')
-        try:
-            notices = []
-            for notice in adapter.fetch(start, end, query):
-                if len(notices) >= MAX_NOTICES:
-                    raise ValueError('Notice safety limit reached')
-                if notice.source != source or notice.published is None or not start <= notice.published <= end:
-                    raise ValueError('Source returned a notice outside its declared window')
-                notices.append(notice)
-            state.record_refresh(source, start, end, asdict(query), notices)
-            summaries.append(dict(source=source, status='COMPLETED', notices=len(notices)))
-        except Exception as exc:
-            state.record_refresh(source, start, end, asdict(query), error=type(exc).__name__)
-            summaries.append(dict(source=source, status='FAILED', error=type(exc).__name__))
+        summaries.append(refresh_source(state, source, adapter, start, end, query))
     return summaries
+
+
+def refresh_source(state, source, adapter, start, end, query, *, progress=None, job_id=None):
+    """One atomic source window, shared by synchronous and background acquisition."""
+    try:
+        notices = []
+        for notice in adapter.fetch(start, end, query):
+            if len(notices) >= MAX_NOTICES:
+                raise ValueError('Notice safety limit reached')
+            if notice.source != source or notice.published is None or not start <= notice.published <= end:
+                raise ValueError('Source returned a notice outside its declared window')
+            notices.append(notice)
+            if progress and (len(notices) == 1 or len(notices) % 25 == 0):
+                progress(len(notices))
+        if progress:
+            progress(len(notices))
+        state.record_refresh(source, start, end, asdict(query), notices, job_id=job_id)
+        return dict(source=source, status='COMPLETED', notices=len(notices))
+    except Exception as exc:
+        error = type(exc).__name__
+        cause, seen = exc, set()
+        while cause is not None and id(cause) not in seen:
+            seen.add(id(cause))
+            if isinstance(cause, TimeoutError) or type(cause).__name__ in ('Timeout', 'ReadTimeout', 'ConnectTimeout'):
+                error = 'TimeoutError'
+                break
+            cause = cause.__cause__ or cause.__context__
+        state.record_refresh(source, start, end, asdict(query), error=error, job_id=job_id)
+        return dict(source=source, status='FAILED', error=error)
 
 
 def filtered(state, profile, *, start=None, end=None, source_names=(), on=None):

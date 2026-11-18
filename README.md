@@ -274,6 +274,45 @@ tenderkit mcp
 
 Configure your client with the absolute path to the installed `tenderkit` executable and arguments `["mcp"]`. For an alternate database, pass `["--db", "/absolute/path/notices.sqlite3", "mcp"]`. Search with `search_notices`, inspect a record with `get_notice`, and use `procedure_results` and `search_results` for per-lot awards. Use `list_documents`, `fetch_documents`, and `read_document` for attachments. Use `--profile-file` at startup to register custom profiles.
 
+### Refresh in the background
+
+For longer windows, use the local writable server's background tools instead of
+waiting for `search_results(refresh=true)`:
+
+1. Call `start_refresh` with `{"profile":"leki","start":"2026-10-18","end":"2026-11-17","include_results":true}`.
+   It returns immediately with a `job_id`. Optionally select registered sources
+   with `source_names`, for example `["BZP"]`.
+2. Call `refresh_status` with `{"job_id":1}` using the returned ID. Each source
+   reports `QUEUED`, `RUNNING`, `COMPLETED`, `FAILED`, `TIMED_OUT` or `INTERRUPTED`,
+   its attempt count, last update, error, and observed/saved notice counts.
+3. Search normally with `refresh=false` while the job runs. Completed source
+   windows are immediately searchable. A failed source does not discard a
+   successful source's data. Use response coverage to assess partial data.
+4. If the job is `PARTIAL`, `FAILED` or `INTERRUPTED`, call `resume_refresh` with its ID.
+   It retries only unfinished sources using the saved profile and dates.
+
+Job states are `QUEUED`, `RUNNING`, `COMPLETED`, `PARTIAL`, `FAILED` or `INTERRUPTED`.
+`PARTIAL` means some sources completed; `FAILED` means none completed.
+Jobs and source progress persist in the database. Identical active requests
+reuse one job; resuming a completed job does nothing. An explicit new request
+after completion fetches a fresh snapshot. Up to 20 jobs may be queued/running.
+One background worker owns the database's refresh lock across local processes.
+Polling drives queued-job recovery and never retries failed sources by itself.
+
+Keep the local MCP server process running: this is a background thread, not an
+external service. A client request timeout does not cancel the job while the
+server remains alive. After server termination, the next status/resume/start
+call recovers abandoned running work as `INTERRUPTED`; queued jobs can proceed.
+No adapter is forcibly interrupted after 300 seconds. Its own network timeouts
+still apply and source timeouts are recorded as `TIMED_OUT`.
+
+`observed` counts notices yielded by an adapter; adapters may buffer pages, so
+zero does not mean no network progress. `saved` counts committed notices.
+Writes commit per complete source window, together with that source's job
+status. An unfinished source is retried from the start, while completed sources
+are skipped. The tools are absent from the shared read-only server. Existing
+synchronous `refresh=true` and CLI `fetch` remain available.
+
 ### Save profiles from an MCP client
 
 Use `save_profile` to define a profile in the local server's database:
