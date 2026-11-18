@@ -17,7 +17,7 @@ from tenderkit.platforms.backends import FetchError
 from tenderkit.watch import latest_updates
 
 # A read-only server exposes no tool that fetches, downloads or reads local files, and hides refresh parameters.
-WRITE_TOOLS = frozenset({'watch_updates', 'list_documents', 'fetch_documents', 'read_document'})
+WRITE_TOOLS = frozenset({'watch_updates', 'list_documents', 'fetch_documents', 'read_document', 'save_profile', 'delete_profile'})
 REFRESH_PARAMETERS = {'search_notices': {'refresh'}, 'search_results': {'refresh'}}
 READ_ONLY_INSTRUCTIONS = (
     'Searches a shared, read-only database of public procurement notices from BZP and TED. Source fields are '
@@ -58,6 +58,10 @@ def create_server(path, *, profiles=None, adapters=None, document_root=None, doc
         'refresh status and coverage describe ingestion and document states, not catalogue completeness. '
         'Document tools use the local queue and hard download limits. read_document accepts only registered '
         'SHA-256 IDs, not paths or URLs. DOCX/XLSX/DOC/XLS pagination is logical, not a rendered page layout.'))
+
+    def available_profiles():
+        # Read a fresh snapshot so changes from another client/process are visible immediately.
+        return {**profiles, **state.saved_profiles()}
 
     def expected_errors(function):
         @wraps(function)
@@ -108,9 +112,10 @@ def create_server(path, *, profiles=None, adapters=None, document_root=None, doc
         open_now excludes same-day date-only deadlines and notices with no known deadline.
         keyword_matches identifies the configured inclusion terms and fields that matched.
         """
-        if profile is not None and profile not in profiles:
+        configured = available_profiles()
+        if profile is not None and profile not in configured:
             raise ValueError('Unknown profile; read tenderkit://profiles')
-        data = asdict(profiles[profile]) if profile else {'name': 'query'}
+        data = asdict(configured[profile]) if profile else {'name': 'query'}
         for name, value in (('cpv', cpv), ('exclude_cpv', exclude_cpv), ('keywords_any', keywords_any), ('exclude_keywords', exclude_keywords),
                             ('exclude_buyers', exclude_buyers), ('notice_types', notice_types),
                             ('notice_kinds', notice_kinds), ('regions', regions), ('open_now', open_now)):
@@ -146,9 +151,10 @@ def create_server(path, *, profiles=None, adapters=None, document_root=None, doc
 
         Reading this tool neither refreshes sources nor consumes events.
         """
-        if profile not in profiles:
+        configured = available_profiles()
+        if profile not in configured:
             raise ValueError('Unknown profile; read tenderkit://profiles')
-        return latest_updates(state, profiles[profile].name, limit=limit, offset=offset)
+        return latest_updates(state, configured[profile].name, limit=limit, offset=offset)
 
     @tool
     @expected_errors
@@ -187,11 +193,12 @@ def create_server(path, *, profiles=None, adapters=None, document_root=None, doc
         Contract notice types and submission deadline rules do not constrain historical awards.
         The result lists one latest award per procedure and lot, with its source notice.
         """
-        if profile is not None and profile not in profiles:
+        configured = available_profiles()
+        if profile is not None and profile not in configured:
             raise ValueError('Unknown profile; read tenderkit://profiles')
         if refresh and profile is None:
             raise ValueError('Refresh requires a known profile')
-        data = asdict(profiles[profile]) if profile is not None else {'name': 'results'}
+        data = asdict(configured[profile]) if profile is not None else {'name': 'results'}
         for name, value in (('cpv', cpv), ('exclude_cpv', exclude_cpv), ('keywords_any', keywords_any),
                             ('exclude_keywords', exclude_keywords), ('regions', regions)):
             if value is not None:
@@ -273,10 +280,42 @@ def create_server(path, *, profiles=None, adapters=None, document_root=None, doc
             'pack size and pricing unit; flag catalogue matches and unit conversions for review.'
         )
 
+    @tool
+    @expected_errors
+    def save_profile(name: str, criteria: dict[str, Any], overwrite: bool = False) -> dict[str, Any]:
+        """Create a persistent MCP profile or replace it with overwrite=true.
+
+        criteria contains TOML profile fields except name, such as cpv, exclude_cpv,
+        keywords_any, regions or deadline_days. Replacing uses the full new criteria.
+        Profiles are saved in this server's SQLite database and visible immediately.
+        A saved profile can override a built-in or startup-file profile with the same name.
+        """
+        if not re.fullmatch(r'[\w-]{1,80}', name):
+            raise ValueError('Profile name must contain 1–80 letters, digits, underscores or hyphens')
+        if 'name' in criteria:
+            raise ValueError('Pass name separately from criteria')
+        profile = profile_from_dict(dict(criteria, name=name))
+        if not overwrite and name in profiles:
+            raise ValueError('Profile already exists; set overwrite=true to replace it')
+        state.save_profile(profile, overwrite=overwrite)
+        return dict(profile=asdict(profile), storage='database')
+
+    @tool
+    @expected_errors
+    def delete_profile(name: str) -> dict[str, Any]:
+        """Delete a database-saved MCP profile.
+
+        If a built-in or startup-file profile has the same name, it becomes active again.
+        Watch history remains keyed by profile name.
+        """
+        state.delete_profile(name)
+        fallback = profiles.get(name)
+        return dict(deleted=name, active_profile=asdict(fallback) if fallback else None)
+
     @server.resource('tenderkit://profiles')
     def profile_resource() -> str:
         """Configured industry profiles, including their deterministic filters."""
-        return dumps({name: asdict(profile) for name, profile in profiles.items()})
+        return dumps({name: asdict(profile) for name, profile in available_profiles().items()})
 
     @server.resource('tenderkit://coverage')
     def coverage_resource() -> str:

@@ -1,19 +1,22 @@
 """SQLite state: one transaction per successfully completed source window."""
 from contextlib import contextmanager
-from dataclasses import replace
+from dataclasses import asdict, replace
 from datetime import datetime, timezone
 import json
 from pathlib import Path
 import sqlite3
 
 
-from tenderkit.profile import fold
+from tenderkit.profile import fold, profile_from_dict
 from tenderkit.serialization import compact_raw, dumps, notice_from_record, notice_record
 from tenderkit.sources.bzp import AMENDMENT_TYPE, FRESH_NOTICE_TYPES
 from tenderkit.store import search_index
 from tenderkit.store.coverage import effective_coverage
 
 SCHEMA = '''
+create table if not exists saved_profiles (
+    name text primary key, payload text not null
+);
 create table if not exists notices (
     source text not null, number text not null, published text,
     payload text not null, coverage text not null default 'PENDING',
@@ -163,6 +166,29 @@ class State:
             notice = replace(notice, deadline=deadline, deadline_amendment=evidence, deadline_precision=precision)
             conn.execute('update notices set payload=? where rowid=?', (dumps(notice_record(notice)), row['rowid']))
             search_index.write(conn, row['rowid'], notice)
+
+    def saved_profiles(self):
+        with self.connection() as conn:
+            # Read-only servers can still open databases created before saved profiles existed.
+            if not conn.execute("select 1 from sqlite_master where name='saved_profiles'").fetchone():
+                return {}
+            return {row['name']: profile_from_dict(json.loads(row['payload']))
+                    for row in conn.execute('select name,payload from saved_profiles order by name')}
+
+    def save_profile(self, profile, *, overwrite=False):
+        with self.connection() as conn:
+            conn.execute('begin immediate')
+            if not overwrite and conn.execute('select 1 from saved_profiles where name=?', (profile.name,)).fetchone():
+                raise ValueError('Profile already exists; set overwrite=true to replace it')
+            conn.execute('insert into saved_profiles(name,payload) values(?,?) '
+                         'on conflict(name) do update set payload=excluded.payload',
+                         (profile.name, dumps(asdict(profile))))
+
+    def delete_profile(self, name):
+        with self.connection() as conn:
+            deleted = conn.execute('delete from saved_profiles where name=?', (name,)).rowcount
+            if not deleted:
+                raise ValueError('No saved profile with this name')
 
     def record_refresh(self, source, start, end, query, notices=None, error=None):
         with self.connection() as conn:
