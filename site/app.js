@@ -18,8 +18,8 @@ const examples = {
   },
   mcp: {
     filename: 'Narzędzia dla Twojego AI',
-    text: '# Uruchom lokalny serwer MCP\ntenderkit mcp\n\n# Ogłoszenia i dokumenty dla Twojego AI\nsearch_notices(profile="oprogramowanie")\nlist_documents(source="BZP", number="…")\nfetch_documents(source="BZP", number="…", keys=["…"])\nprocedure_results(source="BZP", number="…")\nread_document(document_id="<downloaded.sha256>")',
-    explanation: 'Przekaż source i number z wyniku wyszukiwania oraz klucze załączników z listy dokumentów. Do analizy użyj promptu MCP analyze_it_tender lub compare_public_bids.'
+    text: '# Uruchom lokalny serwer MCP\ntenderkit mcp\n\n# Ogłoszenia, wyniki i dokumenty dla Twojego AI\nsearch_notices(profile="oprogramowanie", regions=["mazowieckie"])\nstart_refresh(profile="leki", include_results=true)\nrefresh_status(job_id=1)\nlist_documents(source="BZP", number="…")\nfetch_documents(source="BZP", number="…", keys=["…"])\nread_document(document_id="…", page=1)\nsave_profile(name="moje-it", criteria={…})',
+    explanation: 'Lokalnie masz też pobieranie w tle, własne profile i odczyt dokumentów. Do analizy użyj promptu analyze_it_tender lub compare_public_bids. Bez instalacji pytasz publiczny serwer mcp.tenderkit.pl.'
   }
 };
 let activeCode = 'install';
@@ -322,3 +322,16 @@ document.addEventListener('visibilitychange', syncCarousel);
 motionPreference.addEventListener('change', () => { if (motionPreference.matches) carouselPlaying = false; syncCarousel(); });
 new IntersectionObserver(entries => { carouselVisible = entries[0].isIntersecting; syncCarousel(); }, {threshold:0.25}).observe(hero);
 syncCarousel();
+
+document.querySelectorAll('[data-copy]').forEach((button) => {
+  button.addEventListener('click', async () => {
+    const label = button.querySelector('span');
+    try {
+      await navigator.clipboard.writeText(button.dataset.copy);
+      if (label) label.textContent = 'Skopiowano';
+    } catch {
+      if (label) label.textContent = 'Zaznacz i skopiuj';
+    }
+    setTimeout(() => { if (label) label.textContent = 'Kopiuj'; }, 2000);
+  });
+});
