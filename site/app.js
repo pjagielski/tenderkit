@@ -335,3 +335,54 @@ document.querySelectorAll('[data-copy]').forEach((button) => {
     setTimeout(() => { if (label) label.textContent = 'Kopiuj'; }, 2000);
   });
 });
+
+
+// Contact form: send with fetch and show the answer in place; without JavaScript the browser posts the form and
+// mcp.tenderkit.pl redirects back here with ?kontakt=wyslano or ?kontakt=blad.
+(() => {
+  const form = document.getElementById('contact-form');
+  const status = document.getElementById('contact-status');
+  if (!form || !status) return;
+  const messages = {
+    ok: 'Dziękujemy, wiadomość wysłana. Odpowiemy na podany adres e-mail.',
+    email: 'Sprawdź adres e-mail.',
+    message: 'Wiadomość musi mieć od 10 do 5000 znaków.',
+    name: 'Imię lub nazwa firmy może mieć najwyżej 200 znaków.',
+    limit: 'Za dużo wiadomości naraz. Spróbuj ponownie za kilka minut.',
+    error: 'Nie udało się wysłać wiadomości. Spróbuj ponownie za chwilę.',
+  };
+  const show = (key) => {
+    status.textContent = messages[key] || messages.error;
+    status.className = 'contact-status ' + (key === 'ok' ? 'is-ok' : 'is-error');
+  };
+  const returned = new URLSearchParams(location.search).get('kontakt');
+  if (returned) {
+    show(returned === 'wyslano' ? 'ok' : 'error');
+    history.replaceState(null, '', location.pathname + location.hash);
+  }
+  form.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    const button = form.querySelector('button[type="submit"]');
+    button.disabled = true;
+    status.textContent = 'Wysyłam…';
+    status.className = 'contact-status';
+    try {
+      const response = await fetch(form.action, {
+        method: 'POST',
+        headers: {Accept: 'application/json'},
+        body: new URLSearchParams(new FormData(form)),
+      });
+      const data = await response.json().catch(() => ({}));
+      if (response.ok && data.ok) {
+        form.reset();
+        show('ok');
+      } else {
+        show(response.status === 429 ? 'limit' : data.error);
+      }
+    } catch {
+      show('error');
+    } finally {
+      button.disabled = false;
+    }
+  });
+})();

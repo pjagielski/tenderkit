@@ -209,8 +209,23 @@
       </div></div>
     </section>
 
+    <section class="contact-section" id="kontakt" aria-labelledby="contact-title">
+      <div class="container faq-layout">
+        <div class="contact-copy"><h2 id="contact-title">Napisz do nas.</h2><p>Pytanie o tenderkit, pomysł na integrację albo błąd w danych? Wiadomość trafia bezpośrednio do autora projektu. Odpowiadamy na podany adres e-mail.</p><p class="contact-note">Zapisujemy tylko imię (jeśli je podasz), adres e-mail i treść wiadomości, wyłącznie po to, żeby odpowiedzieć. Nie zapisujemy adresu IP. Wiadomość usuwamy najpóźniej po 12 miesiącach, a na prośbę wcześniej.</p></div>
+        <form class="contact-form" id="contact-form" action="https://mcp.tenderkit.pl/contact" method="post">
+          <label for="contact-name">Imię lub firma <span>(opcjonalnie)</span></label>
+          <input id="contact-name" name="name" type="text" maxlength="200" autocomplete="name">
+          <label for="contact-email">Adres e-mail</label>
+          <input id="contact-email" name="email" type="email" maxlength="254" autocomplete="email" required>
+          <label for="contact-message">Wiadomość</label>
+          <textarea id="contact-message" name="message" rows="6" minlength="10" maxlength="5000" required></textarea>
+          <div class="contact-trap" aria-hidden="true"><label for="contact-website">Nie wypełniaj tego pola</label><input id="contact-website" name="website" type="text" tabindex="-1" autocomplete="off"></div>
+          <div class="contact-actions"><button class="button button-primary" type="submit">Wyślij wiadomość</button><p class="contact-status" id="contact-status" role="status" aria-live="polite"></p></div>
+        </form>
+      </div>
+    </section>
   </main>
-  <footer class="site-footer"><div class="container footer-inner"><a class="brand" href="#"><img class="brand-mark" src="assets/tenderkit-mark.svg" width="32" height="32" alt=""><span class="brand-wordmark">tenderkit</span></a><p>Otwarty framework do polskich przetargów.<br><span class="concept-note">Wersja 0.1.0 · Apache-2.0</span></p><div><a href="https://github.com/pjagielski/tenderkit" target="_blank" rel="noopener noreferrer">GitHub</a><a href="https://github.com/pjagielski/tenderkit#readme" target="_blank" rel="noopener noreferrer">Dokumentacja</a><a href="https://pypi.org/project/tenderkit/" target="_blank" rel="noopener noreferrer">PyPI</a></div></div></footer>
+  <footer class="site-footer"><div class="container footer-inner"><a class="brand" href="#"><img class="brand-mark" src="assets/tenderkit-mark.svg" width="32" height="32" alt=""><span class="brand-wordmark">tenderkit</span></a><p>Otwarty framework do polskich przetargów.<br><span class="concept-note">Wersja 0.1.0 · Apache-2.0</span></p><div><a href="https://github.com/pjagielski/tenderkit" target="_blank" rel="noopener noreferrer">GitHub</a><a href="https://github.com/pjagielski/tenderkit#readme" target="_blank" rel="noopener noreferrer">Dokumentacja</a><a href="https://pypi.org/project/tenderkit/" target="_blank" rel="noopener noreferrer">PyPI</a><a href="#kontakt">Kontakt</a></div></div></footer>
   <div class="toast" role="status" aria-live="polite" id="toast"></div>
   <!-- Cloudflare Web Analytics: cookieless page views; the token is public by design. -->
   <script type='module' src='https://static.cloudflareinsights.com/beacon.min.js' data-cf-beacon='{"token": "c05c0c48f7bf408a8ad6604d905de210"}'></script>
