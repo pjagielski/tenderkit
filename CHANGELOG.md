@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Every MCP tool has a title, a description for each argument and behaviour hints (`readOnlyHint`, `destructiveHint`, `idempotentHint`, `openWorldHint`). On a `--read-only` server all tools are marked read-only and closed-world.
 - Profile and MCP `regions` accept voivodeship names such as `mazowieckie`, ignoring case, Polish diacritics and a `woj.` prefix. TERYT codes such as `14` still work. An unknown name or a code that is not one of the 16 voivodeships fails with the list of valid names.
 - A trailing `*` in `keywords_any` or `exclude_keywords` is a prefix, the same as no star (`onkolog*` finds `onkologicznych`). It used to be matched literally, so such keywords found nothing and such exclusions excluded nothing. `*term` matches anywhere in a word like `*term*`, and a `*` anywhere else is a validation error.
 - Save notices without the full source record with `--no-raw` on `fetch`, `watch` and `mcp`, or `State(path, keep_raw=False)`. Only the source fields tenderkit reads are kept, which makes the database about six times smaller.
