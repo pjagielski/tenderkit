@@ -197,6 +197,12 @@ def create_server(path, *, profiles=None, adapters=None, document_root=None, doc
             keywords_any: Annotated[list[str] | None, KEYWORDS] = None,
             exclude_keywords: Annotated[list[str] | None, EXCLUDE_KEYWORDS] = None,
             exclude_buyers: Annotated[list[str] | None, arg('Buyer names to leave out.')] = None,
+            buyers: Annotated[list[str] | None, arg('Only these buyers: name fragments (case- and accent-insensitive) '
+                                                    'or exact NIP/REGON; any one is enough.')] = None,
+            keyword_fields: Annotated[list[Literal['title', 'description', 'lot_title']] | None,
+                                      arg('Where keywords_any must match; default all three. ["title"] skips platform '
+                                          'instructions and other boilerplate in descriptions. exclude_keywords '
+                                          'still check every field.')] = None,
             notice_types: Annotated[list[str] | None, arg('Raw source notice types, e.g. "ContractNotice" (BZP) or '
                                                           '"cn-standard" (TED).')] = None,
             regions: Annotated[list[str] | None, REGIONS] = None,
@@ -227,6 +233,7 @@ def create_server(path, *, profiles=None, adapters=None, document_root=None, doc
         CPV codes or prefixes ending in * in exclude_cpv never count; a notice whose every code is excluded is left out.
         Keywords match word starts in titles, descriptions and lot titles (lek finds leków; lek* is the same).
         Use *term* for a substring anywhere in a word. A * elsewhere is an error.
+        keyword_fields=["title"] matches keywords_any in titles only; buyers keeps named contracting authorities.
         total counts all matching saved notices. Use compact=true for notice summaries, then get_notice for details.
         notice_kinds compares normalized kinds across sources; notice_types compares raw source values.
         dedupe="procedure" groups matching publications and keeps the newest per procedure.
@@ -240,7 +247,8 @@ def create_server(path, *, profiles=None, adapters=None, document_root=None, doc
             raise ValueError('Unknown profile; read tenderkit://profiles')
         data = asdict(configured[profile]) if profile else {'name': 'query'}
         for name, value in (('cpv', cpv), ('exclude_cpv', exclude_cpv), ('keywords_any', keywords_any), ('exclude_keywords', exclude_keywords),
-                            ('exclude_buyers', exclude_buyers), ('notice_types', notice_types),
+                            ('exclude_buyers', exclude_buyers), ('buyers', buyers), ('keyword_fields', keyword_fields),
+                            ('notice_types', notice_types),
                             ('notice_kinds', notice_kinds), ('regions', regions), ('open_now', open_now)):
             if value is not None:
                 data[name] = value

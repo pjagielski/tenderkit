@@ -40,6 +40,10 @@ PROFILES = [
     {'notice_types': ['ContractNotice']}, {'regions': ['10', '12']}, {'exclude_buyers': ['szpital']},
     {'value': {'min': '100000', 'max': '250000', 'currency': 'PLN'}}, {'value': {'min': '1000000', 'currency': 'EUR'}},
     {'deadline_days': {'min': 1, 'max': 10}}, {'deadline_days': {'min': 4, 'max': 4}}, {'deadline_days': {'min': 30, 'max': 60}},
+    {'buyers': ['szpital']}, {'buyers': ['Łódź', 'gmina KRAKÓW']}, {'buyers': ['zzqx']}, {'buyers': ['szpital'], 'regions': ['10']},
+    {'keywords_any': ['dostaw'], 'keyword_fields': ['title']}, {'keywords_any': ['licencj*'], 'keyword_fields': ['lot_title']},
+    {'keywords_any': ['remont'], 'keyword_fields': ['title'], 'exclude_keywords': ['wind']},
+    {'keywords_any': ['system informatyczn'], 'keyword_fields': ['description']},
 ]
 
 
@@ -63,6 +67,14 @@ class SearchIndexTests(unittest.TestCase):
             profile = profile_from_dict({'name': f'p{index}', **data})
             with self.subTest(profile=data):
                 self.assertEqual(self.numbers(reader, profile), self.numbers(reader, profile, indexed=False))
+
+    def test_keyword_fields_and_buyers_narrow_the_matches(self):
+        numbers = lambda **data: self.numbers(self.state, profile_from_dict({'name': 'p', **data}))
+        self.assertEqual(numbers(keywords_any=['dostaw']), ['n2', 'n1'])
+        self.assertEqual(numbers(keywords_any=['dostaw'], keyword_fields=['title']), ['n1'])
+        self.assertEqual(numbers(keywords_any=['remont'], keyword_fields=['title'], exclude_keywords=['wind']), [])
+        self.assertEqual(numbers(buyers=['SZPITAL']), ['n5', 'n1'])
+        self.assertEqual(numbers(buyers=['lodz']), ['n1'])
 
     def test_the_index_narrows_before_decoding(self):
         profile = profile_from_dict({'name': 'rare', 'keywords_any': ['onkologiczn']})

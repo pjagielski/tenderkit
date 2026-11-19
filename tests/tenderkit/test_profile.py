@@ -33,6 +33,35 @@ class ProfileTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, 'CPV must be digits'):
             Profile('x', cpv=('33*6',))
 
+    def test_title_only_keywords_skip_platform_instructions(self):
+        instructions = ('Komunikacja z zamawiającym odbywa się przy użyciu platformy zakupowej. '
+                        'Instrukcja korzystania z platformy jest dostępna na stronie.')
+        notice = Notice('BZP', '1', title='Dostawa materiałów biurowych', description=instructions)
+        wanted = Notice('BZP', '2', title='Zakup platformy przetargowej', description=instructions)
+        everywhere = Profile('p', keywords_any=('platform',))
+        titles = Profile('p', keywords_any=('platform',), keyword_fields=('title',))
+        self.assertTrue(everywhere.matches(notice))
+        self.assertFalse(titles.matches(notice))
+        self.assertTrue(titles.matches(wanted))
+        self.assertEqual(titles.keyword_matches(wanted), [dict(keyword='platform', field='title')])
+        # Exclusions still read every field.
+        self.assertFalse(Profile('p', keywords_any=('platform',), keyword_fields=('title',),
+                                 exclude_keywords=('komunikacja',)).matches(wanted))
+        lots = Profile('p', keywords_any=('serwer',), keyword_fields=('lot_title',))
+        self.assertTrue(lots.matches(Notice('TED', '3', title='Sprzęt', lots=(Lot('1', title='Serwery'),))))
+        self.assertFalse(lots.matches(Notice('TED', '4', title='Serwery')))
+        with self.assertRaisesRegex(ValueError, 'keyword_fields must contain'):
+            Profile('p', keyword_fields=('tytul',))
+
+    def test_buyers_keep_named_buyers_by_name_fragment_or_id(self):
+        notice = Notice('BZP', '1', title='Leki', buyer_name='Szpital Uniwersytecki w Łodzi', buyer_id='7251234567')
+        self.assertTrue(Profile('p', buyers=('szpital UNIWERSYTECKI', 'gmina')).matches(notice))
+        self.assertTrue(Profile('p', buyers=('lodz',)).matches(notice))
+        self.assertTrue(Profile('p', buyers=('7251234567',)).matches(notice))
+        self.assertFalse(Profile('p', buyers=('725123',)).matches(notice))       # IDs match exactly
+        self.assertFalse(Profile('p', buyers=('Kraków',)).matches(notice))
+        self.assertFalse(Profile('p', buyers=('szpital',)).matches(Notice('BZP', '2', title='Leki')))
+
     def test_cpv_matches_by_prefix_and_an_empty_list_matches_all(self):
         profile = Profile('leki', cpv=('336*',))
         self.assertTrue(profile.matches_cpv(['33600000']))

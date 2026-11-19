@@ -79,6 +79,8 @@ Regions refer to the buyer's voivodeship. Write the Polish name, such as `mazowi
 
 `keywords_any` and `exclude_keywords` search the notice title, description and available lot titles. Matching ignores case and diacritics. A term starts at a word boundary, so `lek` matches `Leki` and `leków`. Phrases such as `system informatyczn` match consecutive text and allow an inflected ending. A trailing star changes nothing, so `lek*` is the same as `lek`. Wrap a term in stars, such as `*lek*`, to match it anywhere within a word. A star anywhere else is an error.
 
+`keyword_fields` limits where `keywords_any` must match: any of `title`, `description` and `lot_title`, all three by default. `keyword_fields = ["title"]` keeps a search for a procurement platform from matching every notice whose description explains how to use one. `exclude_keywords` still check every field. `buyers` keeps only the named contracting authorities: a fragment of the buyer name, ignoring case and diacritics, or an exact NIP or REGON. MCP `search_notices` accepts both.
+
 CLI filter, export and watch records and MCP search results include `keyword_matches` when inclusion keywords are configured. Each match names the configured keyword and the field (`title`, `description` or `lot_title`), with a lot number when the source identifies it. Cached records use the source fields they already contain. Older TED records gain descriptions and lot titles when refreshed.
 
 Set `exclude_scope = "lot"` in a profile or pass it to MCP `search_notices` to

@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Profiles and MCP `search_notices` take `keyword_fields` (`title`, `description`, `lot_title`) to limit where `keywords_any` must match, and `buyers` to keep named contracting authorities by name fragment or exact NIP/REGON. A title-only search no longer matches platform instructions in descriptions. `exclude_keywords` still check every field.
 - Every MCP tool has a title, a description for each argument and behaviour hints (`readOnlyHint`, `destructiveHint`, `idempotentHint`, `openWorldHint`). On a `--read-only` server all tools are marked read-only and closed-world.
 - Profile and MCP `regions` accept voivodeship names such as `mazowieckie`, ignoring case, Polish diacritics and a `woj.` prefix. TERYT codes such as `14` still work. An unknown name or a code that is not one of the 16 voivodeships fails with the list of valid names.
 - A trailing `*` in `keywords_any` or `exclude_keywords` is a prefix, the same as no star (`onkolog*` finds `onkologicznych`). It used to be matched literally, so such keywords found nothing and such exclusions excluded nothing. `*term` matches anywhere in a word like `*term*`, and a `*` anywhere else is a validation error.

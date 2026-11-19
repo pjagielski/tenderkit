@@ -91,6 +91,14 @@ def prefilter(profile, today):
         params += [str(today + timedelta(days=profile.deadline_days.min - 1)),
                    str(today + timedelta(days=profile.deadline_days.max + 1))]
     conditions = ['rowid in (select id from notice_index where ' + ' and '.join(index) + ')'] if index else []
+    if profile.buyers:
+        # The same rule as Profile.matches_buyer, on the stored record.
+        terms = []
+        for buyer in profile.buyers:
+            terms.append("instr(fold(coalesce(json_extract(payload, '$.buyer_name'), '')), ?) > 0 "
+                         "or json_extract(payload, '$.buyer_id') = ?")
+            params += [fold(buyer), buyer]
+        conditions.append('(' + ' or '.join(terms) + ')')
     if profile.keywords_any:
         fts = [_fts_term(keyword) for keyword in profile.keywords_any]
         if all(fts):
