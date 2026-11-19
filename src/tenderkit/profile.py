@@ -5,9 +5,12 @@
     exclude_cpv = ["33696*", "336316*"]    # codes that never count, even inside cpv
     keywords_any = ["lek", "farmaceut"]    # empty: no keyword condition
     exclude_keywords = ["weterynar"]
+    keyword_fields = ["title"]             # where keywords_any must match; empty: title, description, lot_title
+    buyers = ["Kraków"]                    # buyer name fragments or exact NIP/REGON; empty: any buyer
 
 Keywords match from the start of a word in the title, description or lot titles; a trailing * changes nothing.
-Use *term* (or *term) for a substring anywhere in a word.
+Use *term* (or *term) for a substring anywhere in a word. keyword_fields narrows where keywords_any must match
+(platform instructions in descriptions mention many products); exclude_keywords always look at every field.
 Matching is case- and diacritics-insensitive. Profile.matches applies the filters the source cannot handle.
 """
 from dataclasses import dataclass, replace
@@ -25,6 +28,7 @@ from tenderkit.model import Notice
 from tenderkit.notice_kinds import NOTICE_TYPES, notice_kind, source_types
 
 _CPV = re.compile(r'^\d{1,8}\*?$')
+KEYWORD_FIELDS = ('title', 'description', 'lot_title')
 
 
 @dataclass(frozen=True)
@@ -104,15 +108,18 @@ def _keyword_pattern(keyword):
     return re.compile(('' if substring else r'(?<!\w)') + phrase) if phrase else re.compile(r'(?!)')
 
 
-def _keyword_fields(notice):
-    yield 'title', None, notice.title
-    for paragraph in (notice.description or '').split('\n\n'):
-        yield 'description', None, paragraph
-    for lot in notice.lots:
-        if lot.title:
-            yield 'lot_title', lot.number, lot.title
-    for title in notice.lot_titles:
-        yield 'lot_title', None, title
+def _keyword_fields(notice, fields=KEYWORD_FIELDS):
+    if 'title' in fields:
+        yield 'title', None, notice.title
+    if 'description' in fields:
+        for paragraph in (notice.description or '').split('\n\n'):
+            yield 'description', None, paragraph
+    if 'lot_title' in fields:
+        for lot in notice.lots:
+            if lot.title:
+                yield 'lot_title', lot.number, lot.title
+        for title in notice.lot_titles:
+            yield 'lot_title', None, title
 
 
 def keyword_texts(notice):
@@ -132,6 +139,8 @@ class Profile:
     regions: tuple[str, ...] = ()
     deadline_days: DeadlineRange | None = None
     exclude_buyers: tuple[str, ...] = ()
+    buyers: tuple[str, ...] = ()
+    keyword_fields: tuple[str, ...] = ()
     documents: tuple[str, ...] = ()
     notice_kinds: tuple[str, ...] = ()
     exclude_scope: str = 'notice'
@@ -140,7 +149,8 @@ class Profile:
     def __post_init__(self):
         if not isinstance(self.name, str) or not self.name.strip():
             raise ValueError('Profile name must be nonempty')
-        for name in ('cpv', 'exclude_cpv', 'keywords_any', 'exclude_keywords', 'notice_types', 'regions', 'exclude_buyers', 'documents', 'notice_kinds'):
+        for name in ('cpv', 'exclude_cpv', 'keywords_any', 'exclude_keywords', 'notice_types', 'regions', 'exclude_buyers',
+                     'buyers', 'keyword_fields', 'documents', 'notice_kinds'):
             values = getattr(self, name)
             if (not isinstance(values, (list, tuple)) or len(values) > 64
                     or any(not isinstance(v, str) or not v.strip() or len(v) > 200 for v in values)):
@@ -148,6 +158,9 @@ class Profile:
             object.__setattr__(self, name, tuple(values))
         if self.exclude_scope not in ('notice', 'lot'):
             raise ValueError('exclude_scope must be notice or lot')
+        if set(self.keyword_fields) - set(KEYWORD_FIELDS):
+            raise ValueError('keyword_fields must contain title, description or lot_title')
+        object.__setattr__(self, 'keyword_fields', tuple(dict.fromkeys(self.keyword_fields)))
         if set(self.notice_kinds) - NOTICE_TYPES.keys():
             raise ValueError('notice_kinds must contain contract, result, corrigendum or prior_info')
         for name in ('keywords_any', 'exclude_keywords'):
@@ -188,23 +201,38 @@ class Profile:
             codes = kept
         return not self.cpv or any(self._cpv_hit(code, self.cpv) for code in codes)
 
+    @property
+    def searched_fields(self):
+        """The fields keywords_any must match in."""
+        return self.keyword_fields or KEYWORD_FIELDS
+
     def matches_text(self, text):
         return self._matches_keywords((text,))
 
-    def _matches_keywords(self, texts, *, exclude=True):
+    def _matches_keywords(self, texts, *, exclude=True, excluded_texts=None):
+        """Whether one of texts holds a keywords_any term and (with exclude) none of excluded_texts, which default
+        to texts, holds an exclude_keywords term."""
         if not (self.keywords_any or self.exclude_keywords):
             return True
         folded = tuple(fold(text) for text in texts if text)
-        if exclude and any(_keyword_pattern(term).search(text) for term in self.exclude_keywords for text in folded):
-            return False
+        if exclude and self.exclude_keywords:
+            others = folded if excluded_texts is None else tuple(fold(text) for text in excluded_texts if text)
+            if any(_keyword_pattern(term).search(text) for term in self.exclude_keywords for text in others):
+                return False
         return not self.keywords_any or any(
             _keyword_pattern(term).search(text) for term in self.keywords_any for text in folded)
+
+    def matches_buyer(self, notice):
+        """Whether the notice's buyer is wanted: buyers empty, or one is a fragment of the buyer name (case- and
+        diacritics-insensitive) or equals the buyer ID."""
+        return not self.buyers or any(fold(b) in fold(notice.buyer_name or '') or b == notice.buyer_id
+                                      for b in self.buyers)
 
     def keyword_matches(self, notice):
         """Return the configured inclusion terms that matched and their source fields."""
         if not self.keywords_any:
             return []
-        fields = [(field, lot, fold(text)) for field, lot, text in _keyword_fields(notice) if text]
+        fields = [(field, lot, fold(text)) for field, lot, text in _keyword_fields(notice, self.searched_fields) if text]
         hits = dict.fromkeys(
             (term, field, lot)
             for term in self.keywords_any for field, lot, text in fields
@@ -246,7 +274,9 @@ class Profile:
             return None
         if self.regions and notice.buyer_region not in self.regions:
             return None
-        if any(fold(b) in fold(notice.buyer_name) or b == notice.buyer_id for b in self.exclude_buyers):
+        if any(fold(b) in fold(notice.buyer_name or '') or b == notice.buyer_id for b in self.exclude_buyers):
+            return None
+        if not self.matches_buyer(notice):
             return None
         if self.value:
             if notice.value is None or notice.currency != self.value.currency:
@@ -269,7 +299,9 @@ class Profile:
             notice = self._lots_after_exclusions(notice)
             if notice is None:
                 return None
-        if self._matches_keywords((text for _, _, text in _keyword_fields(notice)), exclude=not per_lot):
+        searched = [text for _, _, text in _keyword_fields(notice, self.searched_fields)]
+        every = [text for _, _, text in _keyword_fields(notice)]
+        if self._matches_keywords(searched, exclude=not per_lot, excluded_texts=every):
             return notice
         return None
 
