@@ -2,6 +2,18 @@
 
 Collect Polish procurement notices from BZP and TED, filter them with TOML profiles, and keep the results in SQLite. Use the CLI to export notices, list public documents, and read selected files. The optional MCP server exposes the same local state to MCP clients.
 
+Website: [tenderkit.pl](https://tenderkit.pl/)
+
+## Public MCP server
+
+Try tenderkit without installing anything. `https://mcp.tenderkit.pl/mcp` is a read-only MCP server over a shared database of BZP and TED notices and awards from the last 90 days, refreshed every 8 hours. It does not download documents and needs no login.
+
+```sh
+claude mcp add --transport http tenderkit https://mcp.tenderkit.pl/mcp
+```
+
+Other clients: add `{"mcpServers": {"tenderkit": {"url": "https://mcp.tenderkit.pl/mcp"}}}` to their MCP configuration.
+
 ## Install and search
 
 Requires Python 3.11 or newer.
