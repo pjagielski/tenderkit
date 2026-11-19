@@ -42,6 +42,15 @@ class McpTests(unittest.IsolatedAsyncioTestCase):
                                                          'search_results', 'list_documents', 'fetch_documents', 'read_document',
                                                          'watch_updates', 'save_profile', 'delete_profile',
                                                          'start_refresh', 'refresh_status', 'resume_refresh'})
+        by_name = {t.name: t for t in tools.tools}
+        for tool in tools.tools:
+            self.assertTrue(tool.title, tool.name)
+            for name, schema in tool.input_schema['properties'].items():
+                self.assertTrue(schema.get('description'), f'{tool.name}.{name}')
+        self.assertTrue(by_name['get_notice'].annotations.read_only_hint)
+        self.assertFalse(by_name['search_notices'].annotations.read_only_hint)   # refresh=true fetches
+        self.assertTrue(by_name['fetch_documents'].annotations.open_world_hint)
+        self.assertTrue(by_name['delete_profile'].annotations.destructive_hint)
         result = await client.call_tool('search_notices', {'profile': 'leki'})
         self.assertFalse(result.is_error)
         self.assertEqual(result.structured_content['notices'], search(self.state, self.profile)['notices'])
@@ -339,6 +348,13 @@ class ReadOnlyMcpTests(unittest.IsolatedAsyncioTestCase):
         self.assertNotIn('refresh', tools['search_results'].input_schema['properties'])
         self.assertIn('profile', tools['search_results'].input_schema['properties'])
         self.assertNotIn('refresh', tools['search_notices'].description)
+        for tool in tools.values():
+            # Agents pick tools and arguments from these, and directories score them.
+            self.assertTrue(tool.title, tool.name)
+            self.assertTrue(tool.annotations.read_only_hint, tool.name)
+            self.assertFalse(tool.annotations.open_world_hint, tool.name)
+            for name, schema in tool.input_schema['properties'].items():
+                self.assertTrue(schema.get('description'), f'{tool.name}.{name}')
         self.assertEqual((await client.list_prompts()).prompts, [])
         result = await client.call_tool('search_notices', {'profile': 'leki'})
         self.assertEqual(result.structured_content['notices'], search(self.state, self.profile)['notices'])
