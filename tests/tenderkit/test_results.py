@@ -222,6 +222,30 @@ class ResultServiceTests(unittest.TestCase):
         self.assertEqual((lot_one[0]['contractor'], lot_one[0]['number']), ('Nowy wykonawca', 'result-2'))
         self.assertEqual(len(output['results']), 2)
 
+    def test_compact_results_carry_the_same_facts_once_per_notice(self):
+        full = search_results(self.state, cpv=('72*',))
+        compact = search_results(self.state, cpv=('72*',), compact=True)
+        self.assertEqual((compact['total'], compact['next_offset']), (full['total'], full['next_offset']))
+        notices = {(n['source'], n['number']): n for n in compact['notices']}
+        self.assertEqual(list(notices), [('BZP', 'result-1')])
+        rebuilt = [{**{k: None for k in full['awards'][0]}, **notices[(a['source'], a['number'])], **a}
+                   for a in compact['awards']]
+        self.assertEqual(rebuilt, full['awards'])
+        self.assertNotIn('title', compact['awards'][0])
+        self.assertNotIn('contractor', compact['awards'][1])           # cancelled lot: empty fields left out
+        self.assertLess(len(json.dumps(compact)), len(json.dumps(full)))
+
+    def test_compact_procedure_results_summarise_notices(self):
+        full = procedure_results(self.state, 'BZP', 'result-1')
+        compact = procedure_results(self.state, 'BZP', 'result-1', compact=True)
+        self.assertEqual(compact['procedure_id'], 'proc-1')
+        self.assertEqual([n['number'] for n in compact['contracts']], ['contract-1'])
+        self.assertEqual([(n['number'], n['award_count']) for n in compact['results']], [('result-1', 2)])
+        self.assertFalse({'description', 'lots', 'awards'} & compact['notice'].keys())
+        self.assertEqual([(a['lot'], a['number'], a.get('contractor'), a.get('price')) for a in compact['awards']],
+                         [(a['lot'], a['number'], a['contractor'], a['price']) for a in full['awards']])
+        self.assertFalse({'source', 'title', 'buyer_name', 'url'} & compact['awards'][0].keys())
+
     def test_search_results_filters_by_buyer_and_cpv(self):
         found = search_results(self.state, buyer='krakow', cpv=('72*',))
         self.assertEqual({award['lot'] for award in found['awards']}, {'1', '2'})
