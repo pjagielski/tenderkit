@@ -89,6 +89,13 @@ class McpTests(unittest.IsolatedAsyncioTestCase):
         slim = await client.call_tool('search_results', {'profile': 'leki', 'compact': True})
         self.assertEqual(slim.structured_content['notices'][0]['number'], 'two')
         self.assertNotIn('title', slim.structured_content['awards'][0])
+        summary_only = await client.call_tool('search_results', {'profile': 'leki', 'limit': 0, 'sort': '-price',
+                                                                 'status': 'AWARDED', 'min_offers': 0})
+        self.assertFalse(summary_only.is_error)
+        self.assertEqual(summary_only.structured_content['awards'], [])
+        self.assertLessEqual(summary_only.structured_content['summary']['awards'],
+                             awards.structured_content['summary']['status']['AWARDED'])
+        self.assertTrue((await client.call_tool('search_results', {'profile': 'leki', 'sort': 'value'})).is_error)
         slim_procedure = await client.call_tool('procedure_results', {'source': 'TED', 'number': 'two', 'compact': True})
         self.assertNotIn('description', slim_procedure.structured_content['contracts'][0])
         prompts = await client.list_prompts()

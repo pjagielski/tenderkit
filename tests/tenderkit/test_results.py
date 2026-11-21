@@ -246,6 +246,75 @@ class ResultServiceTests(unittest.TestCase):
                          [(a['lot'], a['number'], a['contractor'], a['price']) for a in full['awards']])
         self.assertFalse({'source', 'title', 'buyer_name', 'url'} & compact['awards'][0].keys())
 
+    def _add_lots(self):
+        # TED: one bid for two lots (notice_total), a framework ceiling and a EUR lot; BZP: a lot without a bid count.
+        ted = Notice('TED', 'ted-1', procedure_id='ted-proc', title='Dostawa ambulansów i opon', buyer_name='Szpital',
+                     cpv=('72200000',), published=date(2026, 10, 22), notice_type='can-standard',
+                     lots=(Lot('LOT-1', 'Ambulans typu C'), Lot('LOT-2', 'Opony zimowe'), Lot('LOT-3', 'Serwis'),
+                           Lot('LOT-4', 'Ambulans typu B')),
+                     awards=(Award('LOT-1', 'AWARDED', contractor='Beta', price=Decimal('500'), currency='PLN',
+                                   offers=1, price_scope='notice_total', date=date(2026, 10, 10)),
+                             Award('LOT-2', 'AWARDED', contractor='Beta', price=Decimal('500'), currency='PLN',
+                                   offers=1, price_scope='notice_total'),
+                             Award('LOT-3', 'AWARDED', contractor='Gamma', price=Decimal('80'), currency='PLN',
+                                   offers=3, price_scope='framework_max'),
+                             Award('LOT-4', 'AWARDED', contractor='Delta', contractor_id='999', price=Decimal('40'),
+                                   currency='EUR', offers=4, price_scope='lot', date=date(2026, 10, 5))))
+        bzp = Notice('BZP', 'result-9', procedure_id='proc-9', title='Ambulans', buyer_name='Gmina Kraków',
+                     cpv=('72200000',), published=date(2026, 10, 23), notice_type='TenderResultNotice',
+                     awards=(Award('__all__', 'AWARDED', contractor='Acme sp. z o.o.', contractor_id='111',
+                                   price=Decimal('3000'), currency='PLN'),))
+        for item in (ted, bzp):
+            self.state.record_refresh(item.source, item.published, item.published, {}, [item])
+
+    def test_summary_counts_procedures_lots_and_only_lot_prices(self):
+        self._add_lots()
+        result = search_results(self.state, cpv=('72*',), limit=0)
+        self.assertEqual((result['awards'], result['total'], result['next_offset']), ([], 7, None))
+        summary = result['summary']
+        self.assertEqual({k: summary[k] for k in ('awards', 'procedures', 'notices', 'buyers', 'contractors')},
+                         dict(awards=7, procedures=3, notices=3, buyers=2, contractors=4))
+        self.assertEqual(summary['status'], {'AWARDED': 6, 'CANCELLED': 1})
+        self.assertEqual(summary['missing'], dict(price=0, contractor=0, date=3, offers=1))
+        self.assertEqual(summary['offers'], dict(known=6, single=2, min=0, median=1.5, max=4))
+        self.assertEqual(summary['prices'], [
+            dict(currency='PLN', lots=2, sum='4000', min='1000', median='2000', max='3000'),
+            dict(currency='EUR', lots=1, sum='40', min='40', median='40', max='40')])
+        self.assertEqual(summary['prices_left_out'], {'notice_total': 2, 'framework_max': 1})
+        self.assertNotIn('keyword_scope', summary)
+
+    def test_status_bid_filters_and_sorting_keep_missing_values_last(self):
+        self._add_lots()
+
+        def lots(**kw):
+            return [(a['number'], a['lot']) for a in search_results(self.state, cpv=('72*',), **kw)['awards']]
+        self.assertEqual(lots(status='CANCELLED'), [('result-1', '2')])
+        self.assertEqual(lots(max_offers=1), [('result-1', '2'), ('ted-1', 'LOT-1'), ('ted-1', 'LOT-2')])
+        self.assertEqual(lots(min_offers=3), [('ted-1', 'LOT-3'), ('ted-1', 'LOT-4')])
+        self.assertEqual(lots(min_offers=0), [lot for lot in lots() if lot != ('result-9', '__all__')])
+        # Only lot prices sort; notice totals, framework ceilings and cancelled lots follow in stored order.
+        self.assertEqual(lots(sort='-price')[:3], [('result-9', '__all__'), ('result-1', '1'), ('ted-1', 'LOT-4')])
+        self.assertEqual(lots(sort='price')[:3], [('ted-1', 'LOT-4'), ('result-1', '1'), ('result-9', '__all__')])
+        self.assertEqual(lots(sort='date')[:4], [('ted-1', 'LOT-4'), ('ted-1', 'LOT-1'), ('result-1', '1'),
+                                                 ('result-1', '2')])
+        self.assertEqual(lots(sort='-published')[0], ('result-9', '__all__'))
+        page = search_results(self.state, cpv=('72*',), sort='-offers', limit=2, offset=1)
+        self.assertEqual(([a['offers'] for a in page['awards']], page['next_offset']), ([3, 2], 3))
+        for bad in (dict(status='DONE'), dict(min_offers=-1), dict(max_offers='1'), dict(sort='value'),
+                    dict(limit=-1), dict(keywords_in_lot=True)):
+            with self.subTest(bad=bad), self.assertRaises(ValueError):
+                search_results(self.state, cpv=('72*',), **bad)
+
+    def test_keyword_scope_tells_lot_matches_from_other_lots_of_the_notice(self):
+        self._add_lots()
+        result = search_results(self.state, keywords_any=['ambulans'])
+        scopes = {(a['number'], a['lot']): a['keyword_scope'] for a in result['awards']}
+        self.assertEqual(scopes, {('ted-1', 'LOT-1'): 'lot', ('ted-1', 'LOT-2'): 'notice', ('ted-1', 'LOT-3'): 'notice',
+                                  ('ted-1', 'LOT-4'): 'lot', ('result-9', '__all__'): 'lot'})
+        self.assertEqual(result['summary']['keyword_scope'], {'lot': 3, 'notice': 2})
+        narrowed = search_results(self.state, keywords_any=['ambulans'], keywords_in_lot=True)
+        self.assertEqual(sorted(a['lot'] for a in narrowed['awards']), ['LOT-1', 'LOT-4', '__all__'])
+
     def test_search_results_filters_by_buyer_and_cpv(self):
         found = search_results(self.state, buyer='krakow', cpv=('72*',))
         self.assertEqual({award['lot'] for award in found['awards']}, {'1', '2'})
