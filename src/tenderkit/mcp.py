@@ -348,8 +348,8 @@ def create_server(path, *, profiles=None, adapters=None, document_root=None, doc
                                                   'count are left out.')] = None,
             max_offers: Annotated[int | None, arg('Only lots with at most this many bids, e.g. 1 for single-bid '
                                                   'lots; lots without a bid count are left out.')] = None,
-            keywords_in_lot: Annotated[bool, arg('Only awards whose own lot title holds a keywords_any term (any '
-                                                 'field for single-lot notices).')] = False,
+            keywords_in_lot: Annotated[bool, arg('Only awards with keyword_scope lot: a keywords_any term in the '
+                                                 'lot title or description (any field for single-lot notices).')] = False,
             sort: Annotated[Literal['price', '-price', 'date', '-date', 'published', '-published', 'offers',
                                     '-offers'] | None,
                             arg('Order awards by lot price, award date, notice publication date or bid count; '
@@ -369,8 +369,10 @@ def create_server(path, *, profiles=None, adapters=None, document_root=None, doc
         statistics, and per-currency sum/min/median/max of lot prices. Prices that cover several lots
         (price_scope notice_total) or a framework ceiling, or whose scope is unknown, are left out of the sums
         and counted in prices_left_out. limit=0 returns only the summary.
-        With keywords_any each award has keyword_scope: lot when the terms name its own lot, notice when they
-        matched only another part of a multi-lot notice, which does not show this lot is the same product.
+        With keywords_any each award has keyword_scope: lot when a term is in its lot's title or description (taken
+        from any stored notice of the procedure, usually the contract notice) or the notice has a single lot;
+        notice when the lot is described and the terms matched only elsewhere, which does not show this lot is the
+        same product; unknown when no stored notice names or describes the lot.
         coverage describes acquisition windows and scopes per source, independently of result counts.
         """
         configured = available_profiles()

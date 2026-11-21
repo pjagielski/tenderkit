@@ -311,9 +311,28 @@ class ResultServiceTests(unittest.TestCase):
         scopes = {(a['number'], a['lot']): a['keyword_scope'] for a in result['awards']}
         self.assertEqual(scopes, {('ted-1', 'LOT-1'): 'lot', ('ted-1', 'LOT-2'): 'notice', ('ted-1', 'LOT-3'): 'notice',
                                   ('ted-1', 'LOT-4'): 'lot', ('result-9', '__all__'): 'lot'})
-        self.assertEqual(result['summary']['keyword_scope'], {'lot': 3, 'notice': 2})
+        self.assertEqual(result['summary']['keyword_scope'], {'lot': 3, 'notice': 2, 'unknown': 0})
         narrowed = search_results(self.state, keywords_any=['ambulans'], keywords_in_lot=True)
         self.assertEqual(sorted(a['lot'] for a in narrowed['awards']), ['LOT-1', 'LOT-4', '__all__'])
+
+    def test_keyword_scope_reads_lots_from_the_contract_notice_of_the_procedure(self):
+        # BZP results name no lots; the contract notice describes lots 1 and 2 but not lot 3.
+        contract = Notice('BZP', 'contract-7', procedure_id='proc-7', title='Dostawa leków', buyer_name='Szpital',
+                          cpv=('33600000',), published=date(2026, 10, 1), notice_type='ContractNotice',
+                          lots=(Lot('1', description='Insulina ludzka krótkodziałająca'),
+                                Lot('2', title='Heparyna', description='Heparyna drobnocząsteczkowa')))
+        result = Notice('BZP', 'result-7', procedure_id='proc-7', title='Dostawa leków, w tym insuliny',
+                        buyer_name='Szpital', cpv=('33600000',), published=date(2026, 10, 30),
+                        notice_type='TenderResultNotice',
+                        awards=tuple(Award(lot, 'AWARDED', contractor='Pharma', price=Decimal('10'), currency='PLN')
+                                     for lot in ('1', '2', '3')))
+        self.state.record_refresh('BZP', date(2026, 10, 1), date(2026, 10, 30), {}, [contract, result])
+        found = search_results(self.state, keywords_any=['insulin'])
+        self.assertEqual({a['lot']: (a['keyword_scope'], a['lot_title']) for a in found['awards']},
+                         {'1': ('lot', None), '2': ('notice', 'Heparyna'), '3': ('unknown', None)})
+        self.assertEqual(found['summary']['keyword_scope'], {'lot': 1, 'notice': 1, 'unknown': 1})
+        narrowed = search_results(self.state, keywords_any=['insulin'], keywords_in_lot=True)
+        self.assertEqual([a['lot'] for a in narrowed['awards']], ['1'])
 
     def test_search_results_filters_by_buyer_and_cpv(self):
         found = search_results(self.state, buyer='krakow', cpv=('72*',))
