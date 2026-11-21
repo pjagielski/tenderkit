@@ -217,6 +217,8 @@ CPV and the lot name when available. TED result XML can also provide a
 structured lot quantity and unit. Previously saved TED results gain the
 new lot metadata on refresh.
 
+With `compact=true`, `search_results` lists each source notice once in `notices` and leaves only `source` and `number` on its awards, and `procedure_results` returns notice summaries without descriptions or lots. Totals and paging are the same; use it for large result sets.
+
 TED award prices can carry a `price_scope` of `lot`, `notice_total`, or `framework_max`, when the
 XML supports that interpretation. A result can also expose its explicitly published framework ceiling
 as `framework_max` and `framework_currency`. A total or a ceiling repeated on multiple award rows

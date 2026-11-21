@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- MCP `search_results` and `procedure_results` take `compact=true`: each notice is listed once, awards keep only their notice number, empty fields are left out, and `procedure_results` returns notice summaries. On production data this cuts a 100-award medicines search by 68% and a 67-lot procedure by 85%. Every MCP tool now sends its text block as one-line JSON instead of indented JSON, about 10% less per response.
 - Profiles and MCP `search_notices` take `keyword_fields` (`title`, `description`, `lot_title`) to limit where `keywords_any` must match, and `buyers` to keep named contracting authorities by name fragment or exact NIP/REGON. A title-only search no longer matches platform instructions in descriptions. `exclude_keywords` still check every field.
 - Every MCP tool has a title, a description for each argument and behaviour hints (`readOnlyHint`, `destructiveHint`, `idempotentHint`, `openWorldHint`). On a `--read-only` server all tools are marked read-only and closed-world.
 - Profile and MCP `regions` accept voivodeship names such as `mazowieckie`, ignoring case, Polish diacritics and a `woj.` prefix. TERYT codes such as `14` still work. An unknown name or a code that is not one of the 16 voivodeships fails with the list of valid names.

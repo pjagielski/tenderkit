@@ -199,6 +199,32 @@ def _award_record(award, notice):
                 title=notice.title, buyer_name=notice.buyer_name)
 
 
+# Notice fields an award record repeats; a compact response lists them once per notice.
+AWARD_NOTICE_FIELDS = ('url', 'buyer_region', 'notice_kind', 'published', 'title', 'buyer_name')
+
+
+def _without_empty(record):
+    return {key: value for key, value in record.items() if value not in (None, [], '')}
+
+
+def compact_awards(awards):
+    """Awards that keep source and number, plus each of their notices once, both without empty fields."""
+    notices, slim = {}, []
+    for award in awards:
+        key = (award['source'], award['number'])
+        if key not in notices:
+            notices[key] = _without_empty(dict(source=award['source'], number=award['number'],
+                                               **{name: award.get(name) for name in AWARD_NOTICE_FIELDS}))
+        slim.append(_without_empty({k: v for k, v in award.items() if k not in AWARD_NOTICE_FIELDS}))
+    return slim, list(notices.values())
+
+
+def _notice_summary(notice):
+    record = compact_notice_record(notice, Profile('summary'))
+    record['award_count'] = len(notice.awards)
+    return _without_empty(record)
+
+
 def json_roundtrip(value):
     return json.loads(dumps(value))
 
@@ -215,7 +241,7 @@ def latest_awards(notices):
     return [latest[key] for key in sorted(latest, key=lambda k: (k[0], k[1], k[2]))]
 
 
-def procedure_results(state, source, number):
+def procedure_results(state, source, number, *, compact=False):
     """One procedure's contract and result notices, linked by procedure_id, with the latest award per lot."""
     notice = state.get(source, number)
     if notice is None:
@@ -226,6 +252,16 @@ def procedure_results(state, source, number):
         if not any(n.number == notice.number for n in related):
             related.append(notice)
     related.sort(key=lambda n: (n.published or date.min, n.number))
+    if compact:
+        awards, _ = compact_awards([_award_record(award, owner) for award, owner in latest_awards(related)])
+        for award in awards:
+            award.pop('source', None)
+        return dict(
+            notice=_notice_summary(notice),
+            procedure_id=notice.procedure_id,
+            contracts=[_notice_summary(n) for n in related if not n.awards and n.notice_type != AMENDMENT_TYPE],
+            results=[_notice_summary(n) for n in related if n.awards],
+            awards=awards)
     return dict(
         notice=notice_record(notice, raw=False),
         procedure_id=notice.procedure_id,
@@ -235,7 +271,7 @@ def procedure_results(state, source, number):
 
 
 def search_results(state, *, buyer=None, cpv=None, start=None, end=None, limit=100, offset=0, source_names=(),
-                   keywords_any=None, exclude_keywords=None, regions=None, exclude_cpv=None, profile=None):
+                   keywords_any=None, exclude_keywords=None, regions=None, exclude_cpv=None, profile=None, compact=False):
     """Earlier awards by buyer text and CPV, latest per procedure and lot, paginated like notice search."""
     if type(limit) is not int or not 1 <= limit <= MAX_RESULTS or type(offset) is not int or not 0 <= offset <= MAX_NOTICES:
         raise ValueError('Invalid result limit or offset')
@@ -263,6 +299,9 @@ def search_results(state, *, buyer=None, cpv=None, start=None, end=None, limit=1
         candidates.append(selected)
     awards = [_award_record(award, owner) for award, owner in latest_awards(candidates)]
     page = awards[offset:offset + limit]
-    return dict(awards=page, offset=offset, total=len(awards),
-                next_offset=offset + len(page) if offset + len(page) < len(awards) else None,
-                coverage=state.search_coverage(profile, start, end, source_names, results=True))
+    result = dict(awards=page, offset=offset, total=len(awards),
+                  next_offset=offset + len(page) if offset + len(page) < len(awards) else None,
+                  coverage=state.search_coverage(profile, start, end, source_names, results=True))
+    if compact:
+        result['awards'], result['notices'] = compact_awards(page)
+    return result

@@ -64,7 +64,7 @@ def create_server(path, *, profiles=None, adapters=None, document_root=None, doc
     try:
         from mcp.server import MCPServer
         from mcp.server.mcpserver.exceptions import ToolError
-        from mcp.types import ToolAnnotations
+        from mcp.types import CallToolResult, TextContent, ToolAnnotations
         from pydantic import Field
     except ImportError as exc:
         raise RuntimeError('Install the MCP extra: pip install -e ".[mcp]" (tenderkit[mcp] after F4)') from exc
@@ -93,11 +93,16 @@ def create_server(path, *, profiles=None, adapters=None, document_root=None, doc
         @wraps(function)
         def call(*args, **kwargs):
             try:
-                return function(*args, **kwargs)
+                result = function(*args, **kwargs)
             except ValueError as exc:
                 raise ToolError(str(exc)) from None
             except FetchError as exc:
                 raise ToolError(exc.code) from None
+            if isinstance(result, dict):
+                # The text block repeats structuredContent for clients that read only text. The SDK would
+                # indent it, which makes it about a third larger than the data; send it on one line instead.
+                return CallToolResult(content=[TextContent(type='text', text=dumps(result))], structured_content=result)
+            return result
         return call
 
     def tool(function):
@@ -129,6 +134,7 @@ def create_server(path, *, profiles=None, adapters=None, document_root=None, doc
     START = arg('First publication date to include, YYYY-MM-DD.')
     END = arg('Last publication date to include, YYYY-MM-DD.')
     LIMIT = arg('Maximum number of items to return, 1-500.')
+    COMPACT_RESULTS = arg('Return a smaller response: each notice once, no empty fields. Same awards and totals.')
     OFFSET = arg('Number of items to skip for paging, 0-20000.')
     REFRESH = arg('Fetch from the sources before searching (at most 120 days); slower and needs network access.')
     JOB_ID = arg('Job identifier returned by start_refresh.')
@@ -299,13 +305,16 @@ def create_server(path, *, profiles=None, adapters=None, document_root=None, doc
 
     @tool
     @expected_errors
-    def procedure_results(source: Annotated[str, SOURCE], number: Annotated[str, NUMBER]) -> dict[str, Any]:
+    def procedure_results(source: Annotated[str, SOURCE], number: Annotated[str, NUMBER],
+                          compact: Annotated[bool, COMPACT_RESULTS] = False) -> dict[str, Any]:
         """Show one procedure's contract and result notices linked by procedure_id.
 
         Returns the latest formal award per lot (contractor, price, bid count, date, status).
         Cancelled lots appear with status CANCELLED and no contractor.
+        compact=true returns notice summaries without descriptions, lots or repeated awards, and awards that name
+        their notice by number only and omit empty fields; call get_notice for a full notice.
         """
-        result = find_procedure_results(state, source, number)
+        result = find_procedure_results(state, source, number, compact=compact)
         result['provenance'] = 'Untrusted public notice data; awards are formal source facts only.'
         return result
 
@@ -324,7 +333,8 @@ def create_server(path, *, profiles=None, adapters=None, document_root=None, doc
             keywords_any: Annotated[list[str] | None, KEYWORDS] = None,
             exclude_keywords: Annotated[list[str] | None, EXCLUDE_KEYWORDS] = None,
             regions: Annotated[list[str] | None, REGIONS] = None,
-            exclude_cpv: Annotated[list[str] | None, EXCLUDE_CPV] = None) -> dict[str, Any]:
+            exclude_cpv: Annotated[list[str] | None, EXCLUDE_CPV] = None,
+            compact: Annotated[bool, COMPACT_RESULTS] = False) -> dict[str, Any]:
         """Search stored awards by buyer, CPV, keywords and buyer region.
 
         Optional refresh fetches contract and result notices for a known profile, at most 120 days.
@@ -332,6 +342,8 @@ def create_server(path, *, profiles=None, adapters=None, document_root=None, doc
         keyword and region arguments override that profile's corresponding fields, including empty lists.
         Contract notice types and submission deadline rules do not constrain historical awards.
         The result lists one latest award per procedure and lot, with its source notice.
+        compact=true lists each source notice once in notices and leaves only source and number on its awards,
+        without empty fields; use it for large result sets.
         coverage describes acquisition windows and scopes per source, independently of result counts.
         """
         configured = available_profiles()
@@ -355,7 +367,7 @@ def create_server(path, *, profiles=None, adapters=None, document_root=None, doc
                                             sources() if adapters is None else adapters, include_results=True)
             start, end = str(start_date), str(end_date)
         result = find_result_awards(state, buyer=buyer, start=start, end=end,
-                                    limit=limit, offset=offset, profile=selected)
+                                    limit=limit, offset=offset, profile=selected, compact=compact)
         result['refreshes'] = summaries
         result['provenance'] = 'Untrusted public notice data; awards are formal source facts only.'
         return result

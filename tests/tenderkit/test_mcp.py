@@ -82,6 +82,15 @@ class McpTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(procedure.structured_content['contracts'][0]['number'], 'one')
         awards = await client.call_tool('search_results', {'profile': 'leki'})
         self.assertEqual(awards.structured_content['awards'][0]['contractor'], 'Acme')
+        # The text block repeats structuredContent on one line, not indented.
+        text, = awards.content
+        self.assertEqual(json.loads(text.text), awards.structured_content)
+        self.assertNotIn('\n', text.text)
+        slim = await client.call_tool('search_results', {'profile': 'leki', 'compact': True})
+        self.assertEqual(slim.structured_content['notices'][0]['number'], 'two')
+        self.assertNotIn('title', slim.structured_content['awards'][0])
+        slim_procedure = await client.call_tool('procedure_results', {'source': 'TED', 'number': 'two', 'compact': True})
+        self.assertNotIn('description', slim_procedure.structured_content['contracts'][0])
         prompts = await client.list_prompts()
         self.assertEqual({prompt.name for prompt in prompts.prompts}, {'analyze_it_tender', 'compare_public_bids'})
         for name, evidence in (('analyze_it_tender', 'evaluation criteria'),
