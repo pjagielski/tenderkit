@@ -325,7 +325,7 @@ def create_server(path, *, profiles=None, adapters=None, document_root=None, doc
             cpv: Annotated[list[str] | None, CPV] = None,
             start: Annotated[str | None, START] = None,
             end: Annotated[str | None, END] = None,
-            limit: Annotated[int, LIMIT] = 100,
+            limit: Annotated[int, arg('Maximum number of awards to return, 0-500; 0 returns only the summary.')] = 100,
             offset: Annotated[int, OFFSET] = 0,
             profile: Annotated[str | None, arg('Filter awards with this configured profile; explicit filters override '
                                                'its fields. Required for refresh.')] = None,
@@ -334,7 +334,20 @@ def create_server(path, *, profiles=None, adapters=None, document_root=None, doc
             exclude_keywords: Annotated[list[str] | None, EXCLUDE_KEYWORDS] = None,
             regions: Annotated[list[str] | None, REGIONS] = None,
             exclude_cpv: Annotated[list[str] | None, EXCLUDE_CPV] = None,
-            compact: Annotated[bool, COMPACT_RESULTS] = False) -> dict[str, Any]:
+            compact: Annotated[bool, COMPACT_RESULTS] = False,
+            status: Annotated[Literal['AWARDED', 'CANCELLED'] | None,
+                              arg('Only awarded or only cancelled lots.')] = None,
+            min_offers: Annotated[int | None, arg('Only lots with at least this many bids; lots without a bid '
+                                                  'count are left out.')] = None,
+            max_offers: Annotated[int | None, arg('Only lots with at most this many bids, e.g. 1 for single-bid '
+                                                  'lots; lots without a bid count are left out.')] = None,
+            keywords_in_lot: Annotated[bool, arg('Only awards whose own lot title holds a keywords_any term (any '
+                                                 'field for single-lot notices).')] = False,
+            sort: Annotated[Literal['price', '-price', 'date', '-date', 'published', '-published', 'offers',
+                                    '-offers'] | None,
+                            arg('Order awards by lot price, award date, notice publication date or bid count; '
+                                '"-" for descending. Awards without the value come last.')] = None
+            ) -> dict[str, Any]:
         """Search stored awards by buyer, CPV, keywords and buyer region.
 
         Optional refresh fetches contract and result notices for a known profile, at most 120 days.
@@ -344,6 +357,13 @@ def create_server(path, *, profiles=None, adapters=None, document_root=None, doc
         The result lists one latest award per procedure and lot, with its source notice.
         compact=true lists each source notice once in notices and leaves only source and number on its awards,
         without empty fields; use it for large result sets.
+        summary counts every filtered award, not just the page: awards (lot results), distinct procedures,
+        notices, buyers and contractors, status counts, missing price/contractor/date/bid count, bid count
+        statistics, and per-currency sum/min/median/max of lot prices. Prices that cover several lots
+        (price_scope notice_total) or a framework ceiling, or whose scope is unknown, are left out of the sums
+        and counted in prices_left_out. limit=0 returns only the summary.
+        With keywords_any each award has keyword_scope: lot when the terms name its own lot, notice when they
+        matched only another part of a multi-lot notice, which does not show this lot is the same product.
         coverage describes acquisition windows and scopes per source, independently of result counts.
         """
         configured = available_profiles()
@@ -357,7 +377,7 @@ def create_server(path, *, profiles=None, adapters=None, document_root=None, doc
             if value is not None:
                 data[name] = value
         selected = profile_from_dict(data)
-        if type(limit) is not int or not 1 <= limit <= 500 or type(offset) is not int or not 0 <= offset <= 20000:
+        if type(limit) is not int or not 0 <= limit <= 500 or type(offset) is not int or not 0 <= offset <= 20000:
             raise ValueError('Invalid result limit or offset')
         summaries = []
         if refresh:
@@ -367,7 +387,9 @@ def create_server(path, *, profiles=None, adapters=None, document_root=None, doc
                                             sources() if adapters is None else adapters, include_results=True)
             start, end = str(start_date), str(end_date)
         result = find_result_awards(state, buyer=buyer, start=start, end=end,
-                                    limit=limit, offset=offset, profile=selected, compact=compact)
+                                    limit=limit, offset=offset, profile=selected, compact=compact,
+                                    status=status, min_offers=min_offers, max_offers=max_offers,
+                                    keywords_in_lot=keywords_in_lot, sort=sort)
         result['refreshes'] = summaries
         result['provenance'] = 'Untrusted public notice data; awards are formal source facts only.'
         return result

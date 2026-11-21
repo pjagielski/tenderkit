@@ -209,6 +209,10 @@ class Profile:
     def matches_text(self, text):
         return self._matches_keywords((text,))
 
+    def mentions(self, text):
+        """Whether text holds a keywords_any term, ignoring exclusions."""
+        return bool(self.keywords_any) and self._matches_keywords((text,), exclude=False)
+
     def _matches_keywords(self, texts, *, exclude=True, excluded_texts=None):
         """Whether one of texts holds a keywords_any term and (with exclude) none of excluded_texts, which default
         to texts, holds an exclude_keywords term."""

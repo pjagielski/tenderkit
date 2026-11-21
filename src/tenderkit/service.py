@@ -2,9 +2,11 @@
 from collections import defaultdict
 from dataclasses import asdict, replace
 from datetime import date, datetime, timedelta
+from decimal import Decimal
 from importlib.metadata import entry_points
 import json
 import re
+from statistics import median
 from zoneinfo import ZoneInfo
 
 from tenderkit.interfaces import Source
@@ -190,7 +192,7 @@ def _award_record(award, notice):
     lot_title = lot.title if lot else None
     if not lot_title and len(notice.lots) == len(notice.lot_titles) == 1:
         lot_title = notice.lot_titles[0]
-    return dict(record, source=notice.source, number=notice.number, url=notice.url,
+    return dict(record, source=notice.source, number=notice.number, procedure_id=notice.procedure_id, url=notice.url,
                 buyer_region=notice.buyer_region, cpv=list(lot.cpv if lot and lot.cpv else notice.cpv),
                 notice_kind=notice_kind(notice), lot_title=lot_title,
                 quantity=str(lot.quantity) if lot and lot.quantity is not None else None,
@@ -200,7 +202,85 @@ def _award_record(award, notice):
 
 
 # Notice fields an award record repeats; a compact response lists them once per notice.
-AWARD_NOTICE_FIELDS = ('url', 'buyer_region', 'notice_kind', 'published', 'title', 'buyer_name')
+AWARD_NOTICE_FIELDS = ('procedure_id', 'url', 'buyer_region', 'notice_kind', 'published', 'title', 'buyer_name')
+AWARD_STATUSES = ('AWARDED', 'CANCELLED')
+# Sort keys for result awards: date is the award or contract date, published the notice date; '-' sorts descending.
+RESULT_SORTS = ('price', '-price', 'date', '-date', 'published', '-published', 'offers', '-offers')
+
+
+def lot_price(award):
+    """The award's price when it prices this one lot, else None.
+
+    TED states the scope: 'lot' is one lot's bid, while 'notice_total' (one bid for several lots) and 'framework_max'
+    (a framework ceiling) would be counted once per lot, and an unmarked TED price is of unknown scope. A BZP award
+    comes from its own lot section, so its price is that lot's."""
+    if award.get('price') is None or not award.get('currency'):
+        return None
+    scope = award.get('price_scope')
+    if scope == 'lot' or (scope is None and award['source'] != 'TED'):
+        return Decimal(award['price'])
+    return None
+
+
+def keyword_scope(profile, award, notice):
+    """'lot' when a keywords_any term names this award's subject: the lot title, or any searched field of a notice
+    with a single lot; 'notice' when the terms matched only elsewhere in a multi-lot notice."""
+    lots = {item.lot for item in notice.awards} | {lot.number for lot in notice.lots}
+    if award.lot == '__all__' or len(lots) <= 1:
+        return 'lot'
+    lot = next((item for item in notice.lots if item.number == award.lot), None)
+    return 'lot' if lot and lot.title and profile.mentions(lot.title) else 'notice'
+
+
+def _sort_awards(awards, sort):
+    field = sort.lstrip('-')
+    value = {'price': lot_price, 'date': lambda a: a.get('date'), 'published': lambda a: a.get('published'),
+             'offers': lambda a: a.get('offers')}[field]
+    known = [award for award in awards if value(award) is not None]
+    known.sort(key=value, reverse=sort.startswith('-'))
+    return known + [award for award in awards if value(award) is None]       # missing values always last
+
+
+def _number(value):
+    return int(value) if value == int(value) else float(value)
+
+
+def results_summary(awards):
+    """Counts over every filtered award, not only the returned page.
+
+    awards counts lot results (one latest result per source, procedure and lot); procedures counts distinct
+    procedures; missing counts awarded lots without a price, contractor or date, and any lot without a bid count;
+    prices sum only lot prices (see lot_price), per currency, and price_scope counts the awarded prices left out."""
+    awarded = [a for a in awards if a['status'] == 'AWARDED']
+    offers = sorted(a['offers'] for a in awards if a.get('offers') is not None)
+    prices, excluded = defaultdict(list), defaultdict(int)
+    for award in awarded:
+        price = lot_price(award)
+        if price is not None:
+            prices[award['currency']].append(price)
+        elif award.get('price') is not None:
+            excluded[award.get('price_scope') or ('unknown' if award.get('currency') else 'no_currency')] += 1
+    summary = dict(
+        awards=len(awards),
+        procedures=len({(a['source'], a.get('procedure_id') or a['number']) for a in awards}),
+        notices=len({(a['source'], a['number']) for a in awards}),
+        buyers=len({fold(a['buyer_name']) for a in awards if a.get('buyer_name')}),
+        contractors=len({a.get('contractor_id') or fold(a['contractor']) for a in awarded if a.get('contractor')}),
+        status={status: sum(a['status'] == status for a in awards) for status in AWARD_STATUSES},
+        missing=dict(price=sum(a.get('price') is None for a in awarded),
+                     contractor=sum(not a.get('contractor') for a in awarded),
+                     date=sum(a.get('date') is None for a in awarded),
+                     offers=len(awards) - len(offers)),
+        offers=dict(known=len(offers), single=offers.count(1), min=offers[0], median=_number(median(offers)),
+                    max=offers[-1]) if offers else dict(known=0),
+        prices=[dict(currency=currency, lots=len(values), sum=str(sum(values)), min=str(min(values)),
+                     median=str(median(values)), max=str(max(values)))
+                for currency, values in sorted(prices.items(), key=lambda item: -len(item[1]))],
+        prices_left_out=dict(excluded))
+    scopes = [a['keyword_scope'] for a in awards if 'keyword_scope' in a]
+    if scopes:
+        summary['keyword_scope'] = {scope: scopes.count(scope) for scope in ('lot', 'notice')}
+    return summary
 
 
 def _without_empty(record):
@@ -271,10 +351,20 @@ def procedure_results(state, source, number, *, compact=False):
 
 
 def search_results(state, *, buyer=None, cpv=None, start=None, end=None, limit=100, offset=0, source_names=(),
-                   keywords_any=None, exclude_keywords=None, regions=None, exclude_cpv=None, profile=None, compact=False):
-    """Earlier awards by buyer text and CPV, latest per procedure and lot, paginated like notice search."""
-    if type(limit) is not int or not 1 <= limit <= MAX_RESULTS or type(offset) is not int or not 0 <= offset <= MAX_NOTICES:
+                   keywords_any=None, exclude_keywords=None, regions=None, exclude_cpv=None, profile=None, compact=False,
+                   status=None, min_offers=None, max_offers=None, keywords_in_lot=False, sort=None):
+    """Earlier awards by buyer text and CPV, latest per procedure and lot, paginated like notice search.
+
+    summary describes every filtered award; limit=0 returns only the summary."""
+    if type(limit) is not int or not 0 <= limit <= MAX_RESULTS or type(offset) is not int or not 0 <= offset <= MAX_NOTICES:
         raise ValueError('Invalid result limit or offset')
+    if status is not None and status not in AWARD_STATUSES:
+        raise ValueError('status must be AWARDED or CANCELLED')
+    for bound in (min_offers, max_offers):
+        if bound is not None and (type(bound) is not int or bound < 0):
+            raise ValueError('min_offers and max_offers must be non-negative integers')
+    if sort is not None and sort not in RESULT_SORTS:
+        raise ValueError('sort must be one of ' + ', '.join(RESULT_SORTS))
     if start is not None or end is not None:
         start, end = window(start, end)
     overrides = {name: value for name, value in (
@@ -297,10 +387,28 @@ def search_results(state, *, buyer=None, cpv=None, start=None, end=None, limit=1
         if folded_buyer and folded_buyer not in fold(notice.buyer_name):
             continue
         candidates.append(selected)
-    awards = [_award_record(award, owner) for award, owner in latest_awards(candidates)]
+    if keywords_in_lot and not profile.keywords_any:
+        raise ValueError('keywords_in_lot requires keywords_any')
+    awards = []
+    for award, owner in latest_awards(candidates):
+        if status is not None and award.status != status:
+            continue
+        if (min_offers is not None or max_offers is not None) and award.offers is None:
+            continue
+        if min_offers is not None and award.offers < min_offers or max_offers is not None and award.offers > max_offers:
+            continue
+        record = _award_record(award, owner)
+        if profile.keywords_any:
+            record['keyword_scope'] = keyword_scope(profile, award, owner)
+            if keywords_in_lot and record['keyword_scope'] != 'lot':
+                continue
+        awards.append(record)
+    if sort is not None:
+        awards = _sort_awards(awards, sort)
     page = awards[offset:offset + limit]
     result = dict(awards=page, offset=offset, total=len(awards),
-                  next_offset=offset + len(page) if offset + len(page) < len(awards) else None,
+                  next_offset=offset + len(page) if limit and offset + len(page) < len(awards) else None,
+                  summary=results_summary(awards),
                   coverage=state.search_coverage(profile, start, end, source_names, results=True))
     if compact:
         result['awards'], result['notices'] = compact_awards(page)

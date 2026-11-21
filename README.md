@@ -219,6 +219,10 @@ new lot metadata on refresh.
 
 With `compact=true`, `search_results` lists each source notice once in `notices` and leaves only `source` and `number` on its awards, and `procedure_results` returns notice summaries without descriptions or lots. Totals and paging are the same; use it for large result sets.
 
+Every `search_results` response has a `summary` of all filtered awards, not only the returned page. `awards` counts lot results (the latest result per source, procedure and lot, so corrections replace earlier publications) and `procedures` counts distinct procedures. `missing` counts awarded lots without a price, contractor or date, and lots without a bid count. `prices` sums lot prices per currency with min, median and max; a TED price that covers several lots (`price_scope` `notice_total`), a framework ceiling or a price of unknown scope would be counted once per lot, so it is left out and counted in `prices_left_out`. Use `limit=0` for the summary alone.
+
+Filter with `status` (`AWARDED` or `CANCELLED`), `min_offers` and `max_offers` (`max_offers=1` for single-bid lots; lots without a bid count are left out) and order with `sort` (`price`, `date`, `published`, `offers`, `-` for descending; missing values last). A keyword in a procedure title does not show that every lot is that product: with `keywords_any`, each award's `keyword_scope` is `lot` when a term names its own lot and `notice` otherwise, and `keywords_in_lot=true` keeps only the former.
+
 TED award prices can carry a `price_scope` of `lot`, `notice_total`, or `framework_max`, when the
 XML supports that interpretation. A result can also expose its explicitly published framework ceiling
 as `framework_max` and `framework_currency`. A total or a ceiling repeated on multiple award rows

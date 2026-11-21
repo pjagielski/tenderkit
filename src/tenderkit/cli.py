@@ -96,8 +96,13 @@ Run tenderkit COMMAND --help for command options.''',
                          help='CPV code or prefix ending in *; repeat to search several.')
     results.add_argument('--from', dest='start', metavar='YYYY-MM-DD', help='First publication date, inclusive.')
     results.add_argument('--to', dest='end', metavar='YYYY-MM-DD', help='Last publication date, inclusive.')
-    results.add_argument('--limit', type=int, default=100, help='Awards per page (default: 100, max: 500).')
+    results.add_argument('--limit', type=int, default=100, help='Awards per page (default: 100, max: 500; 0: summary only).')
     results.add_argument('--offset', type=int, default=0, help='Skip this many awards (default: 0).')
+    results.add_argument('--status', choices=('AWARDED', 'CANCELLED'), help='Only awarded or only cancelled lots.')
+    results.add_argument('--min-offers', type=int, help='Only lots with at least this many bids.')
+    results.add_argument('--max-offers', type=int, help='Only lots with at most this many bids (1: single bid).')
+    results.add_argument('--sort', choices=('price', '-price', 'date', '-date', 'published', '-published', 'offers',
+                                            '-offers'), help='Order by lot price, award date, publication or bids.')
     ui = add_command('ui', 'Browse saved notices at http://127.0.0.1:8765/.')
     ui.add_argument('--port', type=int, default=8765, help='Local HTTP port (default: 8765).')
     ui.add_argument('--profile', action='append', required=True, metavar='NAME_OR_PATH',
@@ -215,7 +220,8 @@ Run tenderkit COMMAND --help for command options.''',
             else:
                 print(dumps(search_results(state, buyer=args.buyer, cpv=args.cpv or (),
                                            start=args.start, end=args.end, limit=args.limit, offset=args.offset,
-                                           source_names=(args.source,) if args.source else ())))
+                                           source_names=(args.source,) if args.source else (), status=args.status,
+                                           min_offers=args.min_offers, max_offers=args.max_offers, sort=args.sort)))
             return 0
         if args.command in ('download', 'list-documents', 'read-document'):
             from tenderkit.documents import Documents
