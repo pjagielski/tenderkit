@@ -217,7 +217,7 @@ CPV and the lot name when available. TED result XML can also provide a
 structured lot quantity and unit. Previously saved TED results gain the
 new lot metadata on refresh.
 
-With `compact=true`, `search_results` lists each source notice once in `notices` and leaves only `source` and `number` on its awards, and `procedure_results` returns notice summaries without descriptions or lots. Totals and paging are the same; use it for large result sets.
+By default (`compact=true`), `search_results` lists each source notice once in `notices` and leaves only `source` and `number` on its awards, and `procedure_results` (which defaults to `compact=false`) returns notice summaries without descriptions or lots. `compact=false` on `search_results` repeats notice fields on every award. Totals and paging are the same.
 
 Every `search_results` response has a `summary` of all filtered awards, not only the returned page. `awards` counts lot results (the latest result per source, procedure and lot, so corrections replace earlier publications) and `procedures` counts distinct procedures. `missing` counts awarded lots without a price, contractor or date, and lots without a bid count. `prices` sums lot prices per currency with min, median and max; a TED price that covers several lots (`price_scope` `notice_total`), a framework ceiling or a price of unknown scope would be counted once per lot, so it is left out and counted in `prices_left_out`. Use `limit=0` for the summary alone.
 

@@ -59,8 +59,11 @@ def without_parameters(function, hidden):
 
 
 def create_server(path, *, profiles=None, adapters=None, document_root=None, document_adapters=None, keep_raw=True,
-                  read_only=False):
-    """read_only=True opens the database read-only and serves only search, notice and result tools."""
+                  read_only=False, max_response_chars=None):
+    """read_only=True opens the database read-only and serves only search, notice and result tools.
+
+    max_response_chars rejects a tool response whose text is longer, with an error that says how to narrow it,
+    instead of letting the client cut it (claude.ai keeps about 150,000 characters of a tool result)."""
     try:
         from mcp.server import MCPServer
         from mcp.server.mcpserver.exceptions import ToolError
@@ -101,7 +104,11 @@ def create_server(path, *, profiles=None, adapters=None, document_root=None, doc
             if isinstance(result, dict):
                 # The text block repeats structuredContent for clients that read only text. The SDK would
                 # indent it, which makes it about a third larger than the data; send it on one line instead.
-                return CallToolResult(content=[TextContent(type='text', text=dumps(result))], structured_content=result)
+                text = dumps(result)
+                if max_response_chars is not None and len(text) > max_response_chars:
+                    raise ToolError(f'Response too large: {len(text)} characters, at most {max_response_chars}. '
+                                    'Use compact=true where offered, a smaller limit with offset, or narrower filters.')
+                return CallToolResult(content=[TextContent(type='text', text=text)], structured_content=result)
             return result
         return call
 
@@ -334,7 +341,7 @@ def create_server(path, *, profiles=None, adapters=None, document_root=None, doc
             exclude_keywords: Annotated[list[str] | None, EXCLUDE_KEYWORDS] = None,
             regions: Annotated[list[str] | None, REGIONS] = None,
             exclude_cpv: Annotated[list[str] | None, EXCLUDE_CPV] = None,
-            compact: Annotated[bool, COMPACT_RESULTS] = False,
+            compact: Annotated[bool, COMPACT_RESULTS] = True,
             status: Annotated[Literal['AWARDED', 'CANCELLED'] | None,
                               arg('Only awarded or only cancelled lots.')] = None,
             min_offers: Annotated[int | None, arg('Only lots with at least this many bids; lots without a bid '
@@ -355,8 +362,8 @@ def create_server(path, *, profiles=None, adapters=None, document_root=None, doc
         keyword and region arguments override that profile's corresponding fields, including empty lists.
         Contract notice types and submission deadline rules do not constrain historical awards.
         The result lists one latest award per procedure and lot, with its source notice.
-        compact=true lists each source notice once in notices and leaves only source and number on its awards,
-        without empty fields; use it for large result sets.
+        By default (compact=true) each source notice is listed once in notices and its awards keep only source
+        and number, without empty fields; compact=false repeats notice fields on every award.
         summary counts every filtered award, not just the page: awards (lot results), distinct procedures,
         notices, buyers and contractors, status counts, missing price/contractor/date/bid count, bid count
         statistics, and per-currency sum/min/median/max of lot prices. Prices that cover several lots
