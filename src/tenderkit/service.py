@@ -222,14 +222,37 @@ def lot_price(award):
     return None
 
 
-def keyword_scope(profile, award, notice):
-    """'lot' when a keywords_any term names this award's subject: the lot title, or any searched field of a notice
-    with a single lot; 'notice' when the terms matched only elsewhere in a multi-lot notice."""
-    lots = {item.lot for item in notice.awards} | {lot.number for lot in notice.lots}
-    if award.lot == '__all__' or len(lots) <= 1:
+def procedure_lots(state, notice, cache):
+    """Titles and descriptions of a procedure's lots from all its stored notices, by lot number.
+
+    Result notices often leave lots unnamed (BZP results never name them); the contract notice does."""
+    key = (notice.source, notice.procedure_id or notice.number)
+    if key not in cache:
+        found = defaultdict(dict)
+        related = state.notices(sources=(notice.source,), procedure_id=notice.procedure_id) \
+            if notice.procedure_id else (notice,)
+        for other in related:
+            for lot in other.lots:
+                for field in ('title', 'description'):
+                    if getattr(lot, field):
+                        found[lot.number].setdefault(field, getattr(lot, field))
+        cache[key] = dict(found)
+    return cache[key]
+
+
+def keyword_scope(profile, award, notice, lots):
+    """Whether a keywords_any term names this award's subject.
+
+    'lot': the term is in the lot's title or description, or the notice has a single lot (then any searched field
+    describes it); 'notice': the lot is described and the terms matched only elsewhere in the notice; 'unknown':
+    no stored notice of the procedure names or describes the lot. lots is procedure_lots for the notice."""
+    numbers = {item.lot for item in notice.awards} | {lot.number for lot in notice.lots}
+    if award.lot == '__all__' or len(numbers) <= 1:
         return 'lot'
-    lot = next((item for item in notice.lots if item.number == award.lot), None)
-    return 'lot' if lot and lot.title and profile.mentions(lot.title) else 'notice'
+    texts = lots().get(award.lot, {}).values()
+    if not texts:
+        return 'unknown'
+    return 'lot' if any(profile.mentions(text) for text in texts) else 'notice'
 
 
 def _sort_awards(awards, sort):
@@ -279,7 +302,7 @@ def results_summary(awards):
         prices_left_out=dict(excluded))
     scopes = [a['keyword_scope'] for a in awards if 'keyword_scope' in a]
     if scopes:
-        summary['keyword_scope'] = {scope: scopes.count(scope) for scope in ('lot', 'notice')}
+        summary['keyword_scope'] = {scope: scopes.count(scope) for scope in ('lot', 'notice', 'unknown')}
     return summary
 
 
@@ -389,7 +412,7 @@ def search_results(state, *, buyer=None, cpv=None, start=None, end=None, limit=1
         candidates.append(selected)
     if keywords_in_lot and not profile.keywords_any:
         raise ValueError('keywords_in_lot requires keywords_any')
-    awards = []
+    awards, lot_cache = [], {}
     for award, owner in latest_awards(candidates):
         if status is not None and award.status != status:
             continue
@@ -399,7 +422,11 @@ def search_results(state, *, buyer=None, cpv=None, start=None, end=None, limit=1
             continue
         record = _award_record(award, owner)
         if profile.keywords_any:
-            record['keyword_scope'] = keyword_scope(profile, award, owner)
+            lots = lambda owner=owner: procedure_lots(state, owner, lot_cache)
+            record['keyword_scope'] = keyword_scope(profile, award, owner, lots)
+            key = (owner.source, owner.procedure_id or owner.number)
+            if not record['lot_title'] and key in lot_cache:       # looked up for a multi-lot notice
+                record['lot_title'] = lot_cache[key].get(award.lot, {}).get('title')
             if keywords_in_lot and record['keyword_scope'] != 'lot':
                 continue
         awards.append(record)
