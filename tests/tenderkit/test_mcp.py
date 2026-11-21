@@ -80,13 +80,14 @@ class McpTests(unittest.IsolatedAsyncioTestCase):
         procedure = await client.call_tool('procedure_results', {'source': 'TED', 'number': 'two'})
         self.assertEqual(procedure.structured_content['awards'][0]['contractor'], 'Acme')
         self.assertEqual(procedure.structured_content['contracts'][0]['number'], 'one')
-        awards = await client.call_tool('search_results', {'profile': 'leki'})
+        awards = await client.call_tool('search_results', {'profile': 'leki', 'compact': False})
         self.assertEqual(awards.structured_content['awards'][0]['contractor'], 'Acme')
+        self.assertEqual(awards.structured_content['awards'][0]['title'], 'Wynik: dostawa leków')
         # The text block repeats structuredContent on one line, not indented.
         text, = awards.content
         self.assertEqual(json.loads(text.text), awards.structured_content)
         self.assertNotIn('\n', text.text)
-        slim = await client.call_tool('search_results', {'profile': 'leki', 'compact': True})
+        slim = await client.call_tool('search_results', {'profile': 'leki'})       # compact by default
         self.assertEqual(slim.structured_content['notices'][0]['number'], 'two')
         self.assertNotIn('title', slim.structured_content['awards'][0])
         summary_only = await client.call_tool('search_results', {'profile': 'leki', 'limit': 0, 'sort': '-price',
@@ -167,6 +168,20 @@ class McpTests(unittest.IsolatedAsyncioTestCase):
                 rows = result.structured_content['notices']
                 self.assertEqual({row['number'] for row in rows}, expected)
                 self.assertEqual({row['notice_kind'] for row in rows}, {kind})
+
+    async def test_max_response_chars_rejects_a_long_response_with_advice(self):
+        from mcp.client import Client
+        from tenderkit.mcp import create_server
+        async with Client(create_server(self.path, read_only=True, max_response_chars=200)) as client:
+            result = await client.call_tool('search_results', {'profile': 'leki', 'compact': False})
+            self.assertTrue(result.is_error)
+            self.assertIn('Response too large', result.content[0].text)
+            self.assertIn('compact=true', result.content[0].text)
+            notice = await client.call_tool('get_notice', {'source': 'TED', 'number': 'missing'})
+            self.assertTrue(notice.is_error)          # ordinary errors are unchanged
+            self.assertNotIn('Response too large', notice.content[0].text)
+        async with Client(create_server(self.path, read_only=True, max_response_chars=100_000)) as client:
+            self.assertFalse((await client.call_tool('search_results', {'profile': 'leki'})).is_error)
 
     async def test_saved_profiles_update_live_clients_persist_and_restore_fallbacks(self):
         from mcp.client import Client
