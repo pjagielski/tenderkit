@@ -46,7 +46,7 @@ def fetch_notices(session, start, end, codes=(), kinds=('cn-standard',), *, mapp
     terms.append(kinds_query[0] if len(kinds_query) == 1 else '(' + ' OR '.join(kinds_query) + ')')
     terms += [f'publication-date>={start:%Y%m%d}', f'publication-date<={end:%Y%m%d}']
     query = ' AND '.join(t for t in terms if t)
-    rows, seen, expected = [], set(), None
+    rows, seen, expected, repeats = [], {}, None, 0
     for page in range(1, max_pages + 1):
         for attempt in range(6):
             response = session.post(TED_SEARCH, json=dict(query=query, fields=TED_FIELDS, limit=250, page=page), timeout=90)
@@ -67,14 +67,19 @@ def fetch_notices(session, start, end, codes=(), kinds=('cn-standard',), *, mapp
         for raw in batch:
             number = raw['publication-number']
             if number in seen:
-                raise TedIncomplete('TED repeated a publication during pagination')
-            seen.add(number)
+                # The TED index can hold one notice as identical rows, both counted in the total; differing rows
+                # mean paging shifted under us.
+                if seen[number] != raw:
+                    raise TedIncomplete('TED repeated a publication during pagination')
+                repeats += 1
+                continue
+            seen[number] = raw
             rows.append(mapper(raw))
-        if expected is not None and len(rows) == expected:
+        if expected is not None and len(rows) + repeats == expected:
             return rows
         if len(batch) < 250:
-            if expected is not None and len(rows) != expected:
-                raise TedIncomplete(f'{len(rows)} notices fetched, TED counts {expected}')
+            if expected is not None and len(rows) + repeats != expected:
+                raise TedIncomplete(f'{len(rows) + repeats} notices fetched, TED counts {expected}')
             return rows
         time.sleep(delay)
     raise TedIncomplete('TED pagination safety limit reached')

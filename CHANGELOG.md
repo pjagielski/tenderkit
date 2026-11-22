@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- TED fetches no longer fail when the TED index holds one notice as identical rows, both counted in its total (seen with 787116-2026). The notice is kept once and the window completes; repeated rows that differ still fail the window as incomplete paging.
 - MCP `search_results` returns compact responses by default; pass `compact=false` for the previous shape. `create_server(max_response_chars=...)` rejects longer tool responses with an error that says how to narrow the request, instead of letting the client cut them (claude.ai keeps about 150,000 characters).
 - `search_results` returns a `summary` of every filtered award, not only the page: lot results, distinct procedures, notices, buyers and contractors, status counts, missing price, contractor, date and bid count, bid count statistics, and per-currency sum, min, median and max of lot prices. TED prices for several lots (`notice_total`), framework ceilings and prices of unknown scope are left out of the sums and counted in `prices_left_out`. `limit=0` returns only the summary. Awards now carry `procedure_id`.
 - `search_results` filters by `status`, `min_offers` and `max_offers` and sorts by lot price, award date, publication date or bid count with `sort` (`-` for descending; missing values last). The CLI `results` command takes `--status`, `--min-offers`, `--max-offers` and `--sort`.

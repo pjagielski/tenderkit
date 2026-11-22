@@ -137,12 +137,24 @@ class SourceTests(unittest.TestCase):
     def test_ted_detects_duplicates_and_stalled_paging(self):
         session = mock.Mock()
         session.post.return_value.status_code = 200
-        session.post.return_value.json.return_value = {'notices': [ted_raw(), ted_raw()], 'totalNoticeCount': 2}
+        session.post.return_value.json.return_value = {'notices': [ted_raw(), ted_raw('1', **{'buyer-name': {'pol': ['Inny']}})],
+                                                       'totalNoticeCount': 2}
         with self.assertRaises(TedIncomplete):
             fetch_notices(session, START, END)
         session.post.return_value.json.return_value = {'notices': [ted_raw(str(i)) for i in range(250)], 'totalNoticeCount': 300}
         with mock.patch('tenderkit.sources.ted.time.sleep'), self.assertRaises(TedIncomplete):
             fetch_notices(session, START, END, max_pages=1)
+
+    def test_ted_keeps_one_copy_of_a_notice_indexed_twice(self):
+        # TED's index holds some notices as identical rows and counts both (787116-2026).
+        session = mock.Mock()
+        session.post.return_value.status_code = 200
+        session.post.return_value.json.return_value = {'notices': [ted_raw('1'), ted_raw('1'), ted_raw('2')],
+                                                       'totalNoticeCount': 3}
+        self.assertEqual([n.number for n in fetch_notices(session, START, END)], ['1', '2'])
+        session.post.return_value.json.return_value = {'notices': [ted_raw('1'), ted_raw('1')], 'totalNoticeCount': 3}
+        with self.assertRaises(TedIncomplete):
+            fetch_notices(session, START, END)
 
     def test_ted_stops_on_a_full_final_page_and_rejects_oversized_total(self):
         session = mock.Mock()
