@@ -4,6 +4,9 @@ Collect Polish procurement notices from BZP and TED, filter them with TOML profi
 
 Website: [tenderkit.pl](https://tenderkit.pl/)
 
+[![pjagielski/tenderkit MCP server](https://glama.ai/mcp/servers/pjagielski/tenderkit/badges/score.svg)](https://glama.ai/mcp/servers/pjagielski/tenderkit)
+[![tenderkit MCP connector](https://glama.ai/mcp/connectors/pl.tenderkit/tenderkit/badges/score.svg)](https://glama.ai/mcp/connectors/pl.tenderkit/tenderkit)
+
 ## Public MCP server
 
 Try tenderkit without installing anything. `https://mcp.tenderkit.pl/mcp` is a read-only MCP server over a shared database of BZP and TED notices and awards from the last 90 days, refreshed every 8 hours. It does not download documents and needs no login.
