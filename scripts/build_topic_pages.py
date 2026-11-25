@@ -255,12 +255,13 @@ STYLE = '''
 .note{color:var(--muted);font-size:.82rem;max-width:75ch;margin:48px 0 0}
 .empty{color:var(--muted);margin-top:16px}
 /* hub */
-.hub{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:12px;list-style:none;padding:0;margin:40px 0 0}
+.hub{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;list-style:none;padding:0;margin:40px 0 0}
 .hub a{display:grid;gap:10px;height:100%;padding:18px 20px 16px;border-radius:16px;background:var(--ice);color:var(--ink);text-decoration:none;border:1px solid transparent}
 .hub a:hover,.hub a:focus-visible{border-color:var(--blue)}
 .hub b{font-size:1.08rem;color:var(--navy);letter-spacing:-.02em}
 .hub small{color:var(--muted);font-size:.85rem}
 .hub .bars{height:44px;gap:2px}.hub .bars b{display:none}
+@media (max-width:900px){.hub{grid-template-columns:repeat(2,minmax(0,1fr))}}@media (max-width:600px){.hub{grid-template-columns:1fr}}
 '''
 
 HEADER = '''<header class="site-header">
@@ -531,7 +532,7 @@ def hub_page(topics, summaries, today):
         line = f'{s["open_total"]} otwartych'
         if s['median']:
             line += f', mediana ceny {money(s["median"])}'
-        items.append(f'<li><a href="/przetargi/{e(t["slug"])}"><b>{e(t["title"])}</b>{rail(s, today, days=21, links=False)}'
+        items.append(f'<li><a href="/przetargi/{e(t["slug"])}"><b>{e(t["name"][:1].upper() + t["name"][1:])}</b>{rail(s, today, days=21, links=False)}'
                      f'<small>{e(line)}</small></a></li>')
     body = f'''    <p class="crumbs"><a href="/">tenderkit</a> / Przetargi</p>
     <h1>Przetargi według tematu</h1>
