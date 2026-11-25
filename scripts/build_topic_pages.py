@@ -357,6 +357,7 @@ FOOTER = '''<footer class="site-footer"><div class="container footer-inner"><a c
 
 def document(*, path, title, description, body, ld):
     url = f'{BASE}{path}'
+    ld_json = json.dumps(ld, ensure_ascii=False).replace('</', '<\\/')  # no "</script>" inside the JSON
     return f'''<!doctype html>
 <html lang="pl">
 <head>
@@ -378,7 +379,7 @@ def document(*, path, title, description, body, ld):
   <link rel="stylesheet" href="/assets/fonts.css">
   <link rel="stylesheet" href="/styles.css">
   <style>{STYLE}</style>
-  <script type="application/ld+json">{json.dumps(ld, ensure_ascii=False).replace("</", "<\\/")}</script>
+  <script type="application/ld+json">{ld_json}</script>
 </head>
 <body>
   <a class="skip-link" href="#main">Przejdź do treści</a>
