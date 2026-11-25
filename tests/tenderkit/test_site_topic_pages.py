@@ -65,6 +65,18 @@ class TopicPageTests(unittest.TestCase):
         self.assertNotIn('javascript:', page)
         self.assertIn('https://ted.example/1', page)
 
+    def test_feed_lists_recent_open_notices_as_valid_rss(self):
+        import xml.etree.ElementTree as ET
+        s = pages.summarize(data(title='Zakup karetki <4x4> & noszy'), date(2026, 11, 25))
+        root = ET.fromstring(pages.feed(TOPIC, s, date(2026, 11, 25)))
+        item = root.find('channel/item')
+        self.assertEqual(item.find('title').text, 'Zakup karetki <4x4> & noszy')
+        self.assertEqual(item.find('guid').text, 'BZP:1')
+        self.assertIn('Termin składania ofert: 10 grudnia 2026', item.find('description').text)
+        old = pages.summarize(data(), date(2027, 1, 25))
+        self.assertIsNone(ET.fromstring(pages.feed(TOPIC, old, date(2027, 1, 25))).find('channel/item'))
+        self.assertIn('href="https://tenderkit.pl/przetargi/karetki.xml"', self.render())
+
     def test_sitemap_keeps_hand_written_entries(self):
         existing = ('<urlset><url><loc>https://tenderkit.pl/</loc><lastmod>2026-11-18</lastmod></url>'
                     '<url><loc>https://tenderkit.pl/przetargi/stare</loc></url></urlset>')
