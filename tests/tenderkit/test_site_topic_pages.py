@@ -40,11 +40,19 @@ class TopicPageTests(unittest.TestCase):
     def test_page_shows_open_notices_and_award_statistics(self):
         page = self.render()
         self.assertIn('id="d-2026-12-10"', page)
-        self.assertIn('Czwartek, 10 grudnia<small>za 15 dni, 1 termin</small>', page)
+        self.assertIn('Czwartek, 10 grudnia<small>za 15 dni, <span class="cnt">1 termin</span></small>', page)
         self.assertIn('Wyszków, woj. mazowieckie', page)
         self.assertIn('889 893 zł', page)
         self.assertIn('<strong>67%</strong>', page)
         self.assertIn('<link rel="canonical" href="https://tenderkit.pl/przetargi/karetki">', page)
+
+    def test_list_carries_what_the_filters_need_and_works_without_them(self):
+        page = self.render()
+        self.assertIn('<li data-region="14" data-left="15" data-day="2026-12-10">', page)
+        self.assertIn('<div class="filters" id="filtry" hidden>', page)
+        self.assertIn('<option value="14">mazowieckie (1)</option>', page)
+        self.assertIn("M=[\"stycznia\"", page)
+        self.assertNotIn('__MONTHS__', page)
 
     def test_spellings_of_one_company_are_counted_together(self):
         page = self.render()

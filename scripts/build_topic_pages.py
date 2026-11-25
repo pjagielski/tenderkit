@@ -25,7 +25,8 @@ BASE = 'https://tenderkit.pl'
 MCP = 'https://mcp.tenderkit.pl/mcp'
 CLIENT = 'tenderkit-pages'
 RESULT_DAYS = 90
-OPEN_LIMIT = 100
+OPEN_LIMIT = 500
+SHOWN = 25  # notices visible before "Pokaż kolejne"; the rest stay in the page for the filters
 AWARD_LIMIT = 300
 MONTHS = ['stycznia', 'lutego', 'marca', 'kwietnia', 'maja', 'czerwca', 'lipca', 'sierpnia', 'września',
           'października', 'listopada', 'grudnia']
@@ -85,8 +86,15 @@ class Mcp:
 
 
 def fetch(mcp, topic, today):
-    notices = mcp.call('search_notices', cpv=topic['cpv'], open_now=True, dedupe='procedure', compact=True,
-                       limit=OPEN_LIMIT)
+    notices, offset = None, 0
+    while offset is not None and offset < OPEN_LIMIT:
+        page = mcp.call('search_notices', cpv=topic['cpv'], open_now=True, dedupe='procedure', compact=True,
+                        limit=100, offset=offset)
+        if notices is None:
+            notices = page
+        else:
+            notices['notices'] += page.get('notices') or []
+        offset = page.get('next_offset')
     # The server caps one response at 140k characters, so awards come in pages of 100.
     results, offset = None, 0
     while offset is not None and offset < AWARD_LIMIT:
@@ -166,6 +174,9 @@ def plural(n, one, few, many):
 # --- pages ----------------------------------------------------------------------------------------------------------
 
 RAIL_DAYS = 28
+# Filters on a topic page: region, deadline range, or one day picked on the rail. State lives in the query string
+# (?woj=14&termin=0-7&dzien=2026-12-01), so a filtered list can be shared. Matching notices show in pages of SHOWN.
+FILTER_JS = "\n(()=>{const list=document.getElementById('lista'),bar=document.getElementById('filtry');if(!list||!bar)return;\nconst items=[...list.querySelectorAll('li')],woj=document.getElementById('f-woj'),ile=document.getElementById('f-ile'),\ndzien=document.getElementById('f-dzien'),next=document.getElementById('dalej'),none=document.getElementById('brak'),\nM=__MONTHS__,STEP=__SHOWN__;bar.hidden=false;\nconst q=new URLSearchParams(location.search);let st={woj:q.get('woj')||'',termin:q.get('termin')||'',dzien:q.get('dzien')||''},limit=STEP;\nconst forms=(n,a,b,c)=>n==1?a:(n%10>=2&&n%10<=4&&(n%100<12||n%100>14)?b:c);\nfunction fits(li){if(st.woj&&li.dataset.region!==st.woj)return false;if(st.dzien)return li.dataset.day===st.dzien;\nif(st.termin){const [a,b]=st.termin.split('-').map(x=>x===''?Infinity:+x),d=li.dataset.left===''?Infinity:+li.dataset.left;if(d<a||d>b)return false}return true}\nfunction render(){let n=0;for(const li of items){const ok=fits(li);li.hidden=!ok||n>=limit;if(ok)n++}\nfor(const g of list.querySelectorAll('.day')){const v=[...g.querySelectorAll('li')].filter(li=>!li.hidden).length;g.hidden=!v;\nconst c=g.querySelector('.cnt');if(c)c.textContent=v+' '+forms(v,'termin','terminy','terminów')}\nconst shown=Math.min(n,limit);ile.textContent=shown===n?n+' '+forms(n,'postępowanie','postępowania','postępowań'):'Pokazano '+shown+' z '+n;\nnone.hidden=n>0;next.hidden=n<=limit;next.textContent='Pokaż kolejne '+Math.min(STEP,n-limit);\nwoj.value=st.woj;for(const b of bar.querySelectorAll('[data-range]'))b.setAttribute('aria-pressed',String(!st.dzien&&b.dataset.range===st.termin));\ndzien.hidden=!st.dzien;if(st.dzien){const d=new Date(st.dzien+'T12:00');dzien.firstChild.textContent='Termin '+d.getDate()+' '+M[d.getMonth()]}\nconst p=new URLSearchParams();for(const k in st)if(st[k])p.set(k,st[k]);const qs=p.toString();history.replaceState(null,'',qs?'?'+qs:location.pathname)}\nfunction set(ch){Object.assign(st,ch);limit=STEP;render()}\nwoj.addEventListener('change',()=>set({woj:woj.value}));\nbar.querySelectorAll('[data-range]').forEach(b=>b.addEventListener('click',()=>set({termin:b.dataset.range,dzien:''})));\ndzien.querySelector('button').addEventListener('click',()=>set({dzien:''}));\ndocument.querySelectorAll('[data-reset]').forEach(b=>b.addEventListener('click',()=>set({woj:'',termin:'',dzien:''})));\nnext.addEventListener('click',()=>{limit+=STEP;render()});\ndocument.querySelectorAll('.rail a[data-day]').forEach(a=>a.addEventListener('click',ev=>{ev.preventDefault();set({dzien:a.dataset.day,termin:''});\nbar.scrollIntoView({behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth',block:'start'})}));\nrender()})();\n".replace('__MONTHS__', json.dumps(MONTHS, ensure_ascii=False)).replace('__SHOWN__', str(SHOWN))
 WEEKDAYS = ['poniedziałek', 'wtorek', 'środa', 'czwartek', 'piątek', 'sobota', 'niedziela']
 
 # One family (Manrope, as on the landing page) so the topic pages read as the same site. The single bold element is
@@ -212,6 +223,23 @@ STYLE = '''
 .day .val small{display:block;font-weight:500;font-size:.75rem;color:var(--muted)}
 .src{font-size:.72rem;font-weight:700;color:var(--blue);margin-left:8px;letter-spacing:.02em}
 .more{margin-top:18px;color:var(--muted);font-size:.9rem}
+.filters{position:sticky;top:0;z-index:5;display:flex;flex-wrap:wrap;align-items:center;gap:10px 18px;margin:22px 0 4px;padding:12px 0;background:#fffffff2;backdrop-filter:blur(6px);border-bottom:1px solid var(--line);scroll-margin-top:12px}
+.filters[hidden]{display:none}
+.filters label{display:flex;align-items:center;gap:8px;font-size:.88rem;font-weight:600;color:var(--navy)}
+.filters select{font:inherit;font-weight:500;padding:7px 10px;border:1px solid var(--line);border-radius:8px;background:#fff;color:var(--ink);max-width:62vw}
+.range{display:inline-flex;border:1px solid var(--line);border-radius:999px;padding:3px;background:var(--ice)}
+.range button{border:0;background:none;padding:6px 13px;border-radius:999px;font-size:.86rem;font-weight:600;color:var(--ink-2)}
+.range button[aria-pressed=true]{background:var(--navy);color:#fff}
+.dayf{display:inline-flex;align-items:center;gap:6px;background:var(--navy);color:#fff;border-radius:999px;padding:5px 6px 5px 13px;font-size:.86rem;font-weight:600}
+.dayf[hidden]{display:none}
+.dayf button{border:0;background:#ffffff26;color:#fff;width:22px;height:22px;border-radius:50%;line-height:1}
+.count{margin:0 0 0 auto;font-size:.86rem;color:var(--muted);font-variant-numeric:tabular-nums}
+.next{display:block;margin:22px auto 0;padding:11px 22px;border:1px solid var(--navy);border-radius:999px;background:#fff;color:var(--navy);font-weight:700}
+.next[hidden]{display:none}
+.next:hover{background:var(--navy);color:#fff}
+button.link{border:0;background:none;padding:0;color:var(--blue);font:inherit;text-decoration:underline}
+.day[hidden],.day li[hidden]{display:none}
+@media (max-width:640px){.count{margin:0;width:100%}.range button{padding:6px 10px}}
 @media (max-width:640px){.day li{grid-template-columns:1fr}.day .val{grid-column:1;grid-row:auto;text-align:left}}
 /* results */
 .facts{font-size:clamp(1.05rem,2vw,1.25rem);line-height:1.55;color:var(--ink);max-width:60ch;margin:16px 0 0}
@@ -376,7 +404,7 @@ def rail(s, today, *, days=RAIL_DAYS, links=True):
         label = f'{d.day} {MONTHS[d.month - 1]}: {n} {plural(n, "termin", "terminy", "terminów")}'
         inner = f'<i style="--h:{round(100 * n / top)}%;--n:{i}"></i>' + (f'<b style="--h:{round(100 * n / top)}%">{n}</b>' if n else '')
         if links and n:
-            bars.append(f'<a class="{kind.strip()}{we}" href="#d-{d.isoformat()}" title="{e(label)}" aria-label="{e(label)}">{inner}</a>')
+            bars.append(f'<a class="{kind.strip()}{we}" href="#d-{d.isoformat()}" data-day="{d.isoformat()}" title="{e(label)}" aria-label="{e(label)}">{inner}</a>')
         else:
             bars.append(f'<span class="{(kind + we).strip()}" title="{e(label)}">{inner}</span>')
         ticks.append(f'<span>{d.day if i == 0 or d.weekday() == 0 else ""}</span>')
@@ -405,6 +433,22 @@ def price_strip(prices, median):
             f'<span>{money(high)}</span></div>')
 
 
+def filters(s):
+    """The filter bar. It starts hidden and the script shows it, so without scripts the whole list stays readable."""
+    regions = Counter(str(n.get('buyer_region') or '')[:2] for n in s['open'])
+    options = ''.join(f'<option value="{code}">{REGIONS[code]} ({n})</option>'
+                      for code, n in sorted(((c, n) for c, n in regions.items() if c in REGIONS),
+                                            key=lambda cn: REGIONS[cn[0]]))
+    ranges = [('', 'Wszystkie'), ('0-7', 'Do 7 dni'), ('8-14', '8–14 dni'), ('15-', 'Później')]
+    buttons = ''.join(f'<button type="button" data-range="{v}" aria-pressed="{"true" if not v else "false"}">{k}</button>'
+                      for v, k in ranges)
+    return (f'    <div class="filters" id="filtry" hidden>'
+            f'<label>Województwo<select id="f-woj"><option value="">wszystkie ({len(s["open"])})</option>{options}</select></label>'
+            f'<div class="range" role="group" aria-label="Termin składania ofert">{buttons}</div>'
+            f'<span class="dayf" id="f-dzien" hidden><span></span><button type="button" aria-label="Usuń filtr dnia">×</button></span>'
+            f'<p class="count" id="f-ile" aria-live="polite"></p></div>')
+
+
 def topic_page(topic, s, topics, today):
     slug, name = topic['slug'], topic['name']
     open_n, award_n = s['open_total'], s['award_total']
@@ -428,14 +472,16 @@ def topic_page(topic, s, topics, today):
     if s['open']:
         out.append('    <p class="sub">Według terminu składania ofert, najbliższe na górze. Tytuł prowadzi do '
                    'ogłoszenia na platformie zamawiającego.</p>')
+        out.append(filters(s))
         groups = {}
         for n in s['open'][:OPEN_LIMIT]:
             groups.setdefault(deadline_day(n), []).append(n)
+        out.append('    <div id="lista">')
         for d, items in groups.items():
             soon = d is not None and (d - today).days <= 3
             heading = (f'{WEEKDAYS[d.weekday()].capitalize()}, {d.day} {MONTHS[d.month - 1]}'
-                       f'<small>{when(d, today)}, {len(items)} {plural(len(items), "termin", "terminy", "terminów")}</small>'
-                       if d else 'Termin nieznany')
+                       f'<small>{when(d, today)}, <span class="cnt">{len(items)} '
+                       f'{plural(len(items), "termin", "terminy", "terminów")}</span></small>' if d else 'Termin nieznany')
             anchor = f' id="d-{d.isoformat()}"' if d else ''
             out.append(f'    <div class="day{" soon" if soon else ""}"{anchor}><h3>{heading}</h3><ul>')
             for n in items:
@@ -446,12 +492,20 @@ def topic_page(topic, s, topics, today):
                 where = place(n)
                 value = (f'<span class="val">{money(n["value"], n.get("currency"))}<small>wartość szacunkowa</small></span>'
                          if n.get('value') else '')
-                out.append(f'      <li><span>{title}<span class="src" title="Źródło ogłoszenia">{e(n.get("source"))}</span></span>'
+                region = str(n.get('buyer_region') or '')[:2]
+                left = (d - today).days if d else ''
+                out.append(f'      <li data-region="{e(region)}" data-left="{left}" data-day="{d.isoformat() if d else ""}">'
+                           f'<span>{title}<span class="src" title="Źródło ogłoszenia">{e(n.get("source"))}</span></span>'
                            f'{value}<span class="who">{e(name_case(n.get("buyer_name")))}{", " + e(where) if where else ""}</span></li>')
             out.append('    </ul></div>')
-        if open_n > OPEN_LIMIT:
-            out.append(f'    <p class="more">Pokazano {OPEN_LIMIT} z {open_n} postępowań. Pełną listę z filtrami zwróci '
-                       f'serwer MCP poniżej.</p>')
+        out.append('    </div>')
+        out.append('    <p class="empty" id="brak" hidden>Żadne otwarte postępowanie nie pasuje do tych filtrów. '
+                   '<button type="button" class="link" data-reset>Pokaż wszystkie</button></p>')
+        out.append('    <button type="button" class="next" id="dalej" hidden></button>')
+        if open_n > len(s['open']):
+            out.append(f'    <p class="more">Na stronie jest {len(s["open"])} z {open_n} postępowań. Pełną listę z '
+                       f'filtrami zwróci serwer MCP poniżej.</p>')
+        out.append(f'    <script>{FILTER_JS}</script>')
     else:
         out.append('    <p class="empty">Dziś nie ma otwartych postępowań w tej kategorii. Lista odświeża się '
                    'codziennie rano.</p>')
