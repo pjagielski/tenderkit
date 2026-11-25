@@ -176,7 +176,43 @@ def plural(n, one, few, many):
 RAIL_DAYS = 28
 # Filters on a topic page: region, deadline range, or one day picked on the rail. State lives in the query string
 # (?woj=14&termin=0-7&dzien=2026-12-01), so a filtered list can be shared. Matching notices show in pages of SHOWN.
-FILTER_JS = "\n(()=>{const list=document.getElementById('lista'),bar=document.getElementById('filtry');if(!list||!bar)return;\nconst items=[...list.querySelectorAll('li')],woj=document.getElementById('f-woj'),ile=document.getElementById('f-ile'),\ndzien=document.getElementById('f-dzien'),next=document.getElementById('dalej'),none=document.getElementById('brak'),\nM=__MONTHS__,STEP=__SHOWN__;bar.hidden=false;\nconst q=new URLSearchParams(location.search);let st={woj:q.get('woj')||'',termin:q.get('termin')||'',dzien:q.get('dzien')||''},limit=STEP;\nconst forms=(n,a,b,c)=>n==1?a:(n%10>=2&&n%10<=4&&(n%100<12||n%100>14)?b:c);\nfunction fits(li){if(st.woj&&li.dataset.region!==st.woj)return false;if(st.dzien)return li.dataset.day===st.dzien;\nif(st.termin){const [a,b]=st.termin.split('-').map(x=>x===''?Infinity:+x),d=li.dataset.left===''?Infinity:+li.dataset.left;if(d<a||d>b)return false}return true}\nfunction render(){let n=0;for(const li of items){const ok=fits(li);li.hidden=!ok||n>=limit;if(ok)n++}\nfor(const g of list.querySelectorAll('.day')){const v=[...g.querySelectorAll('li')].filter(li=>!li.hidden).length;g.hidden=!v;\nconst c=g.querySelector('.cnt');if(c)c.textContent=v+' '+forms(v,'termin','terminy','terminów')}\nconst shown=Math.min(n,limit);ile.textContent=shown===n?n+' '+forms(n,'postępowanie','postępowania','postępowań'):'Pokazano '+shown+' z '+n;\nnone.hidden=n>0;next.hidden=n<=limit;next.textContent='Pokaż kolejne '+Math.min(STEP,n-limit);\nwoj.value=st.woj;for(const b of bar.querySelectorAll('[data-range]'))b.setAttribute('aria-pressed',String(!st.dzien&&b.dataset.range===st.termin));\ndzien.hidden=!st.dzien;if(st.dzien){const d=new Date(st.dzien+'T12:00');dzien.firstChild.textContent='Termin '+d.getDate()+' '+M[d.getMonth()]}\nconst p=new URLSearchParams();for(const k in st)if(st[k])p.set(k,st[k]);const qs=p.toString();history.replaceState(null,'',qs?'?'+qs:location.pathname)}\nfunction set(ch){Object.assign(st,ch);limit=STEP;render()}\nwoj.addEventListener('change',()=>set({woj:woj.value}));\nbar.querySelectorAll('[data-range]').forEach(b=>b.addEventListener('click',()=>set({termin:b.dataset.range,dzien:''})));\ndzien.querySelector('button').addEventListener('click',()=>set({dzien:''}));\ndocument.querySelectorAll('[data-reset]').forEach(b=>b.addEventListener('click',()=>set({woj:'',termin:'',dzien:''})));\nnext.addEventListener('click',()=>{limit+=STEP;render()});\ndocument.querySelectorAll('.rail a[data-day]').forEach(a=>a.addEventListener('click',ev=>{ev.preventDefault();set({dzien:a.dataset.day,termin:''});\nbar.scrollIntoView({behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth',block:'start'})}));\nrender()})();\n".replace('__MONTHS__', json.dumps(MONTHS, ensure_ascii=False)).replace('__SHOWN__', str(SHOWN))
+FILTER_JS = (r'''
+(()=>{const list=document.getElementById('lista'),bar=document.getElementById('filtry');if(!list||!bar)return;
+const items=[...list.querySelectorAll('li')],woj=document.getElementById('f-woj'),ile=document.getElementById('f-ile'),
+dzien=document.getElementById('f-dzien'),next=document.getElementById('dalej'),none=document.getElementById('brak'),
+M=__MONTHS__,STEP=__SHOWN__;bar.hidden=false;
+const q=new URLSearchParams(location.search);let st={woj:q.get('woj')||'',termin:q.get('termin')||'',dzien:q.get('dzien')||''},limit=STEP;
+const R=__REGIONS__,bars=[...document.querySelectorAll('.rail .bars [data-day]')],sum=document.getElementById('rail-sum'),sum0=sum&&sum.textContent;
+const forms=(n,a,b,c)=>n==1?a:(n%10>=2&&n%10<=4&&(n%100<12||n%100>14)?b:c);
+function fits(li){if(st.woj&&li.dataset.region!==st.woj)return false;if(st.dzien)return li.dataset.day===st.dzien;
+if(st.termin){const [a,b]=st.termin.split('-').map(x=>x===''?Infinity:+x),d=li.dataset.left===''?Infinity:+li.dataset.left;if(d<a||d>b)return false}return true}
+function rail(){const c={};let all=0;for(const li of items)if(!st.woj||li.dataset.region===st.woj){all++;c[li.dataset.day]=(c[li.dataset.day]||0)+1}
+const top=Math.max(1,...bars.map(b=>c[b.dataset.day]||0));bars.forEach((b,i)=>{const n=c[b.dataset.day]||0,h=Math.round(100*n/top)+'%',d=new Date(b.dataset.day+'T12:00');
+b.querySelector('i').style.setProperty('--h',h);const l=b.querySelector('b');l.style.setProperty('--h',h);l.textContent=n||'';
+b.classList.toggle('none',!n);b.classList.toggle('soon',!!n&&i<=3);const t=d.getDate()+' '+M[d.getMonth()]+': '+n+' '+forms(n,'termin','terminy','terminów');
+b.title=t;if(b.tagName==='A'){b.setAttribute('aria-label',t);b.tabIndex=n?0:-1}});
+const lt=document.getElementById('rail-later');if(lt){const k=all-bars.reduce((x,b)=>x+(c[b.dataset.day]||0),0);lt.textContent='Terminy na najbliższe '+lt.dataset.days+' dni'+(k>0?', później '+k:'')+'.'}
+if(sum)sum.textContent=st.woj?'Woj. '+R[st.woj]+': '+all+' '+forms(all,'otwarte postępowanie','otwarte postępowania','otwartych postępowań')+'.':sum0}
+function render(){rail();let n=0;for(const li of items){const ok=fits(li);li.hidden=!ok||n>=limit;if(ok)n++}
+for(const g of list.querySelectorAll('.day')){const v=[...g.querySelectorAll('li')].filter(li=>!li.hidden).length;g.hidden=!v;
+const c=g.querySelector('.cnt');if(c)c.textContent=v+' '+forms(v,'termin','terminy','terminów')}
+const shown=Math.min(n,limit);ile.textContent=shown===n?n+' '+forms(n,'postępowanie','postępowania','postępowań'):'Pokazano '+shown+' z '+n;
+none.hidden=n>0;next.hidden=n<=limit;next.textContent='Pokaż kolejne '+Math.min(STEP,n-limit);
+woj.value=st.woj;for(const b of bar.querySelectorAll('[data-range]'))b.setAttribute('aria-pressed',String(!st.dzien&&b.dataset.range===st.termin));
+dzien.hidden=!st.dzien;if(st.dzien){const d=new Date(st.dzien+'T12:00');dzien.firstChild.textContent='Termin '+d.getDate()+' '+M[d.getMonth()]}
+const p=new URLSearchParams();for(const k in st)if(st[k])p.set(k,st[k]);const qs=p.toString();history.replaceState(null,'',qs?'?'+qs:location.pathname)}
+function set(ch){Object.assign(st,ch);limit=STEP;render()}
+woj.addEventListener('change',()=>set({woj:woj.value}));
+bar.querySelectorAll('[data-range]').forEach(b=>b.addEventListener('click',()=>set({termin:b.dataset.range,dzien:''})));
+dzien.querySelector('button').addEventListener('click',()=>set({dzien:''}));
+document.querySelectorAll('[data-reset]').forEach(b=>b.addEventListener('click',()=>set({woj:'',termin:'',dzien:''})));
+next.addEventListener('click',()=>{limit+=STEP;render()});
+document.querySelectorAll('.rail a[data-day]').forEach(a=>a.addEventListener('click',ev=>{ev.preventDefault();set({dzien:a.dataset.day,termin:''});
+bar.scrollIntoView({behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth',block:'start'})}));
+render()})();
+'''
+             .replace('__MONTHS__', json.dumps(MONTHS, ensure_ascii=False)).replace('__SHOWN__', str(SHOWN))
+             .replace('__REGIONS__', json.dumps(REGIONS, ensure_ascii=False)))
 WEEKDAYS = ['poniedziałek', 'wtorek', 'środa', 'czwartek', 'piątek', 'sobota', 'niedziela']
 
 # One family (Manrope, as on the landing page) so the topic pages read as the same site. The single bold element is
@@ -186,6 +222,7 @@ STYLE = '''
 :root{--urgent:#b4530a;--urgent-soft:#fdf0e4;--ink-2:#41536f}
 .topic{width:min(1080px,100% - 32px);margin:0 auto;padding:28px 0 88px;line-height:1.6}
 .topic a{color:var(--blue)}
+.site-header nav a[aria-current]{color:var(--blue)}
 .crumbs{font-size:.84rem;color:var(--muted);margin:0 0 26px}.crumbs a{color:var(--muted);text-decoration:underline;text-decoration-color:var(--line);text-underline-offset:3px}
 .topic h1{font-size:clamp(2.2rem,6vw,4.1rem);font-weight:800;line-height:1.02;letter-spacing:-.055em;color:var(--navy);max-width:28ch;margin:0;white-space:normal;text-wrap:balance}
 .lead{font-size:1.06rem;color:var(--ink-2);max-width:62ch;margin:18px 0 0}
@@ -195,12 +232,13 @@ STYLE = '''
 /* deadline rail */
 .rail{margin-top:40px;padding:22px 22px 14px;background:var(--ice);border-radius:18px}
 .rail-head{display:flex;flex-wrap:wrap;justify-content:space-between;gap:6px 20px;align-items:baseline;margin-bottom:18px}
-.rail-head p{margin:0;font-size:1rem;color:var(--navy);font-weight:600}.rail-head p span{color:var(--muted);font-weight:500}
+.rail-head p{margin:0;font-size:1rem;color:var(--navy);font-weight:600}.rail-head p b{font-weight:600}.rail-head p span{color:var(--muted);font-weight:500}
 .rail-head small{color:var(--muted);font-size:.82rem}
 .bars{display:grid;grid-template-columns:repeat(var(--days),1fr);gap:4px;height:132px;align-items:end}
 .bars a,.bars span{position:relative;display:block;height:100%;border-radius:4px}
 .bars i{position:absolute;left:0;right:0;bottom:0;height:var(--h);min-height:3px;border-radius:4px 4px 2px 2px;background:var(--blue);transform-origin:bottom}
-.bars .soon i{background:var(--urgent)}.bars .none i{background:var(--line);min-height:2px}
+.bars .soon i{background:var(--urgent)}.bars .none i{background:var(--line);min-height:2px}.bars .none b{display:none}
+.bars a.none{pointer-events:none}
 .bars .we{background:repeating-linear-gradient(135deg,#0000 0 6px,#e6ecf8 6px 7px)}
 .bars a:hover i,.bars a:focus-visible i{filter:brightness(1.15)}
 .bars b{position:absolute;left:50%;bottom:calc(var(--h) + 4px);transform:translateX(-50%);font-size:.72rem;font-weight:700;color:var(--navy);font-variant-numeric:tabular-nums}
@@ -297,7 +335,18 @@ HEADER = '''<header class="site-header">
       <a class="brand" href="/" aria-label="tenderkit, strona główna">
         <img class="brand-mark" src="/assets/tenderkit-mark.svg" width="32" height="32" alt=""><span class="brand-wordmark">tenderkit</span>
       </a>
-      <nav aria-label="Nawigacja główna"><a href="/przetargi/">Przetargi według tematu</a><a href="/#mcp">Serwer MCP</a><a href="/#dla-programistow">Dla programistów</a></nav>
+      <nav aria-label="Nawigacja główna">
+        <a href="/#jak-to-dziala">Jak to działa</a>
+        <a href="/#mcp">Serwer MCP</a>
+        <a href="/#dla-programistow">Dla programistów</a>
+        <a href="/#przyklady">Przykładowe implementacje</a>
+        <a href="/przetargi/" aria-current="page">Przetargi</a>
+      </nav>
+      <a class="github-link" href="https://github.com/pjagielski/tenderkit" target="_blank" rel="noopener noreferrer">
+        <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2a10 10 0 0 0-3.16 19.49c.5.09.68-.22.68-.48v-1.69c-2.78.6-3.37-1.18-3.37-1.18-.46-1.16-1.11-1.47-1.11-1.47-.91-.62.07-.61.07-.61 1 .07 1.53 1.03 1.53 1.03.89 1.53 2.34 1.09 2.91.83.09-.65.35-1.09.64-1.34-2.22-.25-4.56-1.11-4.56-4.94 0-1.09.39-1.98 1.03-2.68-.1-.25-.45-1.27.1-2.65 0 0 .84-.27 2.75 1.02A9.55 9.55 0 0 1 12 6.99c.85 0 1.7.11 2.5.34 1.91-1.29 2.75-1.02 2.75-1.02.55 1.38.2 2.4.1 2.65.64.7 1.03 1.59 1.03 2.68 0 3.84-2.34 4.69-4.58 4.94.36.31.68.92.68 1.85v2.58c0 .27.18.58.69.48A10 10 0 0 0 12 2Z"/></svg>
+        <span>GitHub</span>
+        <svg class="external-icon" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M4 12 12 4M4 4h8v8" stroke="currentColor" stroke-width="1.5"/></svg>
+      </a>
     </div>
   </header>'''
 
@@ -402,11 +451,11 @@ def rail(s, today, *, days=RAIL_DAYS, links=True):
         kind = ' none' if not n else (' soon' if i <= 3 else '')
         we = ' we' if d.weekday() >= 5 else ''
         label = f'{d.day} {MONTHS[d.month - 1]}: {n} {plural(n, "termin", "terminy", "terminów")}'
-        inner = f'<i style="--h:{round(100 * n / top)}%;--n:{i}"></i>' + (f'<b style="--h:{round(100 * n / top)}%">{n}</b>' if n else '')
+        inner = f'<i style="--h:{round(100 * n / top)}%;--n:{i}"></i><b style="--h:{round(100 * n / top)}%">{n or ""}</b>'
         if links and n:
             bars.append(f'<a class="{kind.strip()}{we}" href="#d-{d.isoformat()}" data-day="{d.isoformat()}" title="{e(label)}" aria-label="{e(label)}">{inner}</a>')
         else:
-            bars.append(f'<span class="{(kind + we).strip()}" title="{e(label)}">{inner}</span>')
+            bars.append(f'<span class="{(kind + we).strip()}" data-day="{d.isoformat()}" title="{e(label)}">{inner}</span>')
         ticks.append(f'<span>{d.day if i == 0 or d.weekday() == 0 else ""}</span>')
     return (f'<div class="bars" style="--days:{days}">{"".join(bars)}</div>'
             + (f'<div class="ticks" style="--days:{days}" aria-hidden="true">{"".join(ticks)}</div>' if links else ''))
@@ -462,9 +511,9 @@ def topic_page(topic, s, topics, today):
            f'    <h1>{e(topic["title"])}</h1>',
            f'    <p class="lead">{e(topic["intro"])}</p>']
     if s['open']:
-        head = (f'<p>{open_n} {plural(open_n, "otwarte postępowanie", "otwarte postępowania", "otwartych postępowań")}'
-                f'{f", najbliższy termin {when(first, today)}" if first else ""}.'
-                f' <span>Terminy na najbliższe {RAIL_DAYS} dni{f", później {later}" if later > 0 else ""}.</span></p>')
+        head = (f'<p><b id="rail-sum">{open_n} {plural(open_n, "otwarte postępowanie", "otwarte postępowania", "otwartych postępowań")}'
+                f'{f", najbliższy termin {when(first, today)}" if first else ""}.</b>'
+                f' <span id="rail-later" data-days="{RAIL_DAYS}">Terminy na najbliższe {RAIL_DAYS} dni{f", później {later}" if later > 0 else ""}.</span></p>')
         out.append(f'    <div class="rail"><div class="rail-head">{head}<small>Stan na {day(today)}</small></div>'
                    f'{rail(s, today)}</div>')
 
