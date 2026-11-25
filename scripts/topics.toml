@@ -1,0 +1,139 @@
+# Topic pages on tenderkit.pl/przetargi/<slug>, rebuilt daily by scripts/build_topic_pages.py.
+# cpv: CPV codes or prefixes ending in *, as in tenderkit's search_notices. intro: one or two sentences in Polish,
+# shown under the heading; numbers come from the data, not from here.
+
+[[topic]]
+slug = "karetki"
+name = "karetki i ambulanse"
+title = "Przetargi na karetki i ambulanse"
+cpv = ["3411412*"]
+prompt = "Pokaż otwarte przetargi na karetki z terminem składania ofert w ciągu 14 dni."
+intro = "Zakupy ambulansów typu B i C, karetek 4x4 i pojazdów do przewozu chorych przez szpitale, stacje pogotowia i powiaty."
+
+[[topic]]
+slug = "leki"
+name = "leki"
+title = "Przetargi na leki i produkty lecznicze"
+cpv = ["33600000*"]
+prompt = "Jakie szpitale ogłosiły w tym tygodniu przetargi na leki i do kiedy można złożyć ofertę?"
+intro = "Dostawy produktów leczniczych do szpitali i innych podmiotów leczniczych: pakiety leków, szczepionki, płyny infuzyjne."
+
+[[topic]]
+slug = "sprzet-medyczny"
+name = "sprzęt medyczny"
+title = "Przetargi na sprzęt i urządzenia medyczne"
+cpv = ["33100000*"]
+prompt = "Znajdź otwarte przetargi na aparaturę medyczną w województwie mazowieckim."
+intro = "Aparatura diagnostyczna, wyposażenie sal operacyjnych, łóżka, monitory i inne urządzenia medyczne."
+
+[[topic]]
+slug = "oprogramowanie"
+name = "oprogramowanie i usługi IT"
+title = "Przetargi na oprogramowanie i usługi IT"
+cpv = ["48000000*", "72000000*"]
+prompt = "Pokaż otwarte przetargi na oprogramowanie o wartości do 500 tys. zł."
+intro = "Systemy dziedzinowe, licencje, wdrożenia, utrzymanie i rozwój oprogramowania oraz usługi informatyczne."
+
+[[topic]]
+slug = "sprzet-komputerowy"
+name = "sprzęt komputerowy"
+title = "Przetargi na komputery i sprzęt komputerowy"
+cpv = ["30200000*"]
+prompt = "Jakie urzędy kupują teraz laptopy i do kiedy przyjmują oferty?"
+intro = "Komputery stacjonarne, laptopy, serwery, monitory i akcesoria dla urzędów, szkół i szpitali."
+
+[[topic]]
+slug = "drogi"
+name = "budowa i remonty dróg"
+title = "Przetargi na budowę i remonty dróg"
+cpv = ["45233000*"]
+prompt = "Znajdź otwarte przetargi na przebudowę dróg gminnych w województwie małopolskim."
+intro = "Budowa, przebudowa i remonty dróg gminnych, powiatowych i wojewódzkich, chodników oraz ścieżek rowerowych."
+
+[[topic]]
+slug = "remonty-budynkow"
+name = "remonty budynków"
+title = "Przetargi na remonty i modernizację budynków"
+cpv = ["45453000*", "45454000*"]
+prompt = "Pokaż przetargi na termomodernizację szkół z terminem w ciągu miesiąca."
+intro = "Remonty, modernizacje i przebudowy budynków publicznych: szkół, przychodni, urzędów i domów kultury."
+
+[[topic]]
+slug = "energia-elektryczna"
+name = "energia elektryczna"
+title = "Przetargi na dostawę energii elektrycznej"
+cpv = ["09310000*"]
+prompt = "Które gminy ogłosiły przetargi na dostawę energii elektrycznej na przyszły rok?"
+intro = "Dostawy energii elektrycznej dla gmin, grup zakupowych, szpitali i spółek komunalnych."
+
+[[topic]]
+slug = "paliwa"
+name = "paliwa"
+title = "Przetargi na paliwa"
+cpv = ["09100000*"]
+prompt = "Pokaż otwarte przetargi na dostawy oleju napędowego i benzyny."
+intro = "Dostawy oleju napędowego, benzyny, gazu i oleju opałowego, także sprzedaż paliw na stacjach dla flot."
+
+[[topic]]
+slug = "zywnosc"
+name = "żywność"
+title = "Przetargi na dostawy żywności"
+cpv = ["15000000*"]
+prompt = "Znajdź przetargi na dostawy żywności do szkół i przedszkoli w moim województwie."
+intro = "Dostawy pieczywa, nabiału, mięsa, warzyw i owoców do szkół, przedszkoli, szpitali i domów pomocy społecznej."
+
+[[topic]]
+slug = "catering"
+name = "catering i żywienie"
+title = "Przetargi na catering i żywienie"
+cpv = ["55520000*", "55320000*"]
+prompt = "Jakie szpitale szukają firmy do żywienia pacjentów?"
+intro = "Przygotowanie i dowóz posiłków dla szkół, szpitali i domów pomocy społecznej."
+
+[[topic]]
+slug = "odpady"
+name = "odbiór odpadów"
+title = "Przetargi na odbiór i zagospodarowanie odpadów"
+cpv = ["90500000*"]
+prompt = "Pokaż przetargi gmin na odbiór odpadów komunalnych od mieszkańców."
+intro = "Odbiór i zagospodarowanie odpadów komunalnych, medycznych i niebezpiecznych."
+
+[[topic]]
+slug = "sprzatanie"
+name = "sprzątanie"
+title = "Przetargi na sprzątanie i utrzymanie czystości"
+cpv = ["90910000*"]
+prompt = "Znajdź otwarte przetargi na sprzątanie budynków urzędów."
+intro = "Sprzątanie budynków, utrzymanie czystości w szpitalach, urzędach i szkołach, mycie okien."
+
+[[topic]]
+slug = "samochody"
+name = "samochody"
+title = "Przetargi na samochody osobowe i dostawcze"
+cpv = ["34110000*", "34136000*"]
+prompt = "Pokaż przetargi na samochody elektryczne dla urzędów."
+intro = "Zakup i leasing samochodów osobowych i dostawczych dla urzędów, policji, spółek komunalnych i szpitali."
+
+[[topic]]
+slug = "odziez-i-mundury"
+name = "odzież i mundury"
+title = "Przetargi na odzież roboczą i mundury"
+cpv = ["18100000*", "18200000*"]
+prompt = "Znajdź przetargi na umundurowanie i odzież ochronną."
+intro = "Odzież robocza i ochronna, mundury, obuwie i ubiory specjalne dla służb i pracowników."
+
+[[topic]]
+slug = "meble"
+name = "meble"
+title = "Przetargi na meble"
+cpv = ["39100000*"]
+prompt = "Jakie szkoły kupują teraz meble i do kiedy przyjmują oferty?"
+intro = "Meble biurowe, szkolne i medyczne, wyposażenie sal i gabinetów."
+
+[[topic]]
+slug = "ochrona"
+name = "ochrona osób i mienia"
+title = "Przetargi na ochronę osób i mienia"
+cpv = ["79710000*"]
+prompt = "Pokaż otwarte przetargi na ochronę fizyczną obiektów."
+intro = "Ochrona fizyczna obiektów, monitoring, konwojowanie i usługi portierskie."

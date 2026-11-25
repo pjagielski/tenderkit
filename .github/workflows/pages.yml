@@ -3,7 +3,9 @@ name: Landing page
 on:
   push:
     branches: [master]
-    paths: ["site/**", ".github/workflows/pages.yml"]
+    paths: ["site/**", "scripts/build_topic_pages.py", "scripts/topics.toml", ".github/workflows/pages.yml"]
+  schedule:
+    - cron: "30 5 * * *"  # topic pages: today's open notices
   workflow_dispatch:
 
 permissions:
@@ -24,6 +26,12 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: actions/configure-pages@v5
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      # /przetargi/ and one page per topic, from the public MCP server. If the server fails, the deploy stops and
+      # the pages published yesterday stay up.
+      - run: python scripts/build_topic_pages.py --site site
       - uses: actions/upload-pages-artifact@v3
         with:
           path: site
