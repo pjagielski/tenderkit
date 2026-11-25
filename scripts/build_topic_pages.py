@@ -9,6 +9,7 @@ output is not committed.
 Standard library only. Notice fields are public source data and are escaped like any untrusted text.
 """
 import argparse
+from email.utils import format_datetime
 import html
 import json
 import re
@@ -17,7 +18,7 @@ import time
 import tomllib
 import urllib.request
 from collections import Counter
-from datetime import date, datetime, timedelta
+from datetime import date, datetime, timedelta, timezone
 from decimal import Decimal, InvalidOperation
 from pathlib import Path
 
@@ -25,6 +26,8 @@ BASE = 'https://tenderkit.pl'
 MCP = 'https://mcp.tenderkit.pl/mcp'
 CLIENT = 'tenderkit-pages'
 RESULT_DAYS = 90
+FEED_DAYS = 14  # an RSS feed carries the open notices published in the last two weeks
+WARSAW = timezone(timedelta(hours=1))
 OPEN_LIMIT = 500
 SHOWN = 25  # notices visible before "Pokaż kolejne"; the rest stay in the page for the filters
 AWARD_LIMIT = 300
@@ -355,9 +358,11 @@ FOOTER = '''<footer class="site-footer"><div class="container footer-inner"><a c
   <script type='module' src='https://static.cloudflareinsights.com/beacon.min.js' data-cf-beacon='{"token": "c05c0c48f7bf408a8ad6604d905de210"}'></script>'''
 
 
-def document(*, path, title, description, body, ld):
+def document(*, path, title, description, body, ld, feed=None):
     url = f'{BASE}{path}'
     ld_json = json.dumps(ld, ensure_ascii=False).replace('</', '<\\/')  # no "</script>" inside the JSON
+    feed_link = (f'\n  <link rel="alternate" type="application/rss+xml" title="{e(feed[1])}" href="{BASE}{feed[0]}">'
+                 if feed else '')
     return f'''<!doctype html>
 <html lang="pl">
 <head>
@@ -366,7 +371,7 @@ def document(*, path, title, description, body, ld):
   <meta name="theme-color" content="#f3f6fc">
   <title>{e(title)}</title>
   <meta name="description" content="{e(description)}">
-  <link rel="canonical" href="{url}">
+  <link rel="canonical" href="{url}">{feed_link}
   <meta property="og:type" content="website">
   <meta property="og:locale" content="pl_PL">
   <meta property="og:site_name" content="tenderkit">
@@ -521,7 +526,8 @@ def topic_page(topic, s, topics, today):
     out.append(f'    <section aria-labelledby="otwarte"><h2 id="otwarte">Do kiedy można złożyć ofertę</h2>')
     if s['open']:
         out.append('    <p class="sub">Według terminu składania ofert, najbliższe na górze. Tytuł prowadzi do '
-                   'ogłoszenia na platformie zamawiającego.</p>')
+                   f'ogłoszenia na platformie zamawiającego. Nowe ogłoszenia możesz śledzić przez '
+                   f'<a href="/przetargi/{e(slug)}.xml">kanał RSS</a>.</p>')
         out.append(filters(s))
         groups = {}
         for n in s['open'][:OPEN_LIMIT]:
@@ -626,7 +632,8 @@ def topic_page(topic, s, topics, today):
             {'@type': 'ListItem', 'position': 2, 'name': 'Przetargi', 'item': f'{BASE}/przetargi/'},
             {'@type': 'ListItem', 'position': 3, 'name': topic['title'], 'item': f'{BASE}/przetargi/{slug}'}]}]}
     return document(path=f'/przetargi/{slug}', title=f'{topic["title"]}: {open_n} otwartych, terminy i wyniki | tenderkit',
-                    description=description, body='\n'.join(out), ld=ld)
+                    description=description, body='\n'.join(out), ld=ld,
+                    feed=(f'/przetargi/{slug}.xml', f'{topic["title"]}: nowe ogłoszenia'))
 
 
 def hub_page(topics, summaries, today):
@@ -650,6 +657,43 @@ def hub_page(topics, summaries, today):
                     description='Otwarte przetargi i rozstrzygnięcia z BZP i TED w popularnych kategoriach, '
                                 'aktualizowane codziennie: IT, leki, drogi, projektowanie, energia i inne.',
                     body=body, ld=ld)
+
+
+def feed(topic, s, today):
+    """RSS 2.0: open notices of the topic published in the last FEED_DAYS days, newest first."""
+    since = today - timedelta(days=FEED_DAYS)
+    fresh = []
+    for n in s['open']:
+        try:
+            published = datetime.fromisoformat(str(n.get('published'))[:10]).date()
+        except ValueError:
+            continue
+        if published >= since:
+            fresh.append((published, n))
+    fresh.sort(key=lambda pn: pn[0], reverse=True)
+    items = []
+    for published, n in fresh[:100]:
+        link = safe_url(n.get('platform_url')) if n.get('platform_url_specific') else None
+        link = link or safe_url(n.get('url')) or f'{BASE}/przetargi/{topic["slug"]}'
+        d = deadline_day(n)
+        parts = [name_case(n.get('buyer_name')), place(n),
+                 f'Termin składania ofert: {day(d)}' if d else '',
+                 f'Wartość szacunkowa: {money(n["value"], n.get("currency"))}' if n.get('value') else '',
+                 f'Źródło: {n.get("source")} {n.get("number")}']
+        when_ = format_datetime(datetime(published.year, published.month, published.day, 8, tzinfo=WARSAW))
+        items.append(f'    <item>\n      <title>{e(n.get("title"))}</title>\n      <link>{e(link)}</link>\n'
+                     f'      <guid isPermaLink="false">{e(n.get("source"))}:{e(n.get("number"))}</guid>\n'
+                     f'      <pubDate>{when_}</pubDate>\n'
+                     f'      <description>{e(". ".join(x for x in parts if x))}</description>\n    </item>\n')
+    built = format_datetime(datetime(today.year, today.month, today.day, 6, 30, tzinfo=timezone.utc))
+    page = f'{BASE}/przetargi/{topic["slug"]}'
+    return ('<?xml version="1.0" encoding="UTF-8"?>\n'
+            '<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">\n  <channel>\n'
+            f'    <title>{e(topic["title"])} | tenderkit</title>\n    <link>{page}</link>\n'
+            f'    <atom:link href="{page}.xml" rel="self" type="application/rss+xml"/>\n'
+            f'    <description>Nowe otwarte przetargi z BZP i TED: {e(topic["name"])}. Aktualizacja codziennie.</description>\n'
+            f'    <language>pl</language>\n    <lastBuildDate>{built}</lastBuildDate>\n    <ttl>720</ttl>\n'
+            + ''.join(items) + '  </channel>\n</rss>\n')
 
 
 def sitemap(existing, topics, today):
@@ -695,6 +739,7 @@ def main(argv=None):
     for topic in topics:
         (out/f'{topic["slug"]}.html').write_text(topic_page(topic, summaries[topic['slug']], topics, today),
                                                  encoding='utf-8')
+        (out/f'{topic["slug"]}.xml').write_text(feed(topic, summaries[topic['slug']], today), encoding='utf-8')
         s = summaries[topic['slug']]
         print(f'{topic["slug"]}: {s["open_total"]} open, {s["award_total"]} awards', file=sys.stderr)
     (out/'index.html').write_text(hub_page(topics, summaries, today), encoding='utf-8')
