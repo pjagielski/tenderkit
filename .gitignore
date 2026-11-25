@@ -4,3 +4,5 @@ __pycache__/
 *.egg-info/
 build/
 dist/
+# Built by the Pages workflow (scripts/build_topic_pages.py), not committed.
+site/przetargi/
