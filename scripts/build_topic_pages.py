@@ -329,6 +329,9 @@ button.link{border:0;background:none;padding:0;color:var(--blue);font:inherit;te
 .hub a:hover,.hub a:focus-visible{border-color:var(--blue)}
 .hub b{font-size:1.08rem;color:var(--navy);letter-spacing:-.02em}
 .hub small{color:var(--muted);font-size:.85rem}
+.compete{margin-top:24px}.compete .share{position:relative;min-width:150px}
+.compete .share span{position:absolute;left:8px;top:50%;height:6px;margin-top:-3px;width:calc((100% - 64px) * var(--w) / 100);border-radius:3px;background:var(--urgent);opacity:.75}
+.compete .share b{font-variant-numeric:tabular-nums;color:var(--navy)}
 .hub .bars{height:44px;gap:2px}.hub .bars b{display:none}
 @media (max-width:900px){.hub{grid-template-columns:repeat(2,minmax(0,1fr))}}@media (max-width:600px){.hub{grid-template-columns:1fr}}
 '''
@@ -636,6 +639,35 @@ def topic_page(topic, s, topics, today):
                     feed=(f'/przetargi/{slug}.xml', f'{topic["title"]}: nowe ogłoszenia'))
 
 
+def competition(topics, summaries):
+    """How contested each topic is: awards, median price and the share of lots that drew a single bid."""
+    rows = []
+    for t in topics:
+        s = summaries[t['slug']]
+        if not s['offers_known']:
+            continue
+        share = 100 * (s['single'] or 0) / s['offers_known']
+        rows.append((share, t, s))
+    if not rows:
+        return ''
+    rows.sort(key=lambda r: -r[0])
+    body = ''.join(
+        f'<tr><td><a href="/przetargi/{e(t["slug"])}">{e(t["name"][:1].upper() + t["name"][1:])}</a></td>'
+        f'<td class="n">{s["award_total"]}</td><td class="n">{money(s["median"]) if s["median"] else ""}</td>'
+        f'<td class="n share"><span style="--w:{round(share)}"></span><b>{round(share)}%</b></td></tr>'
+        for share, t, s in rows)
+    top, low = rows[0], rows[-1]
+    lead = (f'Najmniejsza konkurencja jest w kategorii {e(top[1]["name"])}: w {round(top[0])}% rozstrzygniętych części '
+            f'wpłynęła tylko jedna oferta. Największa w kategorii {e(low[1]["name"])}, gdzie jedną ofertę miało '
+            f'{round(low[0])}% części.')
+    return f'''    <section aria-labelledby="konkurencja"><h2 id="konkurencja">Gdzie konkurencja jest najmniejsza</h2>
+    <p class="facts">{lead}</p>
+    <div class="awards compete"><table><thead><tr><th>Kategoria</th><th class="n">Rozstrzygnięte części, {RESULT_DAYS} dni</th>
+    <th class="n">Mediana ceny</th><th class="n">Części z jedną ofertą</th></tr></thead><tbody>{body}</tbody></table></div>
+    <p class="note">Udział liczony wśród części, dla których ogłoszenie o wyniku podaje liczbę ofert. Mediana dotyczy cen wybranych ofert w złotych.</p>
+    </section>'''
+
+
 def hub_page(topics, summaries, today):
     items = []
     for t in topics:
@@ -649,6 +681,7 @@ def hub_page(topics, summaries, today):
     <h1>Przetargi według tematu</h1>
     <p class="lead">Otwarte postępowania i rozstrzygnięcia z Biuletynu Zamówień Publicznych i TED w {len(topics)} kategoriach. Słupki pokazują, ile terminów składania ofert mija w każdym z najbliższych 21 dni. Stan na {day(today)}.</p>
     <ul class="hub">{"".join(items)}</ul>
+{competition(topics, summaries)}
     <p class="note">Własne kategorie, regiony i słowa kluczowe ustawisz w profilu tenderkit albo zapytasz o nie model przez <a href="/#mcp">publiczny serwer MCP</a>.</p>'''
     ld = {'@context': 'https://schema.org', '@type': 'CollectionPage', 'name': 'Przetargi według tematu',
           'url': f'{BASE}/przetargi/', 'inLanguage': 'pl-PL', 'dateModified': today.isoformat(),
