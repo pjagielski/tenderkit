@@ -77,6 +77,16 @@ class TopicPageTests(unittest.TestCase):
         self.assertIsNone(ET.fromstring(pages.feed(TOPIC, old, date(2027, 1, 25))).find('channel/item'))
         self.assertIn('href="https://tenderkit.pl/przetargi/karetki.xml"', self.render())
 
+    def test_hub_ranks_topics_by_single_bid_share(self):
+        busy = dict(TOPIC, slug='drogi', name='drogi')
+        quiet = pages.summarize(data(), date(2026, 11, 25))
+        contested = dict(quiet, single=1, offers_known=10)
+        page = pages.hub_page([busy, TOPIC], {'drogi': contested, 'karetki': quiet}, date(2026, 11, 25))
+        table = page[page.index('id="konkurencja"'):]
+        self.assertLess(table.index('/przetargi/karetki'), table.index('/przetargi/drogi'))
+        self.assertIn('w 67% rozstrzygniętych części', table)
+        self.assertIn('<span style="--w:10"></span><b>10%</b>', table)
+
     def test_sitemap_keeps_hand_written_entries(self):
         existing = ('<urlset><url><loc>https://tenderkit.pl/</loc><lastmod>2026-11-18</lastmod></url>'
                     '<url><loc>https://tenderkit.pl/przetargi/stare</loc></url></urlset>')
