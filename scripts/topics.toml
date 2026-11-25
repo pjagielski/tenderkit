@@ -3,12 +3,12 @@
 # shown under the heading; numbers come from the data, not from here.
 
 [[topic]]
-slug = "karetki"
-name = "karetki i ambulanse"
-title = "Przetargi na karetki i ambulanse"
-cpv = ["3411412*"]
-prompt = "Pokaż otwarte przetargi na karetki z terminem składania ofert w ciągu 14 dni."
-intro = "Zakupy ambulansów typu B i C, karetek 4x4 i pojazdów do przewozu chorych przez szpitale, stacje pogotowia i powiaty."
+slug = "projektowanie"
+name = "projektowanie"
+title = "Przetargi na projektowanie i dokumentację projektową"
+cpv = ["71200000*", "71300000*"]
+prompt = "Pokaż otwarte przetargi na dokumentację projektową dróg i mostów z terminem w ciągu 14 dni."
+intro = "Projekty budowlane i wykonawcze, koncepcje architektoniczne, dokumentacja dróg, mostów i sieci, nadzór autorski i inwestorski."
 
 [[topic]]
 slug = "leki"

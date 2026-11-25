@@ -176,7 +176,7 @@ STYLE = '''
 .topic{width:min(1080px,100% - 32px);margin:0 auto;padding:28px 0 88px;line-height:1.6}
 .topic a{color:var(--blue)}
 .crumbs{font-size:.84rem;color:var(--muted);margin:0 0 26px}.crumbs a{color:var(--muted);text-decoration:underline;text-decoration-color:var(--line);text-underline-offset:3px}
-.topic h1{font-size:clamp(2.2rem,6vw,4.1rem);font-weight:800;line-height:1.02;letter-spacing:-.055em;color:var(--navy);max-width:16ch;margin:0}
+.topic h1{font-size:clamp(2.2rem,6vw,4.1rem);font-weight:800;line-height:1.02;letter-spacing:-.055em;color:var(--navy);max-width:22ch;margin:0;white-space:normal;text-wrap:balance}
 .lead{font-size:1.06rem;color:var(--ink-2);max-width:62ch;margin:18px 0 0}
 .topic h2{font-size:clamp(1.45rem,3vw,2.05rem);font-weight:800;letter-spacing:-.04em;line-height:1.15;color:var(--navy);margin:0;max-width:30ch}
 .topic section{margin-top:72px}
@@ -543,7 +543,7 @@ def hub_page(topics, summaries, today):
           'hasPart': [{'@type': 'WebPage', 'name': t['title'], 'url': f'{BASE}/przetargi/{t["slug"]}'} for t in topics]}
     return document(path='/przetargi/', title='Przetargi według tematu: terminy i wyniki | tenderkit',
                     description='Otwarte przetargi i rozstrzygnięcia z BZP i TED w popularnych kategoriach, '
-                                'aktualizowane codziennie: karetki, leki, IT, drogi, energia i inne.',
+                                'aktualizowane codziennie: IT, leki, drogi, projektowanie, energia i inne.',
                     body=body, ld=ld)
 
 
